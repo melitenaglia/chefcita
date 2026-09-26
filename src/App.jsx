@@ -40,7 +40,7 @@ export default function App(){
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
  {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 
- {tab==='Mi cocina'&&<RecipeLibrary key={`favorites-${recipeRefresh}`} session={session} mode="favorites"/>}
+ {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
  {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}`}/>} 
  {tab!=='Inicio'&&tab!=='Mi cuenta'&&tab!=='Configuración'&&tab!=='Recetas'&&tab!=='Mi cocina'&&tab!=='Pendientes'&&<section className="empty"><ChefHat/><h2>{tab} está listo</h2><p>En el próximo paso conectamos esta sección con tus datos reales.</p></section>}
  {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);setTab(target)}}/>}
