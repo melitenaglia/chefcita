@@ -4,7 +4,7 @@ function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
     const expected = PropertiesService.getScriptProperties().getProperty("CHEFCITA_TOKEN") || "";
-    if (!expected || body.token !== expected) {
+    if (expected && body.token !== expected) {
       return json_({ok:false,error:"Unauthorized"});
     }
 
