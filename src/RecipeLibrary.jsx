@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle} from 'lucide-react';
+import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle,SlidersHorizontal,Star} from 'lucide-react';
 import {supabase} from './supabase.js';
 import RecipeDetail from './RecipeDetail.jsx';
 
@@ -11,6 +11,12 @@ export default function RecipeLibrary({session,mode='all'}){
  const [error,setError]=useState('');
  const [search,setSearch]=useState('');
  const [selectedId,setSelectedId]=useState(null);
+ const [categoryFilter,setCategoryFilter]=useState('');
+ const [mealFilter,setMealFilter]=useState('');
+ const [levelFilter,setLevelFilter]=useState('');
+ const [personalFilter,setPersonalFilter]=useState('');
+ const [sort,setSort]=useState('newest');
+ const [kitchenView,setKitchenView]=useState('favorites');
 
  const load=async()=>{
   setLoading(true);
@@ -27,18 +33,59 @@ export default function RecipeLibrary({session,mode='all'}){
 
  useEffect(()=>{load()},[]);
 
- const visible=useMemo(()=>recipes.filter(recipe=>{
-  const personal=recipe.user_recipes?.[0];
-  if(mode==='favorites'&&!personal?.is_favorite)return false;
+ const categories=useMemo(()=>[...new Set(recipes.map(x=>x.categories?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
+ const mealTypes=useMemo(()=>[...new Set(recipes.map(x=>x.meal_types?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
+
+ const kitchenCounts=useMemo(()=>{
+  let favorites=0,toTry=0,tried=0;
+  for(const recipe of recipes){
+   const p=recipe.user_recipes?.[0];
+   if(p?.is_favorite)favorites++;
+   if(p?.tried_status==='tried')tried++;
+   else toTry++;
+  }
+  return {favorites,toTry,tried};
+ },[recipes]);
+
+ const visible=useMemo(()=>{
   const q=search.trim().toLowerCase();
-  if(!q)return true;
-  const ingredients=(recipe.recipe_ingredients||[]).map(x=>x.original_name);
-  const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name);
-  return [
-   recipe.title,recipe.description,recipe.categories?.name,recipe.meal_types?.name,
-   ...ingredients,...tagNames
-  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(q));
- }),[recipes,search,mode]);
+  const rows=recipes.filter(recipe=>{
+   const personal=recipe.user_recipes?.[0]||{};
+
+   if(mode==='favorites'&&!personal.is_favorite)return false;
+   if(mode==='kitchen'){
+    if(kitchenView==='favorites'&&!personal.is_favorite)return false;
+    if(kitchenView==='to_try'&&(personal.tried_status||'to_try')!=='to_try')return false;
+    if(kitchenView==='tried'&&personal.tried_status!=='tried')return false;
+   }
+
+   if(categoryFilter&&recipe.categories?.name!==categoryFilter)return false;
+   if(mealFilter&&recipe.meal_types?.name!==mealFilter)return false;
+   if(levelFilter&&recipe.level!==levelFilter)return false;
+
+   if(personalFilter==='favorite'&&!personal.is_favorite)return false;
+   if(personalFilter==='to_try'&&(personal.tried_status||'to_try')!=='to_try')return false;
+   if(personalFilter==='tried'&&personal.tried_status!=='tried')return false;
+
+   if(!q)return true;
+   const ingredients=(recipe.recipe_ingredients||[]).map(x=>x.original_name);
+   const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name);
+   return [
+    recipe.title,recipe.description,recipe.categories?.name,recipe.meal_types?.name,
+    ...ingredients,...tagNames
+   ].filter(Boolean).some(value=>String(value).toLowerCase().includes(q));
+  });
+
+  return [...rows].sort((a,b)=>{
+   if(sort==='title')return a.title.localeCompare(b.title,'es');
+   if(sort==='time'){
+    const av=a.total_minutes==null?Number.MAX_SAFE_INTEGER:a.total_minutes;
+    const bv=b.total_minutes==null?Number.MAX_SAFE_INTEGER:b.total_minutes;
+    return av-bv;
+   }
+   return new Date(b.created_at)-new Date(a.created_at);
+  });
+ },[recipes,search,mode,kitchenView,categoryFilter,mealFilter,levelFilter,personalFilter,sort]);
 
  const updatePersonal=async(recipe,changes)=>{
   const current=recipe.user_recipes?.[0]||{};
@@ -68,14 +115,38 @@ export default function RecipeLibrary({session,mode='all'}){
   updatePersonal(recipe,{tried_status:current?.tried_status==='tried'?'to_try':'tried'});
  };
 
+ const clearFilters=()=>{
+  setCategoryFilter('');setMealFilter('');setLevelFilter('');setPersonalFilter('');setSort('newest');
+ };
+
+ const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||personalFilter||sort!=='newest');
+
  return <section className="recipe-library">
+  {mode==='kitchen'&&<div className="kitchen-tabs">
+   <button className={kitchenView==='favorites'?'active':''} onClick={()=>setKitchenView('favorites')}><Heart/>Favoritas <span>{kitchenCounts.favorites}</span></button>
+   <button className={kitchenView==='to_try'?'active':''} onClick={()=>setKitchenView('to_try')}><Circle/>Por probar <span>{kitchenCounts.toTry}</span></button>
+   <button className={kitchenView==='tried'?'active':''} onClick={()=>setKitchenView('tried')}><CheckCircle2/>Probadas <span>{kitchenCounts.tried}</span></button>
+  </div>}
+
   <div className="library-toolbar">
    <div className="search-box"><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por receta, ingrediente, categoría o etiqueta..."/></div>
    <span>{visible.length} {visible.length===1?'receta':'recetas'}</span>
   </div>
+
+  <div className="library-filters">
+   <span className="filters-label"><SlidersHorizontal/>Filtros</span>
+   <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">Todas las categorías</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
+   <select value={mealFilter} onChange={e=>setMealFilter(e.target.value)}><option value="">Todos los tipos</option>{mealTypes.map(x=><option key={x}>{x}</option>)}</select>
+   <select value={levelFilter} onChange={e=>setLevelFilter(e.target.value)}><option value="">Cualquier nivel</option><option value="initial">Inicial</option><option value="intermediate">Intermedio</option><option value="expert">Experto</option></select>
+   {mode==='all'&&<select value={personalFilter} onChange={e=>setPersonalFilter(e.target.value)}><option value="">Cualquier estado</option><option value="favorite">Favoritas</option><option value="to_try">Por probar</option><option value="tried">Probadas</option></select>}
+   <select value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Más recientes</option><option value="title">A–Z</option><option value="time">Menor tiempo</option></select>
+   {filtersActive&&<button onClick={clearFilters}>Limpiar</button>}
+  </div>
+
   {loading&&<div className="library-state"><ChefHat/><p>Cargando recetas...</p></div>}
   {!loading&&error&&<div className="library-state error"><p>No pudimos cargar las recetas.</p><small>{error}</small><button onClick={load}>Reintentar</button></div>}
-  {!loading&&!error&&visible.length===0&&<div className="library-state"><BookOpen/><h2>{mode==='favorites'?'Todavía no tenés favoritas':'Tu biblioteca está lista'}</h2><p>{mode==='favorites'?'Marcá una receta con el corazón y aparecerá acá.':'Añadí tu primera receta para empezar a construir Chefcita.'}</p></div>}
+  {!loading&&!error&&visible.length===0&&<div className="library-state"><BookOpen/><h2>{mode==='kitchen'?'No hay recetas en esta vista':'No encontramos recetas'}</h2><p>{search||filtersActive?'Probá quitando algún filtro o cambiando la búsqueda.':'Añadí tu primera receta para empezar a construir Chefcita.'}</p></div>}
+
   {!loading&&!error&&visible.length>0&&<div className="recipe-grid">
    {visible.map(recipe=>{
     const personal=recipe.user_recipes?.[0];
@@ -93,12 +164,17 @@ export default function RecipeLibrary({session,mode='all'}){
       {recipe.description&&<p>{recipe.description}</p>}
       {mainIngredients.length>0&&<div className="card-ingredients">{mainIngredients.map((x,i)=><span key={i}>{x.original_name}</span>)}</div>}
       {tagNames.length>0&&<div className="card-tags">{tagNames.map(tag=><span key={tag}>{tag}</span>)}</div>}
-      <div className="recipe-facts">{recipe.total_minutes!=null&&<span><Clock/>{recipe.total_minutes} min</span>}{recipe.level&&<span>{levelLabel[recipe.level]}</span>}</div>
+      <div className="recipe-facts">
+       {recipe.total_minutes!=null&&<span><Clock/>{recipe.total_minutes} min</span>}
+       {recipe.level&&<span>{levelLabel[recipe.level]}</span>}
+       {tried&&personal?.rating&&<span className="card-rating"><Star/>{personal.rating}/5</span>}
+      </div>
       <button className={tried?'tried-toggle active':'tried-toggle'} onClick={e=>toggleTried(recipe,e)}>{tried?<CheckCircle2/>:<Circle/>}{tried?'Probada':'Por probar'}</button>
      </div>
     </article>;
    })}
   </div>}
-  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={()=>setSelectedId(null)} onDeleted={()=>load()} onChanged={()=>load()}/>} 
+
+  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={()=>setSelectedId(null)} onDeleted={()=>load()} onChanged={()=>load()}/>}
  </section>;
 }
