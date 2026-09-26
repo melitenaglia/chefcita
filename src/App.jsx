@@ -16,6 +16,7 @@ export default function App(){
  const [settingsStart,setSettingsStart]=useState('Cuenta');
  const [adding,setAdding]=useState(false);
  const [recipeRefresh,setRecipeRefresh]=useState(0);
+ const [pendingStart,setPendingStart]=useState('imports');
  useEffect(()=>{
   supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
@@ -34,15 +35,16 @@ export default function App(){
  if(loading)return <div className="splash"><ChefHat/><span>Chefcita</span></div>;
  if(!session)return <Auth/>;
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
- return <div className="shell"><aside><div className="logo"><ChefHat/><b>Chefcita</b></div><nav>{nav.map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>setTab(n)}><I/>{n}</button>)}</nav><div className="account-nav"><button onClick={()=>setTab('Mi cuenta')}><UserRound/>Mi cuenta</button><button onClick={()=>setTab('Configuración')}><Settings/>Config.</button><button className="logout" onClick={()=>supabase.auth.signOut()}><LogOut/>Salir</button></div></aside>
+ const goToTab=target=>{if(target==='Pendientes')setPendingStart('imports');setTab(target)};
+ return <div className="shell"><aside><div className="logo"><ChefHat/><b>Chefcita</b></div><nav>{nav.map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>goToTab(n)}><I/>{n}</button>)}</nav><div className="account-nav"><button onClick={()=>setTab('Mi cuenta')}><UserRound/>Mi cuenta</button><button onClick={()=>setTab('Configuración')}><Settings/>Config.</button><button className="logout" onClick={()=>supabase.auth.signOut()}><LogOut/>Salir</button></div></aside>
  <main className="content"><header><div><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div><button className="add" onClick={()=>setAdding(true)}><Plus/> Añadir receta</button></header>
- {tab==='Inicio'&&<HomeDashboard onNavigate={setTab} onAdd={()=>setAdding(true)}/>} 
+ {tab==='Inicio'&&<HomeDashboard onNavigate={goToTab} onAdd={()=>setAdding(true)}/>} 
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
  {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 
  {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
- {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}`}/>} 
+ {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart}/>} 
  {tab!=='Inicio'&&tab!=='Mi cuenta'&&tab!=='Configuración'&&tab!=='Recetas'&&tab!=='Mi cocina'&&tab!=='Pendientes'&&<section className="empty"><ChefHat/><h2>{tab} está listo</h2><p>En el próximo paso conectamos esta sección con tus datos reales.</p></section>}
- {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);setTab(target)}}/>}
+ {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);if(target==='Por validar'){setPendingStart('review');setTab('Pendientes')}else{if(target==='Pendientes')setPendingStart('imports');setTab(target)}}}/>} 
  </main></div>;
 }
