@@ -7,6 +7,7 @@ import SettingsPage from './SettingsPage.jsx';
 import RecipeLibrary from './RecipeLibrary.jsx';
 import AddRecipe from './AddRecipe.jsx';
 import PendingImports from './PendingImports.jsx';
+import RecipeDetail from './RecipeDetail.jsx';
 
 export default function App(){
  const [session,setSession]=useState(null);
@@ -15,6 +16,7 @@ export default function App(){
  const [settingsStart,setSettingsStart]=useState('Cuenta');
  const [adding,setAdding]=useState(false);
  const [recipeRefresh,setRecipeRefresh]=useState(0);
+ const [openRecipe,setOpenRecipe]=useState(null);
  useEffect(()=>{
   supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
@@ -38,10 +40,11 @@ export default function App(){
  {tab==='Inicio'&&<><section className="welcome"><div><span>Tu cocina empieza acá</span><h2>¿Qué cocinamos hoy?</h2><p>Guardá recetas, organizalas y convertí ese Reel que nunca volvés a encontrar en una receta de verdad.</p></div><ChefHat/></section><div className="cards"><article><BookOpen/><b>Recetas</b><strong>0</strong><small>Tu biblioteca está lista para empezar.</small></article><article><Inbox/><b>Pendientes</b><strong>0</strong><small>Recetas esperando revisión.</small></article><article><Heart/><b>Favoritas</b><strong>0</strong><small>Las que siempre querés repetir.</small></article></div></>}
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
  {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
- {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 
- {tab==='Mi cocina'&&<RecipeLibrary key={`favorites-${recipeRefresh}`} session={session} mode="favorites"/>}
+ {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} onOpen={setOpenRecipe}/>} 
+ {tab==='Mi cocina'&&<RecipeLibrary key={`favorites-${recipeRefresh}`} session={session} mode="favorites" onOpen={setOpenRecipe}/>}
  {tab==='Pendientes'&&<PendingImports key={`pending-${recipeRefresh}`}/>} 
  {tab!=='Inicio'&&tab!=='Mi cuenta'&&tab!=='Configuración'&&tab!=='Recetas'&&tab!=='Mi cocina'&&tab!=='Pendientes'&&<section className="empty"><ChefHat/><h2>{tab} está listo</h2><p>En el próximo paso conectamos esta sección con tus datos reales.</p></section>}
+ {openRecipe&&<div className="detail-overlay"><RecipeDetail recipeId={openRecipe} onBack={()=>setOpenRecipe(null)}/></div>}
  {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);setTab(target)}}/>}
  </main></div>;
 }
