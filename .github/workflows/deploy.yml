@@ -1,4 +1,4 @@
-name: Deploy Chef Cita
+name: Deploy Chefcita
 on:
   push:
     branches: [main, hardening/frontend]
