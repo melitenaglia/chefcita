@@ -105,6 +105,7 @@ export default function PendingImports(){
 
     <div className="pending-actions">
      {canOfferChoice(item)&&<>
+      {item.needs_input&&<button disabled={busy} onClick={()=>processImport(item.id)}><RefreshCw/>Reintentar lectura</button>}
       <button onClick={()=>{setEditing(item.id);setCaption(item.pasted_content||item.extracted_content||'')}}><PenLine/>Pegar caption</button>
       <button disabled={busy} onClick={()=>saveWithoutAi(item)}>Guardar para completar · 0 IA</button>
       {item.content_quality==='limited'&&<button className="force-ai" disabled={busy} onClick={()=>processImport(item.id,{force_ai:true})}><Sparkles/>Procesar igual</button>}
