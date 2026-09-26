@@ -12,3 +12,7 @@
 
 
 .pending-invites>div>span{display:grid;gap:3px}.copy-link{border:0;background:transparent;text-decoration:underline;cursor:pointer;font-weight:700;color:#655c56}
+
+
+.account-nav{margin-top:auto;position:relative}.account-toggle{width:100%;border:0;background:#f7f2ee;border-radius:12px;padding:11px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}.account-toggle svg,.account-menu svg{width:18px}.account-menu{position:absolute;left:0;right:0;bottom:52px;background:#fff;border:1px solid #e8ddd5;border-radius:14px;padding:6px;box-shadow:0 14px 38px #3927161f;z-index:30}.account-menu button{width:100%;border:0;background:transparent;border-radius:9px;padding:10px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer}.account-menu button:hover{background:#f7f2ee}
+@media(max-width:760px){.account-nav{display:block;position:fixed;right:8px;bottom:8px;z-index:40}.account-toggle{width:44px;height:44px;padding:0;justify-content:center;border-radius:12px}.account-toggle span{display:none}.account-menu{position:fixed;left:auto;right:8px;bottom:62px;width:220px}.shell aside nav{padding-right:48px}}
