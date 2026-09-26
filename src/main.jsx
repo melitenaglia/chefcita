@@ -12,7 +12,9 @@ const supabase=createClient(
 function Auth(){
  const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [mode,setMode]=useState('login'); const [msg,setMsg]=useState(''); const [busy,setBusy]=useState(false);
  const submit=async(e)=>{e.preventDefault();setBusy(true);setMsg('');
-  const {error}=mode==='login'\n    ? await supabase.auth.signInWithPassword({email,password})\n    : await supabase.auth.signUp({email,password}); setBusy(false);
+  const {error}=mode==='login'
+    ? await supabase.auth.signInWithPassword({email,password})
+    : await supabase.auth.signUp({email,password}); setBusy(false);
   if(error)setMsg(error.message); else if(mode==='signup')setMsg('Cuenta creada. Revisá tu email si Supabase solicita confirmación.');
  };
  return <main className="auth"><section className="auth-card"><div className="brandmark"><ChefHat/></div><h1>Chef Cita</h1><p className="subtitle">Tu recetario, ordenado a tu manera.</p>
