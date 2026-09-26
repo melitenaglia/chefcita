@@ -2,8 +2,8 @@ import React,{useState} from 'react';
 import PendingImports from './PendingImports.jsx';
 import ReviewRecipes from './ReviewRecipes.jsx';
 
-export default function PendingHub(){
- const [tab,setTab]=useState('imports');
+export default function PendingHub({initialTab='imports'}){
+ const [tab,setTab]=useState(initialTab==='review'?'review':'imports');
  return <section className="pending-hub">
   <div className="pending-tabs">
    <button className={tab==='imports'?'active':''} onClick={()=>setTab('imports')}>Importaciones</button>
