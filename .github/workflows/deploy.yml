@@ -20,6 +20,7 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - run: npm run verify
       - name: Verify compiled Pages artifact
         run: |
           test -f dist/index.html
