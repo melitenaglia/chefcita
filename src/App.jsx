@@ -6,7 +6,7 @@ import Account from './Account.jsx';
 import SettingsPage from './SettingsPage.jsx';
 import RecipeLibrary from './RecipeLibrary.jsx';
 import AddRecipe from './AddRecipe.jsx';
-import PendingImports from './PendingImports.jsx';
+import PendingHub from './PendingHub.jsx';
 
 export default function App(){
  const [session,setSession]=useState(null);
@@ -40,7 +40,7 @@ export default function App(){
  {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 
  {tab==='Mi cocina'&&<RecipeLibrary key={`favorites-${recipeRefresh}`} session={session} mode="favorites"/>}
- {tab==='Pendientes'&&<PendingImports key={`pending-${recipeRefresh}`}/>} 
+ {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}`}/>} 
  {tab!=='Inicio'&&tab!=='Mi cuenta'&&tab!=='Configuración'&&tab!=='Recetas'&&tab!=='Mi cocina'&&tab!=='Pendientes'&&<section className="empty"><ChefHat/><h2>{tab} está listo</h2><p>En el próximo paso conectamos esta sección con tus datos reales.</p></section>}
  {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);setTab(target)}}/>}
  </main></div>;
