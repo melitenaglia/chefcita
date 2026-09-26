@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import {supabase} from './supabase.js';
+import HouseholdSettings from './HouseholdSettings.jsx';
 
 const sections=['Cuenta','Mi hogar','Recetas','IA e importaciones','Datos'];
 
@@ -40,7 +41,7 @@ export default function SettingsPage({session}){
     <div className="setting-form"><label>Nueva contraseña<input type="password" minLength="8" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres"/></label><label>Repetir contraseña<input type="password" minLength="8" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Repetí la contraseña"/></label><button className="secondary" onClick={savePassword} disabled={busy||!password}>Cambiar contraseña</button></div>
     {message&&<p className="settings-message">{message}</p>}
    </>}
-   {section==='Mi hogar'&&<><h2>Mi hogar</h2><p>Acá vas a poder compartir Chefcita con Sofi y gestionar integrantes.</p><div className="setting-row"><span><b>Chefcita</b><small>Espacio compartido</small></span><em>Configuración pendiente</em></div></>}
+   {section==='Mi hogar'&&<HouseholdSettings session={session}/>}
    {section==='Recetas'&&<><h2>Recetas</h2><p>Preferencias generales para guardar y organizar tus recetas.</p><div className="setting-row"><span><b>Privacidad por defecto</b><small>Quién podrá ver una receta nueva</small></span><strong>Mi hogar</strong></div></>}
    {section==='IA e importaciones'&&<><h2>IA e importaciones</h2><p>Chefcita no completará datos que no pueda obtener de la fuente. Lo que falte quedará para validar.</p></>}
    {section==='Datos'&&<><h2>Datos</h2><p>Importación de Chefcita 1.0 y futuras opciones de exportación.</p><div className="setting-row"><span><b>Chefcita 1.0</b><small>Biblioteca anterior</small></span><em>Pendiente de migrar</em></div></>}
