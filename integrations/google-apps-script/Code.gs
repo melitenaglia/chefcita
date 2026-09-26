@@ -112,17 +112,9 @@ function extractInstagram_(url) {
 }
 
 function cleanInstagramUrl_(value) {
-  try {
-    const cleaned = String(value || "").replace(/&amp;/g,"&").split("?")[0].trim();
-    const u = new URL(cleaned);
-    if (u.getProtocol() !== "https") return "";
-    const host = u.getHost().toLowerCase();
-    if (!CHEFCITA_ALLOWED_HOSTS.has(host)) return "";
-    if (!/^\/(reel|p|tv)\//i.test(u.getPath())) return "";
-    return u.toString();
-  } catch (_err) {
-    return "";
-  }
+  const cleaned = String(value || "").replace(/&amp;/g,"&").split("?")[0].trim();
+  const match = cleaned.match(/^https:\/\/(?:www\.|m\.)?instagram\.com\/(reel|p|tv)\/[^/?#]+\/?$/i);
+  return match ? cleaned : "";
 }
 
 function getMeta_(html, key) {
