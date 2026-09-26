@@ -8,4 +8,4 @@ Nueva versión web/PWA de Chef Cita.
 - GitHub Pages
 
 ## Estado
-Primera versión: acceso, navegación y base visual. La biblioteca de Chef Cita 1.0 todavía no fue migrada.
+Primera versión: acceso, navegación y base visual. La biblioteca de Chef Cita 1.0 todavía no fue migrada.\n\nGitHub Pages habilitado.
