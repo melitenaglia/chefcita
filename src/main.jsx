@@ -6,7 +6,7 @@ import './styles.css';
 
 const supabase=createClient(
   'https://yfhiqdpohixsvzuudivw.supabase.co',
-  'PUBLISHABLE_KEY_PLACEHOLDER'
+  'sb_publishable_HGiPaAgXEqoZcZWC2jzOig_1vkqhMRL'
 );
 
 function Auth(){
