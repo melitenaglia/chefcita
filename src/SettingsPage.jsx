@@ -15,8 +15,14 @@ export default function SettingsPage({session,initialSection='Cuenta'}){
  const saveName=async()=>{
   setBusy(true); setMessage('');
   const {error}=await supabase.auth.updateUser({data:{name:name.trim()}});
+  if(!error){
+   const {error:profileError}=await supabase.from('profiles').update({display_name:name.trim()}).eq('id',session.user.id);
+   setBusy(false);
+   setMessage(profileError?profileError.message:'Nombre guardado.');
+   return;
+  }
   setBusy(false);
-  setMessage(error?error.message:'Nombre guardado.');
+  setMessage(error.message);
  };
 
  const savePassword=async()=>{
