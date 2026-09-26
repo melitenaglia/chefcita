@@ -3,7 +3,7 @@ import {UserRound,Settings,LogOut} from 'lucide-react';
 
 export default function Account({session,onProfile,onSettings,onLogout}){
  const email=session?.user?.email||'';
- const name=session?.user?.user_metadata?.name||email.split('@')[0]||'Mi cuenta';
+ const name=session?.user?.user_metadata?.name?.trim()||email.split('@')[0]||'Mi cuenta';
  return <section className="account-page">
   <div className="account-heading"><div className="account-avatar">{name.slice(0,1).toUpperCase()}</div><div><h2>{name}</h2><p>{email}</p></div></div>
   <div className="account-actions">
