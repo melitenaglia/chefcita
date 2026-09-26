@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle} from 'lucide-react';
 import {supabase} from './supabase.js';
+import RecipeDetail from './RecipeDetail.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -9,6 +10,7 @@ export default function RecipeLibrary({session,mode='all'}){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [search,setSearch]=useState('');
+ const [selectedId,setSelectedId]=useState(null);
 
  const load=async()=>{
   setLoading(true);
@@ -78,7 +80,7 @@ export default function RecipeLibrary({session,mode='all'}){
     const mainIngredients=(recipe.recipe_ingredients||[]).filter(x=>x.role!=='secondary').slice(0,4);
     const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean).slice(0,4);
     const tried=personal?.tried_status==='tried';
-    return <article className="recipe-card" key={recipe.id}>
+    return <article className="recipe-card clickable" key={recipe.id} onClick={()=>setSelectedId(recipe.id)}>
      <div className="recipe-card-top">
       {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="recipe-placeholder"><ChefHat/></div>}
       <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label="Favorita"><Heart/></button>
@@ -95,5 +97,6 @@ export default function RecipeLibrary({session,mode='all'}){
     </article>;
    })}
   </div>}
+  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={()=>setSelectedId(null)} onDeleted={()=>load()} onChanged={()=>load()}/>} 
  </section>;
 }
