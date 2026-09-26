@@ -15,10 +15,18 @@ export default function PendingImports(){
  const load=async()=>{
   setLoading(true);setError('');
   const {data,error}=await supabase.from('imports')
-   .select('id,source_type,source_url,pasted_content,extracted_content,status,error_message,recipe_id,created_at,needs_input,input_message,processing_mode,user_hints,content_quality,content_score')
+   .select('id,source_type,source_url,pasted_content,extracted_content,status,error_message,recipe_id,created_at,needs_input,input_message,processing_mode,user_hints,content_quality,content_score,ai_scope')
    .order('created_at',{ascending:false});
   if(error){setError(error.message);setItems([])}
-  else setItems(data||[]);
+  else{
+   const rows=data||[];
+   setItems(rows);
+   const firstNeedsInput=rows.find(x=>x.needs_input);
+   if(firstNeedsInput&&editing===null){
+    setEditing(firstNeedsInput.id);
+    setCaption(firstNeedsInput.pasted_content||firstNeedsInput.extracted_content||'');
+   }
+  }
   setLoading(false);
  };
 
@@ -81,6 +89,8 @@ export default function PendingImports(){
      <b>{item.user_hints?.title||'Instagram'}</b>
      <span className={'status '+item.status}>{labels[item.status]||item.status}</span>
      {item.processing_mode==='manual'&&<span className="status no-ai">Sin IA</span>}
+     {item.processing_mode!=='manual'&&<span className="status scope">{item.ai_scope==='full'?'Completa':'Ficha rápida'}</span>}
+     {item.needs_input&&<span className="status paused">Falta caption</span>}
      {item.content_quality==='limited'&&item.status!=='processed'&&<span className="status paused">IA detenida</span>}
      {item.content_quality==='good'&&item.status!=='processed'&&<span className="status good">Contenido útil</span>}
     </div>
@@ -95,7 +105,7 @@ export default function PendingImports(){
 
     <div className="pending-actions">
      {canOfferChoice(item)&&<>
-      <button onClick={()=>{setEditing(item.id);setCaption(item.pasted_content||item.extracted_content||'')}}><PenLine/>Pegar/editar texto</button>
+      <button onClick={()=>{setEditing(item.id);setCaption(item.pasted_content||item.extracted_content||'')}}><PenLine/>Pegar caption</button>
       <button disabled={busy} onClick={()=>saveWithoutAi(item)}>Guardar para completar · 0 IA</button>
       {item.content_quality==='limited'&&<button className="force-ai" disabled={busy} onClick={()=>processImport(item.id,{force_ai:true})}><Sparkles/>Procesar igual</button>}
      </>}
