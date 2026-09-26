@@ -2,8 +2,8 @@ import React,{useEffect,useState} from 'react';
 import {Check,ChefHat,Plus,Trash2,ExternalLink} from 'lucide-react';
 import {supabase} from './supabase.js';
 
-const blankIngredient=()=>({original_name:'',quantity_text:'',note:''});
-const blankStep=()=>({instruction:''});
+const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
+const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
 
 export default function ReviewRecipes(){
  const [items,setItems]=useState([]);
@@ -37,74 +37,91 @@ export default function ReviewRecipes(){
  const open=async id=>{
   setSelected(id);setRecipe(null);setError('');
   const {data,error}=await supabase.from('recipes')
-   .select('*,recipe_ingredients(*),recipe_steps(*),recipe_tags(tag_id),recipe_sources(source_url,original_copy,is_primary)')
+   .select('*,recipe_ingredients(*),recipe_steps(*),recipe_tags(tag_id),recipe_sources(source_url,original_copy,author_handle,original_image_url,is_primary)')
    .eq('id',id).single();
   if(error){setError(error.message);return}
   setRecipe(data);
   setSelectedTags((data.recipe_tags||[]).map(x=>x.tag_id));
-  setIngredients([...(data.recipe_ingredients||[])].sort((a,b)=>a.sort_order-b.sort_order).map(x=>({
-   original_name:x.original_name||'',
-   quantity_text:x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' '),
+  setIngredients([...(data.recipe_ingredients||[])].sort((a,b)=>a.sort_order-b.sort_order).map(x=>{
+   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   return {
+    original_name:x.original_name||'',
+    quantity_text:quantityText,
+    _initial_quantity_text:quantityText,
+    quantity:x.quantity,
+    unit:x.unit||'',
+    note:x.note||'',
+    section:x.section||'',
+    role:x.role||'main'
+   };
+  }));
+  setSteps([...(data.recipe_steps||[])].sort((a,b)=>a.step_number-b.step_number).map(x=>({
+   instruction:x.instruction||'',
+   duration_minutes:x.duration_minutes,
+   temperature_c:x.temperature_c,
    note:x.note||''
   })));
-  setSteps([...(data.recipe_steps||[])].sort((a,b)=>a.step_number-b.step_number).map(x=>({instruction:x.instruction||''})));
  };
 
  const setField=(name,value)=>setRecipe(r=>({...r,[name]:value}));
- const numberOrNull=value=>value===''||value==null?null:Number(value);
  const toggleTag=id=>setSelectedTags(list=>list.includes(id)?list.filter(x=>x!==id):[...list,id]);
 
  const save=async approve=>{
   if(!recipe?.title?.trim())return;
   setBusy(true);setError('');
-  const {error:updateError}=await supabase.from('recipes').update({
+
+  const payload={
    title:recipe.title.trim(),
-   description:recipe.description?.trim()||null,
-   category_id:recipe.category_id||null,
-   meal_type_id:recipe.meal_type_id||null,
-   level:recipe.level||null,
-   prep_minutes:numberOrNull(recipe.prep_minutes),
-   cook_minutes:numberOrNull(recipe.cook_minutes),
-   total_minutes:numberOrNull(recipe.total_minutes),
-   servings:numberOrNull(recipe.servings),
-   servings_unit:recipe.servings_unit?.trim()||null,
-   storage_notes:recipe.storage_notes?.trim()||null,
-   freezer_notes:recipe.freezer_notes?.trim()||null,
-   meal_prep_notes:recipe.meal_prep_notes?.trim()||null,
-   review_status:approve?'recipe':'to_validate'
-  }).eq('id',recipe.id);
-  if(updateError){setBusy(false);setError(updateError.message);return}
+   description:recipe.description?.trim()||'',
+   category_id:recipe.category_id||'',
+   meal_type_id:recipe.meal_type_id||'',
+   level:recipe.level||'',
+   prep_minutes:recipe.prep_minutes??'',
+   cook_minutes:recipe.cook_minutes??'',
+   total_minutes:recipe.total_minutes??'',
+   servings:recipe.servings??'',
+   servings_unit:recipe.servings_unit?.trim()||'',
+   storage_notes:recipe.storage_notes?.trim()||'',
+   freezer_notes:recipe.freezer_notes?.trim()||'',
+   meal_prep_notes:recipe.meal_prep_notes?.trim()||''
+  };
 
-  const {error:deleteIngredientsError}=await supabase.from('recipe_ingredients').delete().eq('recipe_id',recipe.id);
-  if(deleteIngredientsError){setBusy(false);setError(deleteIngredientsError.message);return}
-  const ingredientRows=ingredients.map((x,i)=>({
-   recipe_id:recipe.id,
-   original_name:x.original_name.trim(),
-   quantity_text:x.quantity_text.trim()||null,
-   note:x.note.trim()||null,
-   sort_order:i
-  })).filter(x=>x.original_name);
-  if(ingredientRows.length){
-   const {error}=await supabase.from('recipe_ingredients').insert(ingredientRows);
-   if(error){setBusy(false);setError(error.message);return}
-  }
+  const ingredientRows=ingredients
+   .filter(x=>x.original_name.trim())
+   .map(x=>{
+    const quantityChanged=x.quantity_text!==x._initial_quantity_text;
+    return {
+     original_name:x.original_name.trim(),
+     quantity_text:x.quantity_text.trim()||'',
+     quantity:quantityChanged?null:x.quantity,
+     unit:quantityChanged?'':x.unit,
+     note:x.note.trim()||'',
+     section:x.section.trim()||'',
+     role:x.role==='secondary'?'secondary':'main'
+    };
+   });
 
-  const {error:deleteStepsError}=await supabase.from('recipe_steps').delete().eq('recipe_id',recipe.id);
-  if(deleteStepsError){setBusy(false);setError(deleteStepsError.message);return}
-  const stepRows=steps.map((x,i)=>({recipe_id:recipe.id,step_number:i+1,instruction:x.instruction.trim()})).filter(x=>x.instruction);
-  if(stepRows.length){
-   const {error}=await supabase.from('recipe_steps').insert(stepRows);
-   if(error){setBusy(false);setError(error.message);return}
-  }
+  const stepRows=steps
+   .filter(x=>x.instruction.trim())
+   .map(x=>({
+    instruction:x.instruction.trim(),
+    duration_minutes:x.duration_minutes??null,
+    temperature_c:x.temperature_c??null,
+    note:x.note?.trim()||''
+   }));
 
-  const {error:deleteTagsError}=await supabase.from('recipe_tags').delete().eq('recipe_id',recipe.id);
-  if(deleteTagsError){setBusy(false);setError(deleteTagsError.message);return}
-  if(selectedTags.length){
-   const {error}=await supabase.from('recipe_tags').insert(selectedTags.map(tag_id=>({recipe_id:recipe.id,tag_id})));
-   if(error){setBusy(false);setError(error.message);return}
-  }
+  const {error:saveError}=await supabase.rpc('save_recipe_review',{
+   p_recipe_id:recipe.id,
+   p_recipe:payload,
+   p_ingredients:ingredientRows,
+   p_steps:stepRows,
+   p_tag_ids:selectedTags,
+   p_approve:approve
+  });
 
   setBusy(false);
+  if(saveError){setError(saveError.message);return}
+
   if(approve){setSelected(null);setRecipe(null);await loadList()}
   else await open(recipe.id);
  };
@@ -118,8 +135,14 @@ export default function ReviewRecipes(){
    <div className="review-editor-head"><div><small>POR VALIDAR</small><h2>{recipe.title||'Receta sin título'}</h2></div><button onClick={()=>{setSelected(null);setRecipe(null);setError('')}}>Volver</button></div>
 
    {source&&<div className="source-review-box">
-    <div><b>Fuente original</b>{source.source_url&&<a href={source.source_url} target="_blank" rel="noreferrer">Abrir Instagram <ExternalLink/></a>}</div>
-    {source.original_copy?<p>{source.original_copy}</p>:<small>No hay texto original guardado. Completá solo lo que conozcas.</small>}
+    <div className="source-review-head">
+     <div><b>Fuente original</b>{source.author_handle&&<small>{source.author_handle}</small>}</div>
+     {source.source_url&&<a href={source.source_url} target="_blank" rel="noreferrer">Abrir original <ExternalLink/></a>}
+    </div>
+    <div className="source-review-content">
+     {source.original_image_url&&<img src={source.original_image_url} alt="Miniatura de la fuente" onError={e=>{e.currentTarget.style.display='none'}}/>}
+     {source.original_copy?<p>{source.original_copy}</p>:<small>No hay texto original guardado. Completá solo lo que conozcas.</small>}
+    </div>
    </div>}
 
    <div className="review-grid">
@@ -145,8 +168,9 @@ export default function ReviewRecipes(){
     <div className="tag-picker">{tags.map(tag=><button type="button" key={tag.id} className={selectedTags.includes(tag.id)?'tag-chip selected':'tag-chip'} onClick={()=>toggleTag(tag.id)}>{tag.name}</button>)}</div>
    </div>
 
-   <div className="review-section"><div className="review-section-title"><h3>Ingredientes</h3><button onClick={()=>setIngredients(list=>[...list,blankIngredient()])}><Plus/>Añadir</button></div>
-    <div className="review-lines">{ingredients.map((item,index)=><div className="review-ingredient" key={index}>
+   <div className="review-section"><div className="review-section-title"><div><h3>Ingredientes</h3><small>Principales = los que definen la receta. Secundarios = condimentos, salsas y toppings.</small></div><button onClick={()=>setIngredients(list=>[...list,blankIngredient()])}><Plus/>Añadir</button></div>
+    <div className="review-lines">{ingredients.map((item,index)=><div className="review-ingredient v1-parity" key={index}>
+     <select aria-label="Tipo de ingrediente" value={item.role} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option value="main">Principal</option><option value="secondary">Secundario</option></select>
      <input placeholder="Cantidad" value={item.quantity_text} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,quantity_text:e.target.value}:x))}/>
      <input placeholder="Ingrediente" value={item.original_name} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,original_name:e.target.value}:x))}/>
      <input placeholder="Nota" value={item.note} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,note:e.target.value}:x))}/>
@@ -164,7 +188,7 @@ export default function ReviewRecipes(){
     <label>Meal prep<textarea value={recipe.meal_prep_notes||''} onChange={e=>setField('meal_prep_notes',e.target.value)}/></label>
    </div>
    {error&&<p className="message">{error}</p>}
-   <div className="review-actions"><button disabled={busy} onClick={()=>save(false)}>Guardar borrador</button><button className="primary" disabled={busy} onClick={()=>save(true)}><Check/>Aprobar receta</button></div>
+   <div className="review-actions"><button disabled={busy} onClick={()=>save(false)}>{busy?'Guardando...':'Guardar borrador'}</button><button className="primary" disabled={busy} onClick={()=>save(true)}><Check/>Aprobar receta</button></div>
   </section>;
  }
 
