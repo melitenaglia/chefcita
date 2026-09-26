@@ -4,8 +4,8 @@ import HouseholdSettings from './HouseholdSettings.jsx';
 
 const sections=['Cuenta','Mi hogar','Recetas','IA e importaciones','Datos'];
 
-export default function SettingsPage({session}){
- const [section,setSection]=useState('Cuenta');
+export default function SettingsPage({session,initialSection='Cuenta'}){
+ const [section,setSection]=useState(initialSection);
  const [name,setName]=useState(session.user.user_metadata?.name||'');
  const [password,setPassword]=useState('');
  const [confirmPassword,setConfirmPassword]=useState('');
