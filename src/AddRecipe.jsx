@@ -17,6 +17,7 @@ export default function AddRecipe({session,onClose,onSaved}){
  const [sourceUrl,setSourceUrl]=useState('');
  const [pastedContent,setPastedContent]=useState('');
  const [importStrategy,setImportStrategy]=useState('smart');
+ const [aiScope,setAiScope]=useState('quick');
  const [hintTitle,setHintTitle]=useState('');
  const [selectedTags,setSelectedTags]=useState([]);
  const [title,setTitle]=useState('');
@@ -75,6 +76,7 @@ export default function AddRecipe({session,onClose,onSaved}){
    pasted_content:pastedContent.trim()||null,
    status:'queued',
    processing_mode:importStrategy,
+   ai_scope:aiScope,
    user_hints:{
     title:hintTitle.trim()||null,
     tags:selectedTags
@@ -145,6 +147,18 @@ export default function AddRecipe({session,onClose,onSaved}){
      </button>
     </div>
 
+    {importStrategy==='smart'&&<>
+     <div className="scope-title"><b>¿Qué querés sacar del caption?</b><small>Para Reels, Ficha rápida suele ser suficiente y usa menos salida de IA.</small></div>
+     <div className="scope-grid">
+      <button type="button" className={aiScope==='quick'?'scope-card active':'scope-card'} onClick={()=>setAiScope('quick')}>
+       <span><b>Ficha rápida · recomendada</b><small>Nombre, ingredientes, categoría, tipo, nivel y etiquetas. No transcribe los pasos.</small></span>
+      </button>
+      <button type="button" className={aiScope==='full'?'scope-card active':'scope-card'} onClick={()=>setAiScope('full')}>
+       <span><b>Receta completa</b><small>También intenta estructurar pasos, tiempos y demás datos que estén escritos.</small></span>
+      </button>
+     </div>
+    </>}
+
     <label>Nombre {importStrategy==='manual'?'*':'(opcional)'}<input value={hintTitle} onChange={e=>setHintTitle(e.target.value)} placeholder="Ej. Pasta cremosa del Reel"/></label>
 
     <div className="tag-field">
@@ -156,7 +170,7 @@ export default function AddRecipe({session,onClose,onSaved}){
 
     <div className="import-note strong">
      {importStrategy==='smart'
-      ?'Chefcita hace una revisión previa sin IA. Si el caption parece incompleto, se detiene antes de gastar tokens y te ofrece qué hacer.'
+      ?`Chefcita hace una revisión previa sin IA. Si el caption parece incompleto, se detiene antes de gastar tokens. ${aiScope==='quick'?'Si está bien, extrae principalmente ingredientes y clasificación.':'Si está bien, estructura la receta completa.'}`
       :'Se crea una receta para revisar manualmente. No se hace ninguna llamada a OpenAI.'}
     </div>
    </>:<>
