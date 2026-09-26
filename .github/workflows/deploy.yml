@@ -23,6 +23,15 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run verify
+      - name: Install browser smoke-test dependency
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Smoke test rendered app
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/chefcita-preview.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/chefcita/ >/dev/null && break; sleep 1; done
+          node scripts/smoke-render.mjs
       - name: Verify compiled Pages artifact
         run: |
           test -f dist/index.html
