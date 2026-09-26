@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save} from 'lucide-react';
+import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
+import RecipeEditor from './RecipeEditor.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -9,6 +10,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
+ const [editing,setEditing]=useState(false);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
 
@@ -85,11 +87,16 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
  if(loading)return <div className="modal-backdrop"><div className="recipe-detail loading"><ChefHat/><p>Cargando receta...</p></div></div>;
 
+ if(editing)return <div className="modal-backdrop"><div className="recipe-detail editor-shell"><RecipeEditor recipeId={recipeId} mode="edit" onBack={()=>setEditing(false)} onSaved={async()=>{setEditing(false);await load();onChanged?.()}}/></div></div>;
+
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <article className="recipe-detail">
    <div className="detail-head">
     <div><small>RECETA</small><h2>{recipe?.title||'Receta'}</h2></div>
-    <button onClick={onClose} aria-label="Cerrar"><X/></button>
+    <div className="detail-head-actions">
+     {recipe?.owner_id===session.user.id&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
+     <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
+    </div>
    </div>
 
    {error&&<p className="message">{error}</p>}
