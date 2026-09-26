@@ -20,7 +20,7 @@ export default function HouseholdSettings({session}){
   const [{data:h,error:hError},{data:m,error:mError},{data:i,error:iError}]=await Promise.all([
    supabase.from('households').select('id,name,created_by').eq('id',membership.household_id).single(),
    supabase.from('household_members').select('user_id,role,joined_at,profiles(display_name)').eq('household_id',membership.household_id).order('joined_at'),
-   membership.role==='owner'?supabase.from('household_invites').select('id,invited_email,expires_at,accepted_at').eq('household_id',membership.household_id).is('accepted_at',null).order('created_at',{ascending:false}):Promise.resolve({data:[],error:null})
+   membership.role==='owner'?supabase.from('household_invites').select('id,invited_email,token,expires_at,accepted_at').eq('household_id',membership.household_id).is('accepted_at',null).order('created_at',{ascending:false}):Promise.resolve({data:[],error:null})
   ]);
   const error=hError||mError||iError;
   if(error){setMessage(error.message);setLoading(false);return;}
@@ -51,10 +51,10 @@ export default function HouseholdSettings({session}){
   const clean=email.trim().toLowerCase();
   if(!clean)return;
   setBusy(true);setMessage('');
-  const {error}=await supabase.from('household_invites').insert({household_id:household.id,invited_email:clean,invited_by:session.user.id});
+  const {data:newInvite,error}=await supabase.from('household_invites').insert({household_id:household.id,invited_email:clean,invited_by:session.user.id}).select('id,invited_email,token,expires_at,accepted_at').single();
   setBusy(false);
   if(error){setMessage(error.message);return;}
-  setEmail('');setMessage('Invitación creada. Cuando esa persona tenga cuenta podremos vincularla al hogar.');await load();
+  setEmail('');setMessage('Invitación creada. Compartí el enlace con esa persona para que se una al hogar.');setInvites(current=>[newInvite,...current]);
  };
 
  if(loading)return <div className="settings-loading">Cargando tu hogar…</div>;
@@ -65,7 +65,7 @@ export default function HouseholdSettings({session}){
   <div className="household-title"><div><h2>{household.name}</h2><p>{household.role==='owner'?'Sos administradora de este hogar.':'Sos integrante de este hogar.'}</p></div><Users/></div>
   {household.role==='owner'&&<div className="setting-form"><label>Nombre del hogar<input value={name} onChange={e=>setName(e.target.value)}/></label><button className="secondary" disabled={busy||name.trim()===household.name} onClick={rename}>Guardar nombre</button></div>}
   <div className="household-section"><h3>Integrantes</h3>{members.map(m=><div className="member-row" key={m.user_id}><span className="member-avatar">{(m.profiles?.display_name||'C').slice(0,1).toUpperCase()}</span><span><b>{m.user_id===session.user.id?'Vos':(m.profiles?.display_name||'Integrante')}</b><small>{m.role==='owner'?'Administradora':'Integrante'}</small></span></div>)}</div>
-  {household.role==='owner'&&<div className="household-section"><h3><UserPlus/> Invitar integrante</h3><div className="invite-form"><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@ejemplo.com"/><button className="secondary" disabled={busy||!email.includes('@')} onClick={invite}>Crear invitación</button></div>{invites.length>0&&<div className="pending-invites">{invites.map(i=><div key={i.id}><span>{i.invited_email}</span><small>Pendiente · vence {new Date(i.expires_at).toLocaleDateString('es-ES')}</small></div>)}</div>}</div>}
+  {household.role==='owner'&&<div className="household-section"><h3><UserPlus/> Invitar integrante</h3><div className="invite-form"><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@ejemplo.com"/><button className="secondary" disabled={busy||!email.includes('@')} onClick={invite}>Crear invitación</button></div>{invites.length>0&&<div className="pending-invites">{invites.map(i=><div key={i.id}><span><b>{i.invited_email}</b><small>Pendiente · vence {new Date(i.expires_at).toLocaleDateString('es-ES')}</small></span><button className="copy-link" onClick={async()=>{const link=`${window.location.origin}${window.location.pathname}?invite=${i.token}`;await navigator.clipboard.writeText(link);setMessage('Enlace de invitación copiado.')}}>Copiar enlace</button></div>)}</div>}</div>}
   {message&&<p className="settings-message">{message}</p>}
  </div>;
 }
