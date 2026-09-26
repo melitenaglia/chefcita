@@ -7,6 +7,7 @@ import SettingsPage from './SettingsPage.jsx';
 import RecipeLibrary from './RecipeLibrary.jsx';
 import AddRecipe from './AddRecipe.jsx';
 import PendingHub from './PendingHub.jsx';
+import HomeDashboard from './HomeDashboard.jsx';
 
 export default function App(){
  const [session,setSession]=useState(null);
@@ -35,7 +36,7 @@ export default function App(){
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
  return <div className="shell"><aside><div className="logo"><ChefHat/><b>Chefcita</b></div><nav>{nav.map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>setTab(n)}><I/>{n}</button>)}</nav><div className="account-nav"><button onClick={()=>setTab('Mi cuenta')}><UserRound/>Mi cuenta</button><button onClick={()=>setTab('Configuración')}><Settings/>Config.</button><button className="logout" onClick={()=>supabase.auth.signOut()}><LogOut/>Salir</button></div></aside>
  <main className="content"><header><div><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div><button className="add" onClick={()=>setAdding(true)}><Plus/> Añadir receta</button></header>
- {tab==='Inicio'&&<><section className="welcome"><div><span>Tu cocina empieza acá</span><h2>¿Qué cocinamos hoy?</h2><p>Guardá recetas, organizalas y convertí ese Reel que nunca volvés a encontrar en una receta de verdad.</p></div><ChefHat/></section><div className="cards"><article><BookOpen/><b>Recetas</b><strong>0</strong><small>Tu biblioteca está lista para empezar.</small></article><article><Inbox/><b>Pendientes</b><strong>0</strong><small>Recetas esperando revisión.</small></article><article><Heart/><b>Favoritas</b><strong>0</strong><small>Las que siempre querés repetir.</small></article></div></>}
+ {tab==='Inicio'&&<HomeDashboard onNavigate={setTab} onAdd={()=>setAdding(true)}/>} 
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
  {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 

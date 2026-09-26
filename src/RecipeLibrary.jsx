@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle} from 'lucide-react';
 import {supabase} from './supabase.js';
+import RecipeDetail from './RecipeDetail.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -9,13 +10,14 @@ export default function RecipeLibrary({session,mode='all'}){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [search,setSearch]=useState('');
+ const [selectedId,setSelectedId]=useState(null);
 
  const load=async()=>{
   setLoading(true);
   setError('');
   const {data,error}=await supabase
    .from('recipes')
-   .select('id,title,description,image_url,level,total_minutes,reviewed_at,created_at,categories(name),meal_types(name),recipe_ingredients(original_name,role),recipe_tags(tags(name)),user_recipes!left(is_favorite,tried_status,rating)')
+   .select('id,title,description,image_url,level,total_minutes,reviewed_at,created_at,categories(name),meal_types(name),recipe_ingredients(original_name,role),recipe_tags(tags(name)),user_recipes!left(is_favorite,tried_status,rating,tried_at)')
    .eq('review_status','recipe')
    .order('created_at',{ascending:false});
   if(error){setError(error.message);setRecipes([])}
@@ -40,12 +42,14 @@ export default function RecipeLibrary({session,mode='all'}){
 
  const updatePersonal=async(recipe,changes)=>{
   const current=recipe.user_recipes?.[0]||{};
+  const triedStatus=changes.tried_status??current.tried_status??'to_try';
   const next={
    user_id:session.user.id,
    recipe_id:recipe.id,
    is_favorite:changes.is_favorite??current.is_favorite??false,
-   tried_status:changes.tried_status??current.tried_status??'to_try',
-   rating:current.rating??null
+   tried_status:triedStatus,
+   rating:triedStatus==='tried'?(current.rating??null):null,
+   tried_at:triedStatus==='tried'?(current.tried_at||new Date().toISOString().slice(0,10)):null
   };
   const {error}=await supabase.from('user_recipes').upsert(next,{onConflict:'user_id,recipe_id'});
   if(error){setError(error.message);return}
@@ -78,7 +82,7 @@ export default function RecipeLibrary({session,mode='all'}){
     const mainIngredients=(recipe.recipe_ingredients||[]).filter(x=>x.role!=='secondary').slice(0,4);
     const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean).slice(0,4);
     const tried=personal?.tried_status==='tried';
-    return <article className="recipe-card" key={recipe.id}>
+    return <article className="recipe-card clickable" key={recipe.id} onClick={()=>setSelectedId(recipe.id)}>
      <div className="recipe-card-top">
       {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="recipe-placeholder"><ChefHat/></div>}
       <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label="Favorita"><Heart/></button>
@@ -95,5 +99,6 @@ export default function RecipeLibrary({session,mode='all'}){
     </article>;
    })}
   </div>}
+  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={()=>setSelectedId(null)} onDeleted={()=>load()} onChanged={()=>load()}/>} 
  </section>;
 }
