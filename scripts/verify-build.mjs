@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import {formatIngredientQuantity,formatIngredientQuantityNote} from '../src/recipeFormat.js';
+import {formatIngredientQuantity,formatIngredientQuantityNote,formatIngredientDisplay} from '../src/recipeFormat.js';
 
 const html = fs.readFileSync('dist/index.html', 'utf8');
 
@@ -31,6 +31,9 @@ const quantityCases=[
  [{quantity_text:'1',quantity:1,unit:'taza'},'1 tza.'],
  [{quantity_text:'300 g',quantity:300,unit:'g'},'300 grs.'],
  [{quantity_text:'1 cucharadita',quantity:1,unit:'cucharadita'},'1 cdta.'],
+ [{quantity_text:'½',quantity:.5,unit:'cucharadita'},'½ cdta.'],
+ [{quantity_text:'1/3',quantity:null,unit:'taza'},'1/3 tza.'],
+ [{quantity_text:'4',quantity:4,unit:'unidades medianas'},'4 uds.'],
  [{quantity_text:'4 unidades medianas',quantity:4,unit:'unidad'},'4 uds.'],
  [{quantity_text:'3 a 4',quantity:3,unit:'lonchas'},'3 a 4 lonchas'],
  [{quantity_text:'a gusto',quantity:null,unit:''},'a gusto']
@@ -43,6 +46,17 @@ for(const [input,expected] of quantityCases){
 
 if(formatIngredientQuantityNote({quantity_text:'4 unidades medianas'})!=='medianas'){
  throw new Error('Legacy ingredient descriptor extraction failed');
+}
+if(formatIngredientQuantityNote({quantity_text:'4',unit:'unidades medianas'})!=='medianas'){
+ throw new Error('Unit descriptor extraction failed');
+}
+const salt=formatIngredientDisplay({quantity_text:'a gusto',original_name:'sal',note:''});
+if(salt.quantity!==''||salt.name!=='sal'||salt.note!=='a gusto'){
+ throw new Error('Qualitative ingredient display failed');
+}
+const eggs=formatIngredientDisplay({quantity_text:'3',original_name:'huevo',unit:''});
+if(eggs.quantity!=='3 uds.'||eggs.name!=='huevos'){
+ throw new Error('Countable ingredient display failed');
 }
 
 console.log('Production build integrity and ingredient quantity checks passed.');

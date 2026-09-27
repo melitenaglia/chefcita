@@ -20,6 +20,20 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  const [kitchenView,setKitchenView]=useState('favorites');
  const [filtersOpen,setFiltersOpen]=useState(false);
 
+ const openDetail=id=>{
+  if(!id)return;
+  setSelectedId(id);
+  const state=window.history.state||{};
+  if(state.chefcitaRecipeId!==id){
+   window.history.pushState({...state,chefcitaRecipeId:id},'',window.location.href);
+  }
+ };
+
+ const closeDetail=()=>{
+  if(window.history.state?.chefcitaRecipeId===selectedId)window.history.back();
+  else setSelectedId(null);
+ };
+
  const load=async()=>{
   setLoading(true);
   setError('');
@@ -34,7 +48,12 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  };
 
  useEffect(()=>{load()},[]);
- useEffect(()=>{if(initialRecipeId)setSelectedId(initialRecipeId)},[initialRecipeId]);
+ useEffect(()=>{
+  const handlePopState=()=>setSelectedId(window.history.state?.chefcitaRecipeId||null);
+  window.addEventListener('popstate',handlePopState);
+  return()=>window.removeEventListener('popstate',handlePopState);
+ },[]);
+ useEffect(()=>{if(initialRecipeId)openDetail(initialRecipeId)},[initialRecipeId]);
 
  const categories=useMemo(()=>[...new Set(recipes.map(x=>x.categories?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
  const mealTypes=useMemo(()=>[...new Set(recipes.map(x=>x.meal_types?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
@@ -158,7 +177,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
     const mainIngredients=(recipe.recipe_ingredients||[]).filter(x=>x.role!=='secondary').slice(0,4);
     const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean).slice(0,4);
     const tried=personal?.tried_status==='tried';
-    return <article className="recipe-card clickable" key={recipe.id} onClick={()=>setSelectedId(recipe.id)}>
+    return <article className="recipe-card clickable" key={recipe.id} onClick={()=>openDetail(recipe.id)}>
      <div className="recipe-card-top">
       {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="recipe-placeholder"><ChefHat/></div>}
       <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label="Favorita"><Heart/></button>
@@ -180,6 +199,6 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
    })}
   </div>}
 
-  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={()=>setSelectedId(null)} onDeleted={()=>load()} onChanged={()=>load()}/>}
+  {selectedId&&<RecipeDetail recipeId={selectedId} session={session} onClose={closeDetail} onDeleted={()=>load()} onChanged={()=>load()}/>} 
  </section>;
 }

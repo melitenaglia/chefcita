@@ -1,9 +1,9 @@
-import React,{useEffect,useMemo,useState} from 'react';
-import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
+import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
-import {formatIngredientQuantity,formatIngredientQuantityNote} from './recipeFormat.js';
+import {formatIngredientDisplay} from './recipeFormat.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -15,6 +15,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const [editing,setEditing]=useState(false);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
+ const swipeStart=useRef(null);
 
  const load=async()=>{
   setLoading(true);setError('');
@@ -85,17 +86,32 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
   onClose();
  };
 
- const quantityLabel=item=>formatIngredientQuantity(item);
- const quantityNote=item=>formatIngredientQuantityNote(item);
+ const ingredientDisplay=item=>formatIngredientDisplay(item);
+ const startEdgeSwipe=e=>{
+  const standalone=window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
+  const touch=e.touches?.[0];
+  if(standalone&&touch&&touch.clientX<=28)swipeStart.current={x:touch.clientX,y:touch.clientY};
+ };
+ const endEdgeSwipe=e=>{
+  if(!swipeStart.current)return;
+  const touch=e.changedTouches?.[0];
+  const start=swipeStart.current;
+  swipeStart.current=null;
+  if(!touch)return;
+  const dx=touch.clientX-start.x;
+  const dy=Math.abs(touch.clientY-start.y);
+  if(dx>=72&&dy<=60)onClose();
+ };
 
  if(loading)return <div className="modal-backdrop"><div className="recipe-detail loading"><ChefHat/><p>Cargando receta...</p></div></div>;
 
  if(editing)return <div className="modal-backdrop"><div className="recipe-detail editor-shell"><RecipeEditor recipeId={recipeId} mode="edit" onBack={()=>setEditing(false)} onSaved={async()=>{setEditing(false);await load();onChanged?.()}}/></div></div>;
 
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-  <article className="recipe-detail">
+  <article className="recipe-detail" onTouchStart={startEdgeSwipe} onTouchEnd={endEdgeSwipe}>
    <div className="detail-head">
     <span className="detail-head-label">Receta</span>
+    <button className="detail-back" onClick={onClose} aria-label="Volver a recetas"><ChevronLeft/><span>Volver</span></button>
     <div className="detail-head-actions">
      {source?.source_url&&<a className="source-head-action" href={source.source_url} target="_blank" rel="noreferrer" aria-label="Abrir publicación original"><ExternalLink/></a>}
      {recipe?.owner_id===session.user.id&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
@@ -134,16 +150,17 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
      {personal.tried_status==='tried'&&<div className="rating-row"><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{!personal.rating&&<p className="rating-prompt">Tocá de 1 a 5 estrellas.</p>}</div>}
     </section>
 
-    <div className="detail-columns">
-     <section className="detail-section">
-      <h3>Ingredientes principales</h3>
-      {mainIngredients.length? <div className="ingredient-list">{mainIngredients.map(item=>{const extra=[quantityNote(item),item.note].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ');return <div key={item.id}><span className="ingredient-quantity">{quantityLabel(item)}</span><b>{item.original_name}</b>{extra&&<small>{extra}</small>}</div>})}</div>:<p className="muted">No hay ingredientes principales cargados.</p>}
-     </section>
-     <section className="detail-section">
-      <h3>Secundarios y condimentos</h3>
-      {secondaryIngredients.length?<div className="ingredient-list">{secondaryIngredients.map(item=>{const extra=[quantityNote(item),item.note].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ');return <div key={item.id}><span className="ingredient-quantity">{quantityLabel(item)}</span><b>{item.original_name}</b>{extra&&<small>{extra}</small>}</div>})}</div>:<p className="muted">Sin secundarios registrados.</p>}
-     </section>
-    </div>
+    <section className="detail-section ingredients-section">
+     <h3>Ingredientes</h3>
+     <div className="ingredient-group">
+      {secondaryIngredients.length>0&&<h4>Principales</h4>}
+      {mainIngredients.length?<div className="ingredient-list">{mainIngredients.map(item=>{const d=ingredientDisplay(item);return <div key={item.id}><span className="ingredient-quantity">{d.quantity}</span><b>{d.name}</b>{d.note&&<small>{d.note}</small>}</div>})}</div>:<p className="muted">No hay ingredientes principales cargados.</p>}
+     </div>
+     {secondaryIngredients.length>0&&<div className="ingredient-group secondary">
+      <h4>Condimentos y extras</h4>
+      <div className="ingredient-list">{secondaryIngredients.map(item=>{const d=ingredientDisplay(item);return <div key={item.id}><span className="ingredient-quantity">{d.quantity}</span><b>{d.name}</b>{d.note&&<small>{d.note}</small>}</div>})}</div>
+     </div>}
+    </section>
 
     <section className="detail-section">
      <h3>Preparación</h3>
