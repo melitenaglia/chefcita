@@ -213,8 +213,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    p_approve:keepApproved
   });
 
-  setBusy(false);
-  if(saveError){setError(userErrorMessage(saveError,'No pude guardar esta receta. Probá de nuevo.'));return}
+  if(saveError){setBusy(false);setError(userErrorMessage(saveError,'No pude guardar esta receta. Probá de nuevo.'));return}
 
   if(supplementalToSave){
    const sourceRow=recipe.recipe_sources?.find(x=>x.is_primary)||recipe.recipe_sources?.[0];
@@ -223,12 +222,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     const merged=previous.includes(supplementalToSave)?previous:(previous?previous+'\n\n--- Información adicional ---\n'+supplementalToSave:supplementalToSave);
     const {error:sourceSaveError}=await supabase.from('recipe_sources').update({supplemental_copy:merged}).eq('id',sourceRow.id);
     if(sourceSaveError){
+     setBusy(false);
      setError(userErrorMessage(sourceSaveError,'La receta se guardó, pero no pude guardar el texto adicional. Podés volver a intentarlo.'));
      return;
     }
     setSupplementalToSave('');
    }
   }
+  setBusy(false);
 
   if(mode==='edit'){
    onSaved?.({approved:true});
