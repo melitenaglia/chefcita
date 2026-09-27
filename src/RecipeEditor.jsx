@@ -132,6 +132,27 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   setExtraText('');
  };
 
+ const deletePending=async()=>{
+  if(mode!=='review'||!recipe?.id)return;
+  const ok=window.confirm('¿Eliminar esta receta de Chefcita? También se eliminará su importación asociada. Esta acción no se puede deshacer.');
+  if(!ok)return;
+
+  setBusy(true);setError('');
+  const {data,error:deleteError}=await supabase.rpc('delete_pending_recipe',{p_recipe_id:recipe.id});
+  setBusy(false);
+
+  if(deleteError){
+   setError(deleteError.message);
+   return;
+  }
+  if(!data){
+   setError('No pude eliminar esta receta.');
+   return;
+  }
+
+  onSaved?.({deleted:true});
+ };
+
  const save=async approve=>{
   if(!recipe?.title?.trim())return;
   setBusy(true);setError('');
@@ -287,8 +308,11 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   {error&&<p className="message">{error}</p>}
 
   <div className="review-actions">
-   {!isEdit&&<button disabled={busy} onClick={()=>save(false)}>{busy?'Guardando...':'Guardar borrador'}</button>}
-   <button className="primary" disabled={busy||!recipe?.title?.trim()} onClick={()=>save(true)}>{isEdit?<><Save/>Guardar cambios</>:<><Check/>Aprobar receta</>}</button>
+   {!isEdit&&<button type="button" className="delete-pending-review" disabled={busy||aiBusy} onClick={deletePending}><Trash2/>Eliminar receta</button>}
+   <div className="review-actions-main">
+    {!isEdit&&<button disabled={busy||aiBusy} onClick={()=>save(false)}>{busy?'Guardando...':'Guardar borrador'}</button>}
+    <button className="primary" disabled={busy||aiBusy||!recipe?.title?.trim()} onClick={()=>save(true)}>{isEdit?<><Save/>Guardar cambios</>:<><Check/>Aprobar receta</>}</button>
+   </div>
   </div>
  </section>;
 }
