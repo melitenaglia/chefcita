@@ -282,7 +282,7 @@ export default function AddRecipe({session,onClose,onSaved}){
     <label className="instagram-link-field">
      <span>Enlace de Instagram</span>
      <div className="instagram-link-row">
-      <input autoFocus disabled={Boolean(pendingImportId)||busy} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" value={sourceUrl} onChange={e=>{setSourceUrl(e.target.value);setError('')}} placeholder="Pegá acá el enlace del Reel"/>
+      <input disabled={Boolean(pendingImportId)||busy} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" value={sourceUrl} onChange={e=>{setSourceUrl(e.target.value);setError('')}} placeholder="Pegá acá el enlace del Reel"/>
       {!pendingImportId&&<button type="button" className="paste-link" disabled={busy} onClick={pasteInstagramLink}><ClipboardPaste/>Pegar enlace</button>}
      </div>
     </label>
@@ -327,7 +327,7 @@ export default function AddRecipe({session,onClose,onSaved}){
     {pendingImportId&&importStage==='needs_input'&&<div className="caption-recovery">
      <div><Sparkles/><span><b>Me falta el texto de la receta</b><small>Copiá el caption o el comentario con la receta y pegalo acá. No necesitás empezar de nuevo.</small></span></div>
      <button type="button" className="paste-caption-large" onClick={pasteClipboard}><ClipboardPaste/>Pegar texto copiado</button>
-     <textarea autoFocus value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Pegá acá la receta..."/>
+     <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Pegá acá la receta..."/>
     </div>}
 
     {importMessage&&<div className={'inline-import-state '+importStage}><b>{importStage==='needs_input'?'Necesito un dato más':importStage==='needs_choice'?'Antes de gastar IA':'Importación pendiente'}</b><p>{importMessage}</p></div>}
@@ -340,7 +340,7 @@ export default function AddRecipe({session,onClose,onSaved}){
     {pendingImportId&&importStage==='error'&&<div className="inline-choice-actions"><button type="button" disabled={busy} onClick={retryImport}>Reintentar</button></div>}
    </>:<>
     <div className="manual-intro"><b>Completá solo lo que sepas.</b><span>Después podés editar la receta cuando quieras.</span></div>
-    <label>Título *<input autoFocus value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ej. Pasta cremosa de calabaza"/></label>
+    <label>Título *<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ej. Pasta cremosa de calabaza"/></label>
     <label>Descripción<input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Una descripción breve"/></label>
     <div className="form-grid">
      <label>Categoría<select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Sin definir</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
