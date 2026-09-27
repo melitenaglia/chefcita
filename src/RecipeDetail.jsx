@@ -1,18 +1,20 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
+import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3,Share2,LockKeyhole} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
 import {formatIngredientDisplay} from './recipeFormat.js';
+import RecipeSharePanel from './RecipeSharePanel.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged}){
+export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged,viewingLibraryId=null}){
  const [recipe,setRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
  const [editing,setEditing]=useState(false);
+ const [sharing,setSharing]=useState(false);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
  const swipeStart=useRef(null);
@@ -47,6 +49,8 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const secondaryIngredients=ingredients.filter(x=>x.role==='secondary');
  const steps=useMemo(()=>[...(recipe?.recipe_steps||[])].sort((a,b)=>a.step_number-b.step_number),[recipe]);
  const tags=(recipe?.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean);
+ const isOwner=recipe?.owner_id===session.user.id;
+ const sharedReadOnly=Boolean(viewingLibraryId)||(!isOwner&&Boolean(recipe));
 
  const savePersonal=async changes=>{
   if(!recipe)return;
@@ -114,7 +118,8 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
     <button className="detail-back" onClick={onClose} aria-label="Volver a recetas"><ChevronLeft/><span>Volver</span></button>
     <div className="detail-head-actions">
      {source?.source_url&&<a className="source-head-action" href={source.source_url} target="_blank" rel="noreferrer" aria-label="Abrir publicación original"><ExternalLink/></a>}
-     {recipe?.owner_id===session.user.id&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
+     {isOwner&&<button className="share-recipe" onClick={()=>setSharing(true)}><Share2/>Compartir</button>}
+     {isOwner&&!sharedReadOnly&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
      <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
     </div>
    </div>
@@ -122,6 +127,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
    {error&&<p className="message">{error}</p>}
 
    {recipe&&<>
+    {sharedReadOnly&&<div className="shared-readonly-banner"><LockKeyhole/><span><b>Receta compartida · solo lectura</b><small>{isOwner?'Para editarla, abrila desde tu biblioteca personal.':'Solo quien creó la receta puede modificarla.'}</small></span></div>}
     <h2 className="detail-title">{recipe.title||'Receta'}</h2>
 
     {source?.source_url&&<a className="detail-source-quick" href={source.source_url} target="_blank" rel="noreferrer">
@@ -187,9 +193,10 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
     <div className="detail-footer">
      <small>{recipe.reviewed_at?'Revisada '+new Date(recipe.reviewed_at).toLocaleDateString('es-ES'):'Guardada '+new Date(recipe.created_at).toLocaleDateString('es-ES')}</small>
-     {recipe.owner_id===session.user.id&&<button className="delete-recipe" disabled={busy} onClick={deleteRecipe}><Trash2/>Eliminar receta</button>}
+     {isOwner&&!sharedReadOnly&&<button className="delete-recipe" disabled={busy} onClick={deleteRecipe}><Trash2/>Eliminar receta</button>}
     </div>
    </>}
+   {sharing&&recipe&&<RecipeSharePanel recipeId={recipe.id} ownerId={recipe.owner_id} session={session} onClose={()=>setSharing(false)} onChanged={onChanged}/>}
   </article>
  </div>;
 }

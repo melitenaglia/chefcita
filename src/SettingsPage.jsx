@@ -1,9 +1,9 @@
 import React,{useEffect,useState} from 'react';
 import {supabase} from './supabase.js';
-import HouseholdSettings from './HouseholdSettings.jsx';
+import SharedLibrariesSettings from './SharedLibrariesSettings.jsx';
 import {userErrorMessage} from './userError.js';
 
-const settingsSections=['Pantalla','Mi hogar','IA e importaciones'];
+const settingsSections=['Pantalla','Bibliotecas','IA e importaciones'];
 
 export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange}){
  const [section,setSection]=useState(mode==='account'?'Cuenta':initialSection);
@@ -69,7 +69,7 @@ export default function SettingsPage({session,mode='settings',initialSection='Pa
     </div>
    </>}
 
-   {section==='Mi hogar'&&<HouseholdSettings session={session}/>}
+   {section==='Bibliotecas'&&<SharedLibrariesSettings session={session}/>}
 
    {section==='IA e importaciones'&&<>
     <h2>IA e importaciones</h2>

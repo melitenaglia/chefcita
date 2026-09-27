@@ -78,11 +78,6 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
   });
  },[]);
 
- const getHousehold=async()=>{
-  const {data}=await supabase.from('household_members').select('household_id').eq('user_id',session.user.id).limit(1).maybeSingle();
-  return data?.household_id||null;
- };
-
  const clearDraft=()=>{try{sessionStorage.removeItem(draftKey)}catch{}};
 
  const toggleTag=name=>{
@@ -180,10 +175,9 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
    return;
   }
 
-  const householdId=await getHousehold();
   const {data,error:insertError}=await supabase.from('imports').insert({
    user_id:session.user.id,
-   household_id:householdId,
+   household_id:null,
    source_type:'instagram',
    source_url:url,
    pasted_content:pastedContent.trim()||null,
@@ -283,10 +277,9 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
   e.preventDefault();
   if(!title.trim())return;
   setBusy(true);setError('');
-  const householdId=await getHousehold();
   const {data,error:saveError}=await supabase.from('recipes').insert({
    owner_id:session.user.id,
-   household_id:householdId,
+   household_id:null,
    title:title.trim(),
    description:description.trim()||null,
    category_id:category||null,
@@ -294,7 +287,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
    level:level||null,
    total_minutes:minutes?Number(minutes):null,
    review_status:'recipe',
-   visibility:householdId?'household':'private'
+   visibility:'private'
   }).select('id').single();
 
   if(saveError){setBusy(false);setError(userErrorMessage(saveError,'No pude guardar la receta. Probá de nuevo.'));return}
