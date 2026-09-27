@@ -43,6 +43,7 @@ export default function App(){
   if(!token)return;
   supabase.rpc('accept_household_invite',{p_token:token}).then(({error})=>{
    setSettingsStart('Mi hogar');
+   setMobileNavSelection('Configuración');
    setTab('Configuración');
    if(error)setInviteNotice('No pude aceptar esta invitación. Comprobá que hayas iniciado sesión con el mismo email al que se envió y que el enlace no haya vencido.');
    else setInviteNotice('Listo. Ya te uniste al hogar.');
@@ -99,6 +100,6 @@ export default function App(){
    <button className="mobile-menu-logout" onClick={()=>supabase.auth.signOut()}><LogOut/><span><b>Salir</b></span></button>
   </section>
  </div>}
-  {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);if(target==='Por validar'){setPendingStart('review');setTab('Pendientes')}else{if(target==='Pendientes')setPendingStart('imports');setTab(target)}}}/>} 
+  {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);if(target==='Por validar'){setPendingStart('review');setMobileNavSelection('Pendientes');setTab('Pendientes')}else{if(target==='Pendientes')setPendingStart('imports');setMobileNavSelection(target);setTab(target)}}}/>} 
  </main></div>;
 }
