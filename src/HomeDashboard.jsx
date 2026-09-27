@@ -1,12 +1,12 @@
-import React,{useEffect,useState} from 'react';
-import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Instagram,Sparkles} from 'lucide-react';
+import React,{useEffect,useRef,useState} from 'react';
+import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Instagram,Sparkles,WandSparkles} from 'lucide-react';
 import {supabase} from './supabase.js';
 
 const IDEA_TYPES=['Desayuno','Almuerzo/Cena','Merienda','Snack','Postre','Bebida'];
 const normalize=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
 const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.message||error||''));
 
-export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
+export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKey=0}){
  const [data,setData]=useState({recipes:0,pending:0,favorites:0,recent:[]});
  const [ideaOptions,setIdeaOptions]=useState([]);
  const [ideaType,setIdeaType]=useState('');
@@ -14,6 +14,8 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
  const [ideaMessage,setIdeaMessage]=useState('');
  const [loading,setLoading]=useState(true);
  const [summaryReady,setSummaryReady]=useState(false);
+ const ideaRef=useRef(null);
+ const ideaSelectRef=useRef(null);
 
  useEffect(()=>{
   let active=true;
@@ -80,6 +82,14 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
   return()=>{active=false};
  },[]);
 
+ useEffect(()=>{
+  if(!ideaFocusKey)return;
+  requestAnimationFrame(()=>{
+   ideaRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
+   setTimeout(()=>ideaSelectRef.current?.focus({preventScroll:true}),350);
+  });
+ },[ideaFocusKey]);
+
  const surpriseMe=async()=>{
   const option=ideaOptions.find(x=>x.label===ideaType);
   if(!option)return;
@@ -102,11 +112,23 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
  };
 
  return <>
+  <section className="idea-picker idea-picker-primary" ref={ideaRef}>
+   <div className="idea-picker-copy"><WandSparkles/><span><small>¿SIN IDEAS?</small><b>Elegí el tipo de comida y Chefcita elige por vos.</b></span></div>
+   <div className="idea-picker-actions">
+    <select ref={ideaSelectRef} value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('')}} aria-label="Tipo de comida">
+     <option value="">Tipo de comida</option>
+     {ideaOptions.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}
+    </select>
+    <button disabled={!ideaType||ideaBusy} onClick={surpriseMe}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
+   </div>
+   {ideaMessage&&<small className="idea-picker-message">{ideaMessage}</small>}
+  </section>
+
   <section className="welcome home-welcome">
    <div className="welcome-copy">
     <span>TU RECETARIO</span>
-    <h2>¿Qué cocinamos hoy?</h2>
-    <p>Explorá tus recetas guardadas y elegí qué preparar.</p>
+    <h2>Tus recetas, a mano</h2>
+    <p>Explorá lo que ya guardaste o sumá una receta nueva.</p>
     <button className="welcome-recipes" onClick={()=>onNavigate('Recetas')}><BookOpen/>Ver recetas</button>
    </div>
    <button className="welcome-instagram" onClick={onAdd}>
@@ -121,18 +143,6 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
    <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading||!summaryReady?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
    <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading||!summaryReady?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
   </div>
-
-  <section className="idea-picker">
-   <div className="idea-picker-copy"><Sparkles/><span><small>¿SIN IDEAS?</small><b>Elegí el tipo de comida y te damos una receta al azar.</b></span></div>
-   <div className="idea-picker-actions">
-    <select value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('')}} aria-label="Tipo de comida">
-     <option value="">Tipo de comida</option>
-     {ideaOptions.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}
-    </select>
-    <button disabled={!ideaType||ideaBusy} onClick={surpriseMe}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
-   </div>
-   {ideaMessage&&<small className="idea-picker-message">{ideaMessage}</small>}
-  </section>
 
   <section className="home-recent">
    <div className="home-section-head"><div><small>ÚLTIMAS RECETAS</small><h2>Agregadas recientemente</h2></div>{data.recent.length>0&&<button onClick={()=>onNavigate('Recetas')}>Ver todas <ArrowRight/></button>}</div>
