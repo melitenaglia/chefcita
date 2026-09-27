@@ -169,40 +169,60 @@ using (
   )
 );
 
-drop policy if exists recipe_library_shares_insert on public.recipe_library_shares;
-create policy recipe_library_shares_insert
-on public.recipe_library_shares
-for insert
-to authenticated
-with check (
-  shared_by=auth.uid()
-  and exists (
-    select 1
-    from public.recipes r
-    where r.id=recipe_library_shares.recipe_id
-      and r.owner_id=auth.uid()
-  )
-  and exists (
-    select 1
-    from public.household_members hm
-    where hm.household_id=recipe_library_shares.household_id
-      and hm.user_id=auth.uid()
-  )
-);
+-- Share/unshare is performed only through this definer function. This keeps
+-- recipe ownership checks authoritative and prevents direct mutation by members.
+create or replace function public.set_recipe_library_share(
+  p_recipe_id uuid,
+  p_household_id uuid,
+  p_shared boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_user uuid:=auth.uid();
+begin
+  if v_user is null then
+    raise exception 'not_authenticated';
+  end if;
 
-drop policy if exists recipe_library_shares_delete on public.recipe_library_shares;
-create policy recipe_library_shares_delete
-on public.recipe_library_shares
-for delete
-to authenticated
-using (
-  exists (
+  if not exists (
     select 1
     from public.recipes r
-    where r.id=recipe_library_shares.recipe_id
-      and r.owner_id=auth.uid()
-  )
-);
+    where r.id=p_recipe_id
+      and r.owner_id=v_user
+  ) then
+    raise exception 'recipe_not_owned';
+  end if;
+
+  if p_shared then
+    if not exists (
+      select 1
+      from public.household_members hm
+      where hm.household_id=p_household_id
+        and hm.user_id=v_user
+    ) then
+      raise exception 'not_library_member';
+    end if;
+
+    insert into public.recipe_library_shares(recipe_id,household_id,shared_by)
+    values(p_recipe_id,p_household_id,v_user)
+    on conflict (recipe_id,household_id) do nothing;
+  else
+    delete from public.recipe_library_shares
+    where recipe_id=p_recipe_id
+      and household_id=p_household_id;
+  end if;
+end;
+$$;
+
+revoke all on function public.set_recipe_library_share(uuid,uuid,boolean) from public,anon;
+grant execute on function public.set_recipe_library_share(uuid,uuid,boolean) to authenticated;
+
+revoke insert,update,delete on public.recipe_library_shares from anon,authenticated;
+grant select on public.recipe_library_shares to authenticated;
 
 -- Shared members can read the recipe itself. Existing UPDATE/DELETE policies
 -- are intentionally untouched, so sharing never grants recipe editing.
