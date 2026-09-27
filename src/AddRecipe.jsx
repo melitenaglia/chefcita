@@ -2,6 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2,LoaderCircle,CheckCircle2,ChevronDown} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
+import {loadSharedLibraries} from './sharedLibraries.js';
 
 function normalizeInstagramRecipeUrl(value){
  try{
@@ -38,6 +39,8 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
  const [categories,setCategories]=useState([]);
  const [mealTypes,setMealTypes]=useState([]);
  const [tags,setTags]=useState([]);
+ const [sharedLibraries,setSharedLibraries]=useState([]);
+ const [targetLibraryId,setTargetLibraryId]=useState('');
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [pendingImportId,setPendingImportId]=useState(null);
@@ -54,6 +57,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
     setPastedContent(saved.pastedContent||'');
     setHintTitle(saved.hintTitle||'');
     setSelectedTags(Array.isArray(saved.selectedTags)?saved.selectedTags:[]);
+    setTargetLibraryId(saved.targetLibraryId||'');
    }
   }catch{}
   setDraftRestored(true);
@@ -61,27 +65,24 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
 
  useEffect(()=>{
   if(!draftRestored||pendingImportId)return;
-  const hasDraft=sourceUrl.trim()||pastedContent.trim()||hintTitle.trim()||selectedTags.length;
+  const hasDraft=sourceUrl.trim()||pastedContent.trim()||hintTitle.trim()||selectedTags.length||targetLibraryId;
   if(!hasDraft){sessionStorage.removeItem(draftKey);return}
-  sessionStorage.setItem(draftKey,JSON.stringify({sourceUrl,pastedContent,hintTitle,selectedTags}));
- },[draftRestored,pendingImportId,sourceUrl,pastedContent,hintTitle,selectedTags,draftKey]);
+  sessionStorage.setItem(draftKey,JSON.stringify({sourceUrl,pastedContent,hintTitle,selectedTags,targetLibraryId}));
+ },[draftRestored,pendingImportId,sourceUrl,pastedContent,hintTitle,selectedTags,targetLibraryId,draftKey]);
 
  useEffect(()=>{
   Promise.all([
    supabase.from('categories').select('id,name').order('sort_order'),
    supabase.from('meal_types').select('id,name').order('sort_order'),
-   supabase.from('tags').select('id,name').order('sort_order')
-  ]).then(([c,m,t])=>{
+   supabase.from('tags').select('id,name').order('sort_order'),
+   loadSharedLibraries(session.user.id)
+  ]).then(([c,m,t,libraries])=>{
    setCategories(c.data||[]);
    setMealTypes(m.data||[]);
    setTags(t.data||[]);
+   setSharedLibraries(libraries.data||[]);
   });
- },[]);
-
- const getHousehold=async()=>{
-  const {data}=await supabase.from('household_members').select('household_id').eq('user_id',session.user.id).limit(1).maybeSingle();
-  return data?.household_id||null;
- };
+ },[session.user.id]);
 
  const clearDraft=()=>{try{sessionStorage.removeItem(draftKey)}catch{}};
 
@@ -180,7 +181,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
    return;
   }
 
-  const householdId=await getHousehold();
+  const householdId=targetLibraryId||null;
   const {data,error:insertError}=await supabase.from('imports').insert({
    user_id:session.user.id,
    household_id:householdId,
@@ -283,7 +284,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
   e.preventDefault();
   if(!title.trim())return;
   setBusy(true);setError('');
-  const householdId=await getHousehold();
+  const householdId=targetLibraryId||null;
   const {data,error:saveError}=await supabase.from('recipes').insert({
    owner_id:session.user.id,
    household_id:householdId,
@@ -331,6 +332,15 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
     <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='link'?'active':''} onClick={()=>{setMode('link');setError('')}}><LinkIcon/><span>Instagram</span></button>
     <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='manual'?'active':''} onClick={()=>{setMode('manual');setError('')}}><PenLine/><span>Cargar a mano</span></button>
    </div>
+
+   <label className="recipe-library-target">
+    <span>Guardar en</span>
+    <select disabled={Boolean(pendingImportId)||busy} value={targetLibraryId} onChange={e=>setTargetLibraryId(e.target.value)}>
+     <option value="">Personal · solo vos</option>
+     {sharedLibraries.map(library=><option key={library.id} value={library.id}>{library.name} · compartida</option>)}
+    </select>
+    <small>{targetLibraryId?'Las personas de esta biblioteca podrán ver la receta.':'La receta queda en tu biblioteca personal.'}</small>
+   </label>
 
    {mode==='link'?<>
     {!pendingImportId&&<div className="instagram-guide" aria-label="Cómo añadir una receta desde Instagram">
