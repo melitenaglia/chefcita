@@ -1,9 +1,10 @@
 import React,{useEffect,useState} from 'react';
-import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle} from 'lucide-react';
+import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
+import {formatIngredientQuantity} from './recipeFormat.js';
 
-const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
+const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',_raw_quantity_text:'',quantity:null,unit:'',_initial_unit:'',note:'',section:'',role:'main'});
 const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
 
 export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
@@ -21,6 +22,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
  const [aiMessage,setAiMessage]=useState('');
  const [supplementalToSave,setSupplementalToSave]=useState('');
  const [error,setError]=useState('');
+ const [editSection,setEditSection]=useState(null);
 
  const load=async()=>{
   setLoading(true);setError('');
@@ -38,13 +40,17 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   setCategories(cats||[]);setMealTypes(types||[]);setTags(tagRows||[]);
   setSelectedTags((data.recipe_tags||[]).map(x=>x.tag_id));
   setIngredients([...(data.recipe_ingredients||[])].sort((a,b)=>a.sort_order-b.sort_order).map(x=>{
-   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   const rawQuantityText=x.quantity_text||'';
+   const hasWords=/[A-Za-zÀ-ÿ]/.test(rawQuantityText);
+   const quantityText=hasWords&&x.quantity!==null&&x.quantity!==undefined?String(x.quantity):(rawQuantityText||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):''));
    return {
     original_name:x.original_name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
+    _raw_quantity_text:rawQuantityText,
     quantity:x.quantity,
     unit:x.unit||'',
+    _initial_unit:x.unit||'',
     note:x.note||'',
     section:x.section||'',
     role:x.role||'main'
@@ -109,13 +115,17 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   }));
 
   const enrichedIngredients=(result.ingredients||[]).map(x=>{
-   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   const rawQuantityText=x.quantity_text||'';
+   const hasWords=/[A-Za-zÀ-ÿ]/.test(rawQuantityText);
+   const quantityText=hasWords&&x.quantity!==null&&x.quantity!==undefined?String(x.quantity):(rawQuantityText||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):''));
    return {
     original_name:x.name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
+    _raw_quantity_text:rawQuantityText,
     quantity:x.quantity,
     unit:x.unit||'',
+    _initial_unit:x.unit||'',
     note:x.note||'',
     section:x.section||'',
     role:x.role==='secondary'?'secondary':'main'
@@ -183,11 +193,13 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    .filter(x=>x.original_name.trim())
    .map(x=>{
     const quantityChanged=x.quantity_text!==x._initial_quantity_text;
+    const unitChanged=x.unit!==x._initial_unit;
+    const quantityTextToSave=(quantityChanged||unitChanged)?x.quantity_text.trim():(x._raw_quantity_text||x.quantity_text.trim());
     return {
      original_name:x.original_name.trim(),
-     quantity_text:x.quantity_text.trim()||'',
+     quantity_text:quantityTextToSave||'',
      quantity:quantityChanged?null:x.quantity,
-     unit:quantityChanged?'':x.unit,
+     unit:x.unit.trim()||'',
      note:x.note.trim()||'',
      section:x.section.trim()||'',
      role:x.role==='secondary'?'secondary':'main'
@@ -249,42 +261,18 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
 
  const source=recipe?.recipe_sources?.find(x=>x.is_primary)||recipe?.recipe_sources?.[0];
  const isEdit=mode==='edit';
+ const categoryName=categories.find(x=>x.id===recipe?.category_id)?.name||'Sin categoría';
+ const mealTypeName=mealTypes.find(x=>x.id===recipe?.meal_type_id)?.name||'Sin tipo';
+ const levelName=({initial:'Inicial',intermediate:'Intermedio',expert:'Experto'})[recipe?.level]||'Sin nivel';
+ const selectedTagNames=tags.filter(tag=>selectedTags.includes(tag.id)).map(tag=>tag.name);
+ const previewQuantity=item=>{
+  const changed=item.quantity_text!==item._initial_quantity_text||item.unit!==item._initial_unit;
+  return formatIngredientQuantity({...item,quantity_text:changed?item.quantity_text:(item._raw_quantity_text||item.quantity_text)});
+ };
+ const openSection=name=>setEditSection(current=>current===name?null:name);
+ const editButton=name=><button type="button" className="review-section-edit" onClick={()=>openSection(name)}>{editSection===name?<><Check/>Listo</>:<><Edit3/>Editar</>}</button>;
 
- return <section className={isEdit?'review-editor edit-approved':'review-editor'}>
-  <div className="review-editor-head">
-   <div><small>{isEdit?'EDITAR RECETA':'POR VALIDAR'}</small><h2>{recipe?.title||'Receta sin título'}</h2></div>
-   <button onClick={onBack}>Volver</button>
-  </div>
-
-  {source&&<div className="source-review-box">
-   <div className="source-review-head">
-    <div><b>Fuente original</b>{source.author_handle&&<small>{source.author_handle}</small>}</div>
-    {source.source_url&&<a href={source.source_url} target="_blank" rel="noreferrer">Abrir original <ExternalLink/></a>}
-   </div>
-   <div className="source-review-content">
-    {source.original_image_url&&<img src={source.original_image_url} alt="Miniatura de la fuente" onError={e=>{e.currentTarget.style.display='none'}}/>}
-    {source.original_copy?<p>{source.original_copy}</p>:<small>No hay texto original guardado. Completá solo lo que conozcas.</small>}
-   </div>
-   {source.supplemental_copy&&<details className="supplemental-source"><summary>Ver información adicional ya incorporada</summary><p>{source.supplemental_copy}</p></details>}
-  </div>}
-
-  <div className="ai-enrich-box">
-   <div className="ai-enrich-head">
-    <div><Sparkles/><span><b>¿Tenés más información?</b><small>Pegá, por ejemplo, la receta completa del primer comentario. La IA la combina con lo que ya existe sin tocar el copy original.</small></span></div>
-    <button type="button" onClick={pasteExtra}><ClipboardPaste/>Pegar portapapeles</button>
-   </div>
-   <textarea value={extraText} onChange={e=>setExtraText(e.target.value)} placeholder="Pegá acá ingredientes, pasos o el texto completo que faltaba..."/>
-   <div className="ai-enrich-actions">
-    <small>No se guarda nada automáticamente: primero vas a ver el resultado en esta ficha.</small>
-    <button type="button" className="primary" disabled={aiBusy||!extraText.trim()} onClick={enrichWithAi}>{aiBusy?<LoaderCircle className="spin"/>:<Sparkles/>}{aiBusy?'Procesando...':'Completar con IA'}</button>
-   </div>
-   {aiBusy&&<div className="ai-thinking" role="status" aria-live="polite">
-    <LoaderCircle className="spin"/>
-    <span><b>Chefcita está pensando...</b><small>Estoy leyendo lo que pegaste y completando la ficha. Puede tardar unos segundos; no actualices la página.</small></span>
-   </div>}
-   {aiMessage&&<p className="ai-success">{aiMessage}</p>}
-  </div>
-
+ const generalEditor=<>
   <div className="review-grid">
    <label>Título *<input value={recipe?.title||''} onChange={e=>setField('title',e.target.value)}/></label>
    <label>Descripción<textarea value={recipe?.description||''} onChange={e=>setField('description',e.target.value)}/></label>
@@ -302,42 +290,125 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     <label>Total (min)<input type="number" min="0" value={recipe?.total_minutes??''} onChange={e=>setField('total_minutes',e.target.value)}/></label>
    </div>
   </div>
-
-  <div className="review-section">
-   <div className="review-section-title"><h3>Etiquetas</h3></div>
+  <div className="review-inline-tags">
+   <span>Etiquetas</span>
    <div className="tag-picker">{tags.map(tag=><button type="button" key={tag.id} className={selectedTags.includes(tag.id)?'tag-chip selected':'tag-chip'} onClick={()=>toggleTag(tag.id)}>{tag.name}</button>)}</div>
   </div>
+ </>;
 
-  <div className="review-section">
-   <div className="review-section-title"><div><h3>Ingredientes</h3><small>Principales = los que definen la receta. Secundarios = condimentos, salsas y toppings.</small></div><button onClick={()=>setIngredients(list=>[...list,blankIngredient()])}><Plus/>Añadir</button></div>
-   <div className="review-lines">{ingredients.map((item,index)=><div className="review-ingredient v1-parity" key={index}>
-    <label className="review-line-field"><span>Tipo</span><select aria-label="Tipo de ingrediente" value={item.role} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option value="main">Principal</option><option value="secondary">Secundario</option></select></label>
-    <label className="review-line-field"><span>Cantidad</span><input placeholder="Ej. 200 g" value={item.quantity_text} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,quantity_text:e.target.value}:x))}/></label>
-    <label className="review-line-field"><span>Ingrediente</span><input placeholder="Ej. tomate" value={item.original_name} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,original_name:e.target.value}:x))}/></label>
-    <label className="review-line-field"><span>Nota</span><input placeholder="Opcional" value={item.note} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,note:e.target.value}:x))}/></label>
-    <button type="button" aria-label="Eliminar ingrediente" className="icon-delete" onClick={()=>setIngredients(list=>list.filter((_,i)=>i!==index))}><Trash2/></button>
-   </div>)}</div>
+ const ingredientEditor=<>
+  <div className="review-section-title ingredient-edit-head"><div><small>Principales = los que definen la receta. Secundarios = condimentos, salsas y toppings.</small></div><button type="button" onClick={()=>setIngredients(list=>[...list,blankIngredient()])}><Plus/>Añadir</button></div>
+  <div className="review-lines">{ingredients.map((item,index)=><div className="review-ingredient ingredient-editor-row" key={index}>
+   <label className="review-line-field ingredient-type"><span>Tipo</span><select aria-label="Tipo de ingrediente" value={item.role} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option value="main">Principal</option><option value="secondary">Secundario</option></select></label>
+   <label className="review-line-field ingredient-qty"><span>Cantidad</span><input placeholder="Ej. 120" value={item.quantity_text} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,quantity_text:e.target.value}:x))}/></label>
+   <label className="review-line-field ingredient-unit"><span>Unidad</span><input placeholder="g, ml, uds." value={item.unit} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,unit:e.target.value}:x))}/></label>
+   <label className="review-line-field ingredient-name"><span>Ingrediente</span><input placeholder="Ej. harina" value={item.original_name} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,original_name:e.target.value}:x))}/></label>
+   <label className="review-line-field ingredient-note"><span>Nota</span><input placeholder="Opcional" value={item.note} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,note:e.target.value}:x))}/></label>
+   <button type="button" aria-label="Eliminar ingrediente" className="icon-delete ingredient-delete" onClick={()=>setIngredients(list=>list.filter((_,i)=>i!==index))}><Trash2/></button>
+  </div>)}</div>
+ </>;
+
+ const stepsEditor=<>
+  <div className="review-section-title"><span></span><button type="button" onClick={()=>setSteps(list=>[...list,blankStep()])}><Plus/>Añadir</button></div>
+  <div className="review-lines">{steps.map((item,index)=><div className="review-step" key={index}><b>{index+1}</b><textarea value={item.instruction} onChange={e=>setSteps(list=>list.map((x,i)=>i===index?{...x,instruction:e.target.value}:x))}/><button type="button" aria-label="Eliminar paso" className="icon-delete" onClick={()=>setSteps(list=>list.filter((_,i)=>i!==index))}><Trash2/></button></div>)}</div>
+ </>;
+
+ const organizationEditor=<div className="review-grid">
+  <label>Conservación<textarea value={recipe?.storage_notes||''} onChange={e=>setField('storage_notes',e.target.value)}/></label>
+  <label>Freezer<textarea value={recipe?.freezer_notes||''} onChange={e=>setField('freezer_notes',e.target.value)}/></label>
+  <label>Meal prep<textarea value={recipe?.meal_prep_notes||''} onChange={e=>setField('meal_prep_notes',e.target.value)}/></label>
+ </div>;
+
+ const aiContent=<>
+  <div className="ai-enrich-head">
+   <div><Sparkles/><span><b>¿Tenés más información?</b><small>Pegá, por ejemplo, la receta completa del primer comentario. La IA la combina con lo que ya existe sin tocar el copy original.</small></span></div>
+   <button type="button" onClick={pasteExtra}><ClipboardPaste/>Pegar portapapeles</button>
+  </div>
+  <textarea value={extraText} onChange={e=>setExtraText(e.target.value)} placeholder="Pegá acá ingredientes, pasos o el texto completo que faltaba..."/>
+  <div className="ai-enrich-actions">
+   <small>No se guarda nada automáticamente: primero vas a ver el resultado en esta ficha.</small>
+   <button type="button" className="primary" disabled={aiBusy||!extraText.trim()} onClick={enrichWithAi}>{aiBusy?<LoaderCircle className="spin"/>:<Sparkles/>}{aiBusy?'Procesando...':'Completar con IA'}</button>
+  </div>
+  {aiBusy&&<div className="ai-thinking" role="status" aria-live="polite">
+   <LoaderCircle className="spin"/>
+   <span><b>Chefcita está pensando...</b><small>Estoy leyendo lo que pegaste y completando la ficha. Puede tardar unos segundos; no actualices la página.</small></span>
+  </div>}
+  {aiMessage&&<p className="ai-success">{aiMessage}</p>}
+ </>;
+
+ return <section className={isEdit?'review-editor edit-approved':'review-editor review-check-mode'}>
+  <div className="review-editor-head">
+   <div><small>{isEdit?'EDITAR RECETA':'POR VALIDAR'}</small><h2>{recipe?.title||'Receta sin título'}</h2></div>
+   <button onClick={onBack}>Volver</button>
   </div>
 
-  <div className="review-section">
-   <div className="review-section-title"><h3>Preparación</h3><button onClick={()=>setSteps(list=>[...list,blankStep()])}><Plus/>Añadir</button></div>
-   <div className="review-lines">{steps.map((item,index)=><div className="review-step" key={index}><b>{index+1}</b><textarea value={item.instruction} onChange={e=>setSteps(list=>list.map((x,i)=>i===index?{...x,instruction:e.target.value}:x))}/><button type="button" aria-label="Eliminar paso" className="icon-delete" onClick={()=>setSteps(list=>list.filter((_,i)=>i!==index))}><Trash2/></button></div>)}</div>
-  </div>
+  {!isEdit&&<div className="review-top-actions">
+   <button className="primary" disabled={busy||aiBusy||!recipe?.title?.trim()} onClick={()=>save(true)}><Check/>{busy?'Aprobando...':'Aprobar receta'}</button>
+   <button className="review-save-draft" disabled={busy||aiBusy} onClick={()=>save(false)}>{busy?'Guardando...':'Guardar borrador'}</button>
+  </div>}
 
-  <div className="review-grid">
-   <label>Conservación<textarea value={recipe?.storage_notes||''} onChange={e=>setField('storage_notes',e.target.value)}/></label>
-   <label>Freezer<textarea value={recipe?.freezer_notes||''} onChange={e=>setField('freezer_notes',e.target.value)}/></label>
-   <label>Meal prep<textarea value={recipe?.meal_prep_notes||''} onChange={e=>setField('meal_prep_notes',e.target.value)}/></label>
-  </div>
+  {source&&<div className="source-review-box compact-source">
+   <div className="source-review-head">
+    <div><b>Fuente original</b>{source.author_handle&&<small>{source.author_handle}</small>}</div>
+    {source.source_url&&<a href={source.source_url} target="_blank" rel="noreferrer">Abrir original <ExternalLink/></a>}
+   </div>
+   {!isEdit&&source.original_copy&&<details className="source-copy-disclosure"><summary>Ver texto original</summary><p>{source.original_copy}</p></details>}
+   {isEdit&&<div className="source-review-content">
+    {source.original_image_url&&<img src={source.original_image_url} alt="Miniatura de la fuente" onError={e=>{e.currentTarget.style.display='none'}}/>}
+    {source.original_copy?<p>{source.original_copy}</p>:<small>No hay texto original guardado.</small>}
+   </div>}
+   {source.supplemental_copy&&<details className="supplemental-source"><summary>Ver información adicional ya incorporada</summary><p>{source.supplemental_copy}</p></details>}
+  </div>}
+
+  {isEdit?<div className="ai-enrich-box">{aiContent}</div>:<details className="ai-enrich-box ai-enrich-disclosure">
+   <summary><Sparkles/><span><b>¿Falta información?</b><small>Completá la ficha con IA solo si lo necesitás.</small></span></summary>
+   <div className="ai-enrich-disclosure-body">{aiContent}</div>
+  </details>}
+
+  <section className={editSection==='general'?'review-block editing':'review-block'}>
+   <div className="review-block-head"><div><h3>Datos de la receta</h3><small>Título, categoría, tiempos, porciones y etiquetas</small></div>{!isEdit&&editButton('general')}</div>
+   {isEdit||editSection==='general'?generalEditor:<div className="review-preview">
+    {recipe?.description&&<p className="review-preview-description">{recipe.description}</p>}
+    <div className="review-preview-chips">
+     <span>{categoryName}</span><span>{mealTypeName}</span><span>{levelName}</span>
+     {recipe?.servings!=null&&<span>{recipe.servings} {recipe.servings_unit||'porciones'}</span>}
+     {recipe?.total_minutes!=null&&<span>{recipe.total_minutes} min</span>}
+     {recipe?.prep_minutes!=null&&<span>Prep. {recipe.prep_minutes} min</span>}
+     {recipe?.cook_minutes!=null&&<span>Cocción {recipe.cook_minutes} min</span>}
+    </div>
+    {selectedTagNames.length>0&&<div className="review-preview-tags">{selectedTagNames.map(name=><span key={name}>{name}</span>)}</div>}
+   </div>}
+  </section>
+
+  <section className={editSection==='ingredients'?'review-block editing':'review-block'}>
+   <div className="review-block-head"><div><h3>Ingredientes</h3><small>{ingredients.length} {ingredients.length===1?'ingrediente':'ingredientes'}</small></div>{!isEdit&&editButton('ingredients')}</div>
+   {isEdit||editSection==='ingredients'?ingredientEditor:<div className="review-ingredient-preview">
+    {ingredients.length?ingredients.map((item,index)=><div key={index}><b>{previewQuantity(item)||'—'}</b><span><strong>{item.original_name||'Ingrediente sin nombre'}</strong>{item.note&&<small>{item.note}</small>}</span><em>{item.role==='secondary'?'Secundario':'Principal'}</em></div>):<p className="muted">No hay ingredientes cargados.</p>}
+   </div>}
+  </section>
+
+  <section className={editSection==='steps'?'review-block editing':'review-block'}>
+   <div className="review-block-head"><div><h3>Preparación</h3><small>{steps.length} {steps.length===1?'paso':'pasos'}</small></div>{!isEdit&&editButton('steps')}</div>
+   {isEdit||editSection==='steps'?stepsEditor:<div className="review-steps-preview">
+    {steps.length?steps.map((item,index)=><div key={index}><b>{index+1}</b><p>{item.instruction}</p></div>):<p className="muted">No hay pasos cargados.</p>}
+   </div>}
+  </section>
+
+  <section className={editSection==='organization'?'review-block editing':'review-block'}>
+   <div className="review-block-head"><div><h3>Conservación y organización</h3><small>Freezer, conservación y meal prep</small></div>{!isEdit&&editButton('organization')}</div>
+   {isEdit||editSection==='organization'?organizationEditor:<div className="review-organization-preview">
+    {recipe?.storage_notes&&<p><b>Conservación</b><span>{recipe.storage_notes}</span></p>}
+    {recipe?.freezer_notes&&<p><b>Freezer</b><span>{recipe.freezer_notes}</span></p>}
+    {recipe?.meal_prep_notes&&<p><b>Meal prep</b><span>{recipe.meal_prep_notes}</span></p>}
+    {!recipe?.storage_notes&&!recipe?.freezer_notes&&!recipe?.meal_prep_notes&&<p className="muted">Sin indicaciones adicionales.</p>}
+   </div>}
+  </section>
 
   {error&&<p className="message">{error}</p>}
 
   <div className="review-actions">
    {!isEdit&&<button type="button" className="delete-pending-review" disabled={busy||aiBusy} onClick={deletePending}><Trash2/>Eliminar receta</button>}
-   <div className="review-actions-main">
-    {!isEdit&&<button disabled={busy||aiBusy} onClick={()=>save(false)}>{busy?'Guardando...':'Guardar borrador'}</button>}
-    <button className="primary" disabled={busy||aiBusy||!recipe?.title?.trim()} onClick={()=>save(true)}>{isEdit?<><Save/>Guardar cambios</>:<><Check/>Aprobar receta</>}</button>
-   </div>
+   {isEdit&&<div className="review-actions-main"><button className="primary" disabled={busy||aiBusy||!recipe?.title?.trim()} onClick={()=>save(true)}><Save/>{busy?'Guardando...':'Guardar cambios'}</button></div>}
   </div>
  </section>;
 }
