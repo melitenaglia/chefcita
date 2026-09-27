@@ -49,6 +49,18 @@ export default function SettingsPage({session,initialSection='Cuenta',notice='',
     <div className="setting-form"><label>Nueva contraseña<input type="password" minLength="8" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres"/></label><label>Repetir contraseña<input type="password" minLength="8" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Repetí la contraseña"/></label><button className="secondary" onClick={savePassword} disabled={busy||!password}>Cambiar contraseña</button></div>
     {message&&<p className="settings-message">{message}</p>}
    </>}
+   {section==='Pantalla'&&<>
+    <h2>Pantalla</h2>
+    <p>Elegí cuánto espacio ocupa Chefcita en este dispositivo.</p>
+    <div className="ui-size-setting">
+     <div className="ui-size-options" role="radiogroup" aria-label="Tamaño de la interfaz">
+      <button type="button" role="radio" aria-checked={uiSize==='compact'} className={uiSize==='compact'?'active':''} onClick={()=>onUiSizeChange?.('compact')}><b>Compacto</b><small>Más contenido en pantalla</small></button>
+      <button type="button" role="radio" aria-checked={uiSize==='normal'} className={uiSize==='normal'?'active':''} onClick={()=>onUiSizeChange?.('normal')}><b>Normal</b><small>Equilibrado</small></button>
+      <button type="button" role="radio" aria-checked={uiSize==='large'} className={uiSize==='large'?'active':''} onClick={()=>onUiSizeChange?.('large')}><b>Grande</b><small>Más cómodo para leer y tocar</small></button>
+     </div>
+     <small className="ui-size-device-note">Se guarda solo en este dispositivo. Podés usar Compacto en tu móvil y Grande en otro.</small>
+    </div>
+   </>}
    {section==='Mi hogar'&&<HouseholdSettings session={session}/>}
    {section==='Recetas'&&<><h2>Recetas</h2><p>Preferencias generales para guardar y organizar tus recetas.</p><div className="setting-row"><span><b>Privacidad por defecto</b><small>Quién podrá ver una receta nueva</small></span><strong>Mi hogar</strong></div></>}
    {section==='IA e importaciones'&&<><h2>IA e importaciones</h2><p>Chefcita no completará datos que no pueda obtener de la fuente. Lo que falte quedará para validar.</p></>}
