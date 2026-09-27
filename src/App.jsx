@@ -65,6 +65,7 @@ export default function App(){
 
  const goToTab=target=>{
   if(target==='Pendientes')setPendingStart('imports');
+  if(target==='Inicio')setIdeaFocusKey(0);
   closeMenu();
   setTab(target);
  };
@@ -101,7 +102,7 @@ export default function App(){
   </aside>
 
   <nav className="mobile-bottom-nav" aria-label="Navegación principal">
-   {mobileNav.map(([name,Icon])=><button key={name} className={(name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:tab===name)?'active':''} onClick={()=>name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>)}
+   {mobileNav.map(([name,Icon])=><button key={name} className={(name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:(name==='Inicio'?tab==='Inicio'&&ideaFocusKey===0:tab===name))?'active':''} onClick={()=>name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>)}
   </nav>
 
   <main className="content">
@@ -138,7 +139,7 @@ export default function App(){
        <button onClick={()=>setMobileMenuLevel('settings')}><Settings/><span><b>Configuración</b><small>Pantalla, hogar e importaciones</small></span><ChevronRight/></button>
        <button className="drawer-logout" onClick={()=>supabase.auth.signOut()}><LogOut/><span><b>Salir</b></span></button>
       </div>
-     </></>:<>
+     </>:<>
       <div className="drawer-group settings-submenu">
        <small>CONFIGURACIÓN</small>
        <button onClick={()=>openSettings('Pantalla')}><Settings/><span><b>Pantalla</b><small>Tamaño y densidad de interfaz</small></span></button>
