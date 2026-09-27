@@ -18,6 +18,7 @@ export default function App(){
  const [recipeRefresh,setRecipeRefresh]=useState(0);
  const [pendingStart,setPendingStart]=useState('imports');
  const [openRecipeId,setOpenRecipeId]=useState(null);
+ const [inviteNotice,setInviteNotice]=useState('');
  useEffect(()=>{
   supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
@@ -28,8 +29,10 @@ export default function App(){
   const token=new URLSearchParams(window.location.search).get('invite');
   if(!token)return;
   supabase.rpc('accept_household_invite',{p_token:token}).then(({error})=>{
-   if(error) console.error('No se pudo aceptar la invitación',error);
-   else {setSettingsStart('Mi hogar');setTab('Configuración');}
+   setSettingsStart('Mi hogar');
+   setTab('Configuración');
+   if(error)setInviteNotice('No pude aceptar esta invitación. Comprobá que hayas iniciado sesión con el mismo email al que se envió y que el enlace no haya vencido.');
+   else setInviteNotice('Listo. Ya te uniste al hogar.');
    window.history.replaceState({},'',window.location.pathname);
   });
  },[session]);
@@ -48,7 +51,7 @@ export default function App(){
  <main className="content"><header><div><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div><div className="header-actions"><button className="mobile-settings" onClick={()=>setTab('Configuración')} aria-label="Abrir configuración"><Settings/></button><button className="add" onClick={()=>setAdding(true)}><Plus/> <span>Añadir receta</span></button></div></header>
  {tab==='Inicio'&&<HomeDashboard onNavigate={goToTab} onAdd={()=>setAdding(true)}/>} 
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
- {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
+ {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart} notice={inviteNotice}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} initialRecipeId={openRecipeId}/>} 
  {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
  {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>} 
