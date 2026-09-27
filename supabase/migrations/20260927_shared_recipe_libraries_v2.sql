@@ -61,6 +61,17 @@ create table if not exists public.recipe_library_shares (
 
 alter table public.recipe_library_shares enable row level security;
 
+-- Preserve the current single-household sharing as read-only library shares.
+insert into public.recipe_library_shares(recipe_id,household_id,shared_by)
+select r.id,r.household_id,r.owner_id
+from public.recipes r
+where r.household_id is not null
+on conflict (recipe_id,household_id) do nothing;
+
+-- Under the new model the recipe itself is always personal.
+update public.recipes set household_id=null where household_id is not null;
+update public.imports set household_id=null where household_id is not null;
+
 drop policy if exists recipe_library_shares_select on public.recipe_library_shares;
 create policy recipe_library_shares_select
 on public.recipe_library_shares
