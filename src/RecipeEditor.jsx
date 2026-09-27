@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste} from 'lucide-react';
+import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle} from 'lucide-react';
 import {supabase} from './supabase.js';
 
 const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
@@ -255,8 +255,12 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    <textarea value={extraText} onChange={e=>setExtraText(e.target.value)} placeholder="Pegá acá ingredientes, pasos o el texto completo que faltaba..."/>
    <div className="ai-enrich-actions">
     <small>No se guarda nada automáticamente: primero vas a ver el resultado en esta ficha.</small>
-    <button type="button" className="primary" disabled={aiBusy||!extraText.trim()} onClick={enrichWithAi}><Sparkles/>{aiBusy?'Procesando...':'Completar con IA'}</button>
+    <button type="button" className="primary" disabled={aiBusy||!extraText.trim()} onClick={enrichWithAi}>{aiBusy?<LoaderCircle className="spin"/>:<Sparkles/>}{aiBusy?'Procesando...':'Completar con IA'}</button>
    </div>
+   {aiBusy&&<div className="ai-thinking" role="status" aria-live="polite">
+    <LoaderCircle className="spin"/>
+    <span><b>Chefcita está pensando...</b><small>Estoy leyendo lo que pegaste y completando la ficha. Puede tardar unos segundos; no actualices la página.</small></span>
+   </div>}
    {aiMessage&&<p className="ai-success">{aiMessage}</p>}
   </div>
 
