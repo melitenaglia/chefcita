@@ -108,25 +108,27 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
  };
 
  return <>
-  <section className="idea-picker idea-picker-primary" ref={ideaRef}>
-   <div className="idea-picker-copy"><WandSparkles/><span><small>¿SIN IDEAS?</small><b>Elegí el tipo de comida y Chefcita elige por vos.</b></span></div>
-   <div className="idea-picker-actions">
+  <section className="idea-hero" ref={ideaRef}>
+   <div className="idea-hero-copy">
+    <span className="idea-hero-icon"><WandSparkles/></span>
+    <div>
+     <small>¿SIN IDEAS?</small>
+     <h2>¿Qué cocinamos hoy?</h2>
+     <p>Elegí el momento del día y Chefcita te propone una receta al azar.</p>
+    </div>
+   </div>
+   <div className="idea-hero-actions">
     <select ref={ideaSelectRef} value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('')}} aria-label="Tipo de comida">
-     <option value="">Tipo de comida</option>
+     <option value="">Elegí el tipo de comida</option>
      {ideaOptions.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}
     </select>
     <button disabled={!ideaType||ideaBusy} onClick={surpriseMe}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
    </div>
-   {ideaMessage&&<small className="idea-picker-message">{ideaMessage}</small>}
+   {ideaMessage&&<small className="idea-hero-message">{ideaMessage}</small>}
   </section>
 
-  <section className="welcome home-welcome">
-   <div className="welcome-copy">
-    <span>TU RECETARIO</span>
-    <h2>Tus recetas, a mano</h2>
-    <p>Explorá lo que ya guardaste o sumá una receta nueva.</p>
-    <button className="welcome-recipes" onClick={()=>onNavigate('Recetas')}><BookOpen/>Ver recetas</button>
-   </div>
+  <section className="home-library-banner">
+   <div><small>TU RECETARIO</small><b>Explorá lo que ya guardaste o sumá una receta nueva.</b></div>
    <button className="welcome-instagram" onClick={onAdd}>
     <Instagram/>
     <span><b>Guardar desde Instagram</b><small>Pegá un Reel o post</small></span>
