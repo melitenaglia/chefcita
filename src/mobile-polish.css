@@ -869,3 +869,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .caption-editor textarea,.ai-enrich-box textarea,.personal-box textarea,
  .search-box input,.library-filters select{font-size:16px!important}
 }
+
+
+body:has(.mobile-app-menu-backdrop){overflow:hidden}
+
+@media(max-width:390px){
+ html[data-ui-size="compact"]{--ui-scale:.78}
+ html[data-ui-size="normal"]{--ui-scale:.94}
+ html[data-ui-size="large"]{--ui-scale:1.08}
+}
