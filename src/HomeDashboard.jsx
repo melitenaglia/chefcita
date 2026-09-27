@@ -13,6 +13,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
  const [ideaBusy,setIdeaBusy]=useState(false);
  const [ideaMessage,setIdeaMessage]=useState('');
  const [loading,setLoading]=useState(true);
+ const [summaryReady,setSummaryReady]=useState(false);
 
  useEffect(()=>{
   let active=true;
@@ -69,7 +70,8 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
    }
 
    if(!active)return;
-   if(result.data)setData(result.data);
+   if(result.data){setData(result.data);setSummaryReady(true)}
+   else setSummaryReady(false);
    if(result.options)setIdeaOptions(result.options);
    if(result.error)console.warn('No se pudo actualizar el resumen de inicio.',result.error);
    setLoading(false);
@@ -115,9 +117,9 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
   </section>
 
   <div className="cards dashboard-cards">
-   <button onClick={()=>onNavigate('Recetas')}><BookOpen/><b>Recetas</b><strong>{loading?'–':data.recipes}</strong><small>Tu biblioteca aprobada.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Recetas')}><BookOpen/><b>Recetas</b><strong>{loading||!summaryReady?'–':data.recipes}</strong><small>Tu biblioteca aprobada.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading||!summaryReady?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading||!summaryReady?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
   </div>
 
   <section className="idea-picker">
@@ -134,7 +136,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
 
   <section className="home-recent">
    <div className="home-section-head"><div><small>ÚLTIMAS RECETAS</small><h2>Agregadas recientemente</h2></div>{data.recent.length>0&&<button onClick={()=>onNavigate('Recetas')}>Ver todas <ArrowRight/></button>}</div>
-   {!loading&&data.recent.length===0?<div className="home-empty"><ChefHat/><p>Todavía no hay recetas aprobadas.</p><button onClick={onAdd}>Añadir la primera</button></div>
+   {!loading&&summaryReady&&data.recent.length===0?<div className="home-empty"><ChefHat/><p>Todavía no hay recetas aprobadas.</p><button onClick={onAdd}>Añadir la primera</button></div>
    :<div className="recent-grid">{data.recent.map(recipe=><button key={recipe.id} onClick={()=>onOpenRecipe?.(recipe.id)}>
      <div className="recent-thumb">{recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
      <span><b>{recipe.title}</b><small>{[recipe.categories?.name,recipe.meal_types?.name].filter(Boolean).join(' · ')||'Receta'}</small>{recipe.total_minutes!=null&&<em><Clock/>{recipe.total_minutes} min</em>}</span>
