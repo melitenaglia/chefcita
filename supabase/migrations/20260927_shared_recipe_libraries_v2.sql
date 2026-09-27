@@ -1,40 +1,43 @@
 begin;
 
--- Allow the same user to belong to multiple shared libraries.
+-- Chefcita shared libraries reuse the existing household tables for membership,
+-- but users may now belong to more than one library.
 do $$
 declare
-  v_constraint record;
+  v_item record;
 begin
-  for v_constraint in
+  for v_item in
     select conname
     from pg_constraint
     where conrelid='public.household_members'::regclass
       and contype='u'
       and replace(pg_get_constraintdef(oid),' ','')='UNIQUE(user_id)'
   loop
-    execute format('alter table public.household_members drop constraint %I',v_constraint.conname);
+    execute format('alter table public.household_members drop constraint %I',v_item.conname);
   end loop;
-  for v_constraint in
-    select idx.relname
+
+  for v_item in
+    select idx.relname as index_name
     from pg_index pi
     join pg_class idx on idx.oid=pi.indexrelid
     where pi.indrelid='public.household_members'::regclass
       and pi.indisunique
       and pi.indnatts=1
-      and (
-        select a.attname
+      and exists (
+        select 1
         from pg_attribute a
         where a.attrelid=pi.indrelid
-          and a.attnum=(pi.indkey::smallint[])[0]
-      )='user_id'
+          and a.attname='user_id'
+          and a.attnum=any(pi.indkey)
+      )
       and not exists (
         select 1 from pg_constraint c where c.conindid=pi.indexrelid
       )
   loop
-    execute format('drop index if exists public.%I',v_constraint.conname);
+    execute format('drop index if exists public.%I',v_item.index_name);
   end loop;
 end;
-$;
+$$;
 
 create unique index if not exists household_members_household_user_uidx
   on public.household_members(household_id,user_id);
@@ -50,8 +53,13 @@ declare
   v_name text:=nullif(trim(p_name),'');
   v_library uuid;
 begin
-  if v_user is null then raise exception 'not_authenticated'; end if;
-  if v_name is null then raise exception 'library_name_required'; end if;
+  if v_user is null then
+    raise exception 'not_authenticated';
+  end if;
+
+  if v_name is null then
+    raise exception 'library_name_required';
+  end if;
 
   insert into public.households(name,created_by)
   values(v_name,v_user)
@@ -73,15 +81,20 @@ returns uuid
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare
   v_user uuid:=auth.uid();
   v_email text;
   v_invite public.household_invites;
 begin
-  if v_user is null then raise exception 'not_authenticated'; end if;
+  if v_user is null then
+    raise exception 'not_authenticated';
+  end if;
 
-  select email into v_email from auth.users where id=v_user;
+  select email
+  into v_email
+  from auth.users
+  where id=v_user;
 
   select *
   into v_invite
@@ -91,7 +104,10 @@ begin
     and (expires_at is null or expires_at>now())
   for update;
 
-  if not found then raise exception 'invite_invalid_or_expired'; end if;
+  if not found then
+    raise exception 'invite_invalid_or_expired';
+  end if;
+
   if lower(coalesce(v_invite.invited_email,''))<>lower(coalesce(v_email,'')) then
     raise exception 'invite_email_mismatch';
   end if;
@@ -106,33 +122,37 @@ begin
 
   return v_invite.household_id;
 end;
-$;
+$$;
 
 revoke all on function public.accept_shared_library_invite(text) from public,anon;
 grant execute on function public.accept_shared_library_invite(text) to authenticated;
 
--- A recipe always remains personal/owned by its creator.
--- Sharing adds read access; it does not move or duplicate the recipe.
+-- Recipes always stay personal. Sharing only grants read access to a library.
 create table if not exists public.recipe_library_shares (
   recipe_id uuid not null references public.recipes(id) on delete cascade,
   household_id uuid not null references public.households(id) on delete cascade,
-  shared_by uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  shared_by uuid not null default auth.uid(),
   created_at timestamptz not null default now(),
   primary key(recipe_id,household_id)
 );
 
 alter table public.recipe_library_shares enable row level security;
 
--- Preserve the current single-household sharing as read-only library shares.
+-- Convert the old single-household model without losing access.
 insert into public.recipe_library_shares(recipe_id,household_id,shared_by)
 select r.id,r.household_id,r.owner_id
 from public.recipes r
 where r.household_id is not null
 on conflict (recipe_id,household_id) do nothing;
 
--- Under the new model the recipe itself is always personal.
-update public.recipes set household_id=null, visibility='private' where household_id is not null;
-update public.imports set household_id=null where household_id is not null;
+update public.recipes
+set household_id=null,
+    visibility='private'
+where household_id is not null;
+
+update public.imports
+set household_id=null
+where household_id is not null;
 
 drop policy if exists recipe_library_shares_select on public.recipe_library_shares;
 create policy recipe_library_shares_select
@@ -157,12 +177,14 @@ to authenticated
 with check (
   shared_by=auth.uid()
   and exists (
-    select 1 from public.recipes r
+    select 1
+    from public.recipes r
     where r.id=recipe_library_shares.recipe_id
       and r.owner_id=auth.uid()
   )
   and exists (
-    select 1 from public.household_members hm
+    select 1
+    from public.household_members hm
     where hm.household_id=recipe_library_shares.household_id
       and hm.user_id=auth.uid()
   )
@@ -175,13 +197,15 @@ for delete
 to authenticated
 using (
   exists (
-    select 1 from public.recipes r
+    select 1
+    from public.recipes r
     where r.id=recipe_library_shares.recipe_id
       and r.owner_id=auth.uid()
   )
 );
 
--- Shared members can read a recipe, but existing UPDATE/DELETE policies are untouched.
+-- Shared members can read the recipe itself. Existing UPDATE/DELETE policies
+-- are intentionally untouched, so sharing never grants recipe editing.
 drop policy if exists recipes_shared_library_read on public.recipes;
 create policy recipes_shared_library_read
 on public.recipes
@@ -197,7 +221,7 @@ using (
   )
 );
 
--- Child content is read-only through the same shared-library membership.
+-- Related recipe content is also read-only for shared members.
 drop policy if exists recipe_ingredients_shared_library_read on public.recipe_ingredients;
 create policy recipe_ingredients_shared_library_read
 on public.recipe_ingredients
