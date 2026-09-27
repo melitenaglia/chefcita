@@ -56,6 +56,7 @@ export default function App(){
  if(!session)return <Auth/>;
 
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
+ const mobileNav=[['Inicio',Home],['Recetas',BookOpen],['Ideas',WandSparkles],['Pendientes',Inbox],['Mi cocina',Heart]];
 
  const closeMenu=()=>{
   setMobileMenuOpen(false);
@@ -99,12 +100,15 @@ export default function App(){
    </div>
   </aside>
 
+  <nav className="mobile-bottom-nav" aria-label="Navegación principal">
+   {mobileNav.map(([name,Icon])=><button key={name} className={(name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:tab===name)?'active':''} onClick={()=>name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>)}
+  </nav>
+
   <main className="content">
    <header className="app-header">
     <button className="mobile-menu-trigger" onClick={()=>{setMobileMenuLevel('root');setMobileMenuOpen(true)}} aria-label="Abrir menú"><Menu/></button>
     <div className="app-header-title"><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div>
     <div className="header-actions">
-     <button className="mobile-ideas-quick" onClick={goToIdeas} aria-label="Buscar una idea para cocinar"><WandSparkles/></button>
      <button className="add" onClick={()=>setAdding(true)}><Plus/><span>Añadir receta</span></button>
     </div>
    </header>
@@ -124,13 +128,6 @@ export default function App(){
      </div>
 
      {mobileMenuLevel==='root'?<>
-      <button className="drawer-primary" onClick={goToIdeas}><WandSparkles/><span><b>¿Qué cocinamos?</b><small>Elegí un tipo de comida y te damos una idea</small></span><ChevronRight/></button>
-      <div className="drawer-group">
-       <small>BIBLIOTECA</small>
-       <button onClick={()=>goToTab('Recetas')}><BookOpen/><span><b>Recetas</b><small>Todo tu recetario</small></span></button>
-       <button onClick={()=>goToTab('Mi cocina')}><Heart/><span><b>Mi cocina</b><small>Favoritas y recetas personales</small></span></button>
-       <button onClick={()=>goToTab('Pendientes')}><Inbox/><span><b>Pendientes</b><small>Importaciones y recetas por validar</small></span></button>
-      </div>
       <div className="drawer-group">
        <small>ACCIONES</small>
        <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Añadir receta</b><small>Instagram o carga manual</small></span></button>
@@ -141,7 +138,7 @@ export default function App(){
        <button onClick={()=>setMobileMenuLevel('settings')}><Settings/><span><b>Configuración</b><small>Pantalla, hogar e importaciones</small></span><ChevronRight/></button>
        <button className="drawer-logout" onClick={()=>supabase.auth.signOut()}><LogOut/><span><b>Salir</b></span></button>
       </div>
-     </>:<>
+     </></>:<>
       <div className="drawer-group settings-submenu">
        <small>CONFIGURACIÓN</small>
        <button onClick={()=>openSettings('Pantalla')}><Settings/><span><b>Pantalla</b><small>Tamaño y densidad de interfaz</small></span></button>
