@@ -544,3 +544,328 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .ui-size-options button b{font-size:15px}
  .ui-size-options button small{font-size:12px}
 }
+
+
+/* Mobile navigation v2 + proportional density system */
+.settings-mobile-section{display:none}
+.mobile-bottom-nav{display:none}
+.mobile-app-menu-backdrop{display:none}
+
+@media(max-width:760px){
+ html{--ui-scale:1}
+ html[data-ui-size="compact"]{--ui-scale:.84}
+ html[data-ui-size="normal"]{--ui-scale:1}
+ html[data-ui-size="large"]{--ui-scale:1.16}
+
+ html{
+  --ui-space-1:calc(4px * var(--ui-scale));
+  --ui-space-2:calc(8px * var(--ui-scale));
+  --ui-space-3:calc(12px * var(--ui-scale));
+  --ui-space-4:calc(16px * var(--ui-scale));
+  --ui-space-5:calc(22px * var(--ui-scale));
+  --ui-radius:calc(14px * var(--ui-scale));
+  --ui-card-pad:calc(16px * var(--ui-scale));
+  --ui-title:calc(27px * var(--ui-scale));
+  --ui-section-title:calc(20px * var(--ui-scale));
+  --ui-body:calc(15px * var(--ui-scale));
+  --ui-small:calc(12px * var(--ui-scale));
+  --ui-nav-icon:calc(20px * var(--ui-scale));
+  --ui-nav-label:calc(10.5px * var(--ui-scale));
+  --ui-nav-height:calc(52px * var(--ui-scale));
+ }
+
+ .desktop-nav{display:none!important}
+ .mobile-bottom-nav{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  align-items:center;
+  gap:1px!important;
+ }
+ .mobile-bottom-nav button{
+  min-width:0;
+  min-height:max(44px,var(--ui-nav-height))!important;
+  padding:calc(4px * var(--ui-scale)) 1px!important;
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:calc(2px * var(--ui-scale))!important;
+  border-radius:calc(10px * var(--ui-scale))!important;
+  font-size:max(8.5px,var(--ui-nav-label))!important;
+  font-weight:700;
+  line-height:1;
+ }
+ .mobile-bottom-nav button svg{
+  width:var(--ui-nav-icon)!important;
+  height:var(--ui-nav-icon)!important;
+ }
+ .mobile-bottom-nav button span{display:block;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ .mobile-bottom-nav .mobile-nav-ideas{
+  background:#f3e5da;
+  color:#7c4d2c!important;
+  transform:translateY(calc(-3px * var(--ui-scale)));
+  border-radius:calc(14px * var(--ui-scale))!important;
+ }
+ .mobile-bottom-nav .mobile-nav-ideas.active{background:#312c29!important;color:#fff!important}
+ .mobile-bottom-nav .mobile-nav-ideas svg{
+  width:calc(22px * var(--ui-scale))!important;
+  height:calc(22px * var(--ui-scale))!important;
+ }
+
+ aside{
+  padding:calc(4px * var(--ui-scale)) 6px calc(4px * var(--ui-scale) + env(safe-area-inset-bottom))!important;
+ }
+ .shell{padding-bottom:calc(max(52px,var(--ui-nav-height)) + 10px + env(safe-area-inset-bottom))!important}
+
+ .mobile-menu-trigger{
+  width:max(40px,calc(44px * var(--ui-scale)))!important;
+  height:max(40px,calc(44px * var(--ui-scale)))!important;
+  border-radius:calc(12px * var(--ui-scale))!important;
+ }
+ .mobile-menu-trigger svg{
+  width:calc(20px * var(--ui-scale))!important;
+  height:calc(20px * var(--ui-scale))!important;
+ }
+
+ .mobile-app-menu-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:flex;
+  align-items:flex-end;
+  background:#312c2948;
+ }
+ .mobile-app-menu{
+  width:100%;
+  max-height:82dvh;
+  overflow:auto;
+  background:#fff;
+  border-radius:calc(22px * var(--ui-scale)) calc(22px * var(--ui-scale)) 0 0;
+  padding:var(--ui-card-pad) var(--ui-card-pad) calc(var(--ui-card-pad) + env(safe-area-inset-bottom));
+  box-shadow:0 -18px 50px #312c2925;
+  display:grid;
+  gap:var(--ui-space-2);
+ }
+ .mobile-app-menu-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:var(--ui-space-3);
+  padding-bottom:var(--ui-space-2);
+  border-bottom:1px solid #eee3db;
+ }
+ .mobile-app-menu-head>div{display:grid;gap:2px}
+ .mobile-app-menu-head small{font-size:calc(10px * var(--ui-scale));letter-spacing:.13em;color:#a06c49;font-weight:800}
+ .mobile-app-menu-head b{font-size:calc(22px * var(--ui-scale))}
+ .mobile-app-menu-head>button{
+  width:max(40px,calc(44px * var(--ui-scale)));
+  height:max(40px,calc(44px * var(--ui-scale)));
+  border:0;background:#f7f2ee;border-radius:50%;display:grid;place-items:center
+ }
+ .mobile-app-menu>button:not(.mobile-app-menu-head>button){
+  width:100%;
+  min-height:max(48px,calc(58px * var(--ui-scale)));
+  border:1px solid #eee3db;
+  background:#fff;
+  border-radius:var(--ui-radius);
+  padding:calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
+  display:grid;
+  grid-template-columns:calc(28px * var(--ui-scale)) minmax(0,1fr);
+  gap:var(--ui-space-3);
+  align-items:center;
+  text-align:left;
+  color:#4f4844;
+ }
+ .mobile-app-menu>button>svg{width:calc(21px * var(--ui-scale));height:calc(21px * var(--ui-scale))}
+ .mobile-app-menu>button>span{display:grid;gap:2px}
+ .mobile-app-menu>button b{font-size:calc(15px * var(--ui-scale))}
+ .mobile-app-menu>button small{font-size:calc(12px * var(--ui-scale));color:#81756e}
+ .mobile-app-menu .mobile-menu-add{background:#312c29;color:#fff;border-color:#312c29}
+ .mobile-app-menu .mobile-menu-add small{color:#ddd1c8}
+ .mobile-app-menu .mobile-menu-logout{color:#944d44}
+
+ .content{
+  padding-top:max(calc(18px * var(--ui-scale)),env(safe-area-inset-top))!important;
+  padding-left:calc(16px * var(--ui-scale))!important;
+  padding-right:calc(16px * var(--ui-scale))!important;
+ }
+ header{
+  margin-bottom:var(--ui-space-5)!important;
+  gap:var(--ui-space-3)!important;
+ }
+ header h1{font-size:var(--ui-title)!important}
+ .eyebrow{font-size:calc(10px * var(--ui-scale))!important;margin-bottom:var(--ui-space-1)!important}
+
+ .idea-picker{
+  margin-top:0!important;
+  margin-bottom:var(--ui-space-4)!important;
+  padding:var(--ui-card-pad)!important;
+  border-radius:var(--ui-radius)!important;
+  gap:var(--ui-space-3)!important;
+ }
+ .idea-picker-primary{
+  background:#fbf3ec;
+  border-color:#e3cdbd;
+  scroll-margin-top:calc(16px + env(safe-area-inset-top));
+ }
+ .idea-picker-copy{gap:var(--ui-space-2)!important}
+ .idea-picker-copy>svg{width:calc(21px * var(--ui-scale))!important;height:calc(21px * var(--ui-scale))!important}
+ .idea-picker-copy small{font-size:calc(10px * var(--ui-scale))!important}
+ .idea-picker-copy b{font-size:calc(15px * var(--ui-scale))!important}
+ .idea-picker-actions{gap:var(--ui-space-2)!important}
+ .idea-picker button{
+  min-height:max(44px,calc(46px * var(--ui-scale)))!important;
+  padding:calc(9px * var(--ui-scale)) calc(12px * var(--ui-scale))!important;
+  font-size:calc(14px * var(--ui-scale))!important;
+ }
+ .idea-picker select{
+  min-height:max(44px,calc(46px * var(--ui-scale)))!important;
+  padding:calc(9px * var(--ui-scale)) 34px calc(9px * var(--ui-scale)) calc(11px * var(--ui-scale))!important;
+  font-size:16px!important;
+ }
+
+ .home-welcome{
+  padding:calc(20px * var(--ui-scale))!important;
+  border-radius:calc(20px * var(--ui-scale))!important;
+  gap:var(--ui-space-4)!important;
+ }
+ .home-welcome .welcome-copy h2{font-size:calc(27px * var(--ui-scale))!important}
+ .home-welcome .welcome-copy p{font-size:var(--ui-body)!important}
+ .welcome-recipes{min-height:max(44px,calc(48px * var(--ui-scale)))!important;font-size:calc(14px * var(--ui-scale))!important}
+ .welcome-instagram{
+  min-height:max(54px,calc(64px * var(--ui-scale)))!important;
+  padding:calc(11px * var(--ui-scale)) calc(13px * var(--ui-scale))!important;
+  border-radius:var(--ui-radius)!important;
+ }
+ .welcome-instagram b{font-size:calc(14px * var(--ui-scale))!important}
+ .welcome-instagram small{font-size:calc(12px * var(--ui-scale))!important}
+
+ .dashboard-cards{
+  gap:var(--ui-space-2)!important;
+  margin-top:var(--ui-space-3)!important;
+ }
+ .dashboard-cards button{
+  min-height:calc(108px * var(--ui-scale))!important;
+  padding:var(--ui-card-pad)!important;
+  border-radius:var(--ui-radius)!important;
+  gap:var(--ui-space-1)!important;
+ }
+ .dashboard-cards b{font-size:calc(16px * var(--ui-scale))!important}
+ .dashboard-cards strong{font-size:calc(28px * var(--ui-scale))!important}
+ .dashboard-cards small{font-size:calc(12px * var(--ui-scale))!important;line-height:1.3!important}
+ .dashboard-cards button>svg:last-child{
+  right:var(--ui-card-pad)!important;
+  top:var(--ui-card-pad)!important;
+  width:calc(15px * var(--ui-scale))!important
+ }
+
+ .home-recent{margin-top:calc(28px * var(--ui-scale))!important}
+ .home-section-head{margin-bottom:var(--ui-space-3)!important;gap:var(--ui-space-3)!important}
+ .home-section-head h2{font-size:var(--ui-section-title)!important}
+ .recent-grid{gap:var(--ui-space-2)!important}
+ .recent-grid>button{
+  padding:calc(9px * var(--ui-scale))!important;
+  grid-template-columns:calc(66px * var(--ui-scale)) minmax(0,1fr)!important;
+  gap:var(--ui-space-2)!important;
+  border-radius:var(--ui-radius)!important;
+ }
+ .recent-thumb{width:calc(66px * var(--ui-scale))!important;height:calc(66px * var(--ui-scale))!important;border-radius:calc(11px * var(--ui-scale))!important}
+ .recent-grid b{font-size:calc(14px * var(--ui-scale))!important}
+ .recent-grid small{font-size:calc(12px * var(--ui-scale))!important}
+
+ .recipe-card{border-radius:calc(18px * var(--ui-scale))!important}
+ .recipe-card-top{height:calc(205px * var(--ui-scale))!important}
+ .recipe-card-body{padding:var(--ui-card-pad)!important}
+ .recipe-card-body h3{font-size:calc(18px * var(--ui-scale))!important;margin:var(--ui-space-2) 0!important}
+ .recipe-card-body p{font-size:var(--ui-body)!important}
+ .recipe-meta span{font-size:calc(11px * var(--ui-scale))!important;padding:calc(4px * var(--ui-scale)) calc(7px * var(--ui-scale))!important}
+ .recipe-facts{margin-top:var(--ui-space-3)!important;font-size:calc(12px * var(--ui-scale))!important}
+
+ .library-toolbar{gap:var(--ui-space-3)!important;margin-bottom:var(--ui-space-4)!important}
+ .mobile-filter-toggle{
+  min-height:max(44px,calc(48px * var(--ui-scale)))!important;
+  padding:calc(9px * var(--ui-scale)) calc(11px * var(--ui-scale))!important;
+  font-size:calc(14px * var(--ui-scale))!important;
+  border-radius:calc(11px * var(--ui-scale))!important;
+ }
+ .library-filters{padding:var(--ui-space-3)!important;border-radius:var(--ui-radius)!important}
+
+ .pending-list{gap:var(--ui-space-2)!important}
+ .pending-list article,.review-card{
+  padding:var(--ui-card-pad)!important;
+  border-radius:var(--ui-radius)!important;
+  gap:var(--ui-space-3)!important;
+ }
+ .pending-copy p,.review-card small{font-size:calc(13px * var(--ui-scale))!important}
+ .pending-actions{gap:var(--ui-space-2)!important}
+ .pending-actions button{font-size:calc(14px * var(--ui-scale))!important;padding:calc(8px * var(--ui-scale)) calc(10px * var(--ui-scale))!important}
+
+ .review-editor{padding:var(--ui-card-pad)!important;border-radius:calc(20px * var(--ui-scale))!important}
+ .review-block{padding:var(--ui-card-pad)!important;margin-top:var(--ui-space-3)!important;border-radius:var(--ui-radius)!important}
+ .review-block-head{gap:var(--ui-space-3)!important;margin-bottom:var(--ui-space-2)!important}
+ .review-block-head h3{font-size:calc(17px * var(--ui-scale))!important}
+ .review-block-head small{font-size:calc(12px * var(--ui-scale))!important}
+ .review-preview-description,.review-steps-preview p{font-size:var(--ui-body)!important}
+
+ .recipe-detail .detail-title{font-size:calc(29px * var(--ui-scale))!important}
+ .recipe-detail>.detail-summary>p{font-size:var(--ui-body)!important}
+ .recipe-detail .detail-section{margin-top:calc(22px * var(--ui-scale))!important}
+ .recipe-detail .detail-section h3{font-size:var(--ui-section-title)!important}
+ .recipe-detail .ingredient-list>div{padding:calc(9px * var(--ui-scale)) 2px!important;column-gap:calc(9px * var(--ui-scale))!important}
+ .recipe-detail .ingredient-list>div>.ingredient-quantity{font-size:calc(14.5px * var(--ui-scale))!important}
+ .recipe-detail .ingredient-list>div>b{font-size:calc(15.5px * var(--ui-scale))!important}
+ .recipe-detail .ingredient-list>div>small{font-size:calc(13px * var(--ui-scale))!important}
+ .recipe-detail .step-list{gap:calc(13px * var(--ui-scale))!important}
+ .recipe-detail .step-list p{font-size:calc(16px * var(--ui-scale))!important}
+ .personal-quick{margin-top:var(--ui-space-2)!important;padding:var(--ui-space-2) 0!important}
+ .personal-quick .personal-action{min-height:max(40px,calc(42px * var(--ui-scale)))!important;font-size:calc(14px * var(--ui-scale))!important}
+ .personal-notes{margin-top:calc(24px * var(--ui-scale))!important;border-radius:var(--ui-radius)!important}
+
+ .recipe-form,.recipe-detail{
+  padding-left:calc(18px * var(--ui-scale))!important;
+  padding-right:calc(18px * var(--ui-scale))!important;
+  padding-bottom:calc(88px * var(--ui-scale) + env(safe-area-inset-bottom))!important;
+ }
+ .form-head,.detail-head{
+  margin-bottom:var(--ui-space-4)!important;
+  padding-bottom:calc(12px * var(--ui-scale))!important;
+ }
+ .form-head h2,.detail-head h2{font-size:calc(25px * var(--ui-scale))!important}
+ .add-modes{margin-bottom:var(--ui-space-4)!important}
+ .strategy-card,.scope-card{padding:var(--ui-card-pad)!important;border-radius:var(--ui-radius)!important}
+
+ .settings-page,.account-page{padding:var(--ui-card-pad)!important;border-radius:calc(20px * var(--ui-scale))!important}
+ .settings-tabs{display:none!important}
+ .settings-mobile-section{
+  display:grid!important;
+  gap:calc(6px * var(--ui-scale));
+  margin:0 0 var(--ui-space-4)!important;
+  font-size:calc(13px * var(--ui-scale))!important;
+  font-weight:750;
+  color:#655c56;
+ }
+ .settings-mobile-section select{
+  width:100%;
+  min-height:48px;
+  padding:10px 38px 10px 12px;
+  border:1px solid #ddd1c8;
+  border-radius:var(--ui-radius);
+  background:#fff;
+  color:#312c29;
+  font-size:16px!important;
+ }
+ .settings-content h2{font-size:calc(23px * var(--ui-scale))!important}
+ .settings-content>p{font-size:var(--ui-body)!important}
+ .setting-row,.setting-form{padding:calc(15px * var(--ui-scale)) 0!important;gap:var(--ui-space-2)!important}
+ .ui-size-options{gap:var(--ui-space-2)!important}
+ .ui-size-options button{min-height:max(54px,calc(62px * var(--ui-scale)))!important;padding:calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale))!important}
+ .ui-size-options button b{font-size:calc(15px * var(--ui-scale))!important}
+ .ui-size-options button small{font-size:calc(12px * var(--ui-scale))!important}
+
+ /* Text-entry controls intentionally stay at 16px to prevent iOS focus zoom. */
+ .recipe-form input,.recipe-form select,.recipe-form textarea,
+ .review-editor input,.review-editor select,.review-editor textarea,
+ .settings-page input,.settings-page select,.household-panel input,.household-empty input,
+ .caption-editor textarea,.ai-enrich-box textarea,.personal-box textarea,
+ .search-box input,.library-filters select{font-size:16px!important}
+}
