@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle} from 'lucide-react';
 import {supabase} from './supabase.js';
+import {userErrorMessage} from './userError.js';
 
 const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
 const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
@@ -18,6 +19,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
  const [aiBusy,setAiBusy]=useState(false);
  const [extraText,setExtraText]=useState('');
  const [aiMessage,setAiMessage]=useState('');
+ const [supplementalToSave,setSupplementalToSave]=useState('');
  const [error,setError]=useState('');
 
  const load=async()=>{
@@ -31,7 +33,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    supabase.from('tags').select('id,name').order('sort_order')
   ]);
 
-  if(error){setError(error.message);setLoading(false);return}
+  if(error){setError(userErrorMessage(error,'No pude cargar esta receta. Probá de nuevo.'));setLoading(false);return}
   setRecipe(data);
   setCategories(cats||[]);setMealTypes(types||[]);setTags(tagRows||[]);
   setSelectedTags((data.recipe_tags||[]).map(x=>x.tag_id));
@@ -48,12 +50,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     role:x.role||'main'
    };
   }));
+  setSupplementalToSave('');
   setSteps([...(data.recipe_steps||[])].sort((a,b)=>a.step_number-b.step_number).map(x=>({
    instruction:x.instruction||'',
    duration_minutes:x.duration_minutes,
    temperature_c:x.temperature_c,
    note:x.note||''
-  })));
+  }));
+  if(enrichedSteps.length)setSteps(enrichedSteps);
   setLoading(false);
  };
 
@@ -74,12 +78,13 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
  const enrichWithAi=async()=>{
   if(!extraText.trim())return;
   setAiBusy(true);setError('');setAiMessage('');
+  const submittedText=extraText.trim();
   const {data,error:aiError}=await supabase.functions.invoke('enrich-recipe-with-ai',{
-   body:{recipe_id:recipe.id,supplemental_text:extraText.trim()}
+   body:{recipe_id:recipe.id,supplemental_text:submittedText}
   });
   setAiBusy(false);
   if(aiError||!data?.structured){
-   setError(aiError?.message||data?.error||'No pude procesar la información adicional.');
+   setError(userErrorMessage(aiError||data?.error,'No pude procesar la información adicional. Probá de nuevo.'));
    return;
   }
 
@@ -89,19 +94,19 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
 
   setRecipe(r=>({
    ...r,
-   title:result.title||r.title,
-   description:result.description??r.description,
-   category_id:categoryId,
-   meal_type_id:mealTypeId,
-   level:result.level||null,
-   prep_minutes:result.prep_minutes,
-   cook_minutes:result.cook_minutes,
-   total_minutes:result.total_minutes,
-   servings:result.servings,
-   servings_unit:result.servings_unit||'',
-   storage_notes:result.storage_notes||'',
-   freezer_notes:result.freezer_notes||'',
-   meal_prep_notes:result.meal_prep_notes||''
+   title:String(result.title||'').trim()||r.title,
+   description:String(result.description||'').trim()||r.description,
+   category_id:result.category?(categoryId||r.category_id):r.category_id,
+   meal_type_id:result.meal_type?(mealTypeId||r.meal_type_id):r.meal_type_id,
+   level:result.level||r.level,
+   prep_minutes:result.prep_minutes??r.prep_minutes,
+   cook_minutes:result.cook_minutes??r.cook_minutes,
+   total_minutes:result.total_minutes??r.total_minutes,
+   servings:result.servings??r.servings,
+   servings_unit:String(result.servings_unit||'').trim()||r.servings_unit,
+   storage_notes:String(result.storage_notes||'').trim()||r.storage_notes,
+   freezer_notes:String(result.freezer_notes||'').trim()||r.freezer_notes,
+   meal_prep_notes:String(result.meal_prep_notes||'').trim()||r.meal_prep_notes
   }));
 
   const enrichedIngredients=(result.ingredients||[]).map(x=>{
@@ -117,9 +122,9 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     role:x.role==='secondary'?'secondary':'main'
    };
   });
-  setIngredients(enrichedIngredients);
+  if(enrichedIngredients.length)setIngredients(enrichedIngredients);
 
-  setSteps((result.steps||[]).map(x=>({
+  const enrichedSteps=(result.steps||[]).map(x=>({
    instruction:x.instruction||'',
    duration_minutes:x.duration_minutes,
    temperature_c:x.temperature_c,
@@ -127,7 +132,8 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   })));
 
   const tagIds=(result.tags||[]).map(name=>tags.find(tag=>tag.name===name)?.id).filter(Boolean);
-  setSelectedTags(tagIds);
+  if(tagIds.length)setSelectedTags(tagIds);
+  setSupplementalToSave(prev=>prev.includes(submittedText)?prev:(prev?prev+'\n\n--- Información adicional ---\n'+submittedText:submittedText));
   setAiMessage('Listo: incorporé la información adicional a la ficha. Revisá los cambios y después guardá o aprobá.');
   setExtraText('');
  };
@@ -142,7 +148,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   setBusy(false);
 
   if(deleteError){
-   setError(deleteError.message);
+   setError(userErrorMessage(deleteError,'No pude eliminar esta receta. Probá de nuevo.'));
    return;
   }
   if(!data){
@@ -208,7 +214,21 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   });
 
   setBusy(false);
-  if(saveError){setError(saveError.message);return}
+  if(saveError){setError(userErrorMessage(saveError,'No pude guardar esta receta. Probá de nuevo.'));return}
+
+  if(supplementalToSave){
+   const sourceRow=recipe.recipe_sources?.find(x=>x.is_primary)||recipe.recipe_sources?.[0];
+   if(sourceRow?.id){
+    const previous=sourceRow.supplemental_copy||'';
+    const merged=previous.includes(supplementalToSave)?previous:(previous?previous+'\n\n--- Información adicional ---\n'+supplementalToSave:supplementalToSave);
+    const {error:sourceSaveError}=await supabase.from('recipe_sources').update({supplemental_copy:merged}).eq('id',sourceRow.id);
+    if(sourceSaveError){
+     setError(userErrorMessage(sourceSaveError,'La receta se guardó, pero no pude guardar el texto adicional. Podés volver a intentarlo.'));
+     return;
+    }
+    setSupplementalToSave('');
+   }
+  }
 
   if(mode==='edit'){
    onSaved?.({approved:true});
@@ -290,17 +310,17 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   <div className="review-section">
    <div className="review-section-title"><div><h3>Ingredientes</h3><small>Principales = los que definen la receta. Secundarios = condimentos, salsas y toppings.</small></div><button onClick={()=>setIngredients(list=>[...list,blankIngredient()])}><Plus/>Añadir</button></div>
    <div className="review-lines">{ingredients.map((item,index)=><div className="review-ingredient v1-parity" key={index}>
-    <select aria-label="Tipo de ingrediente" value={item.role} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option value="main">Principal</option><option value="secondary">Secundario</option></select>
-    <input placeholder="Cantidad" value={item.quantity_text} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,quantity_text:e.target.value}:x))}/>
-    <input placeholder="Ingrediente" value={item.original_name} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,original_name:e.target.value}:x))}/>
-    <input placeholder="Nota" value={item.note} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,note:e.target.value}:x))}/>
-    <button className="icon-delete" onClick={()=>setIngredients(list=>list.filter((_,i)=>i!==index))}><Trash2/></button>
+    <label className="review-line-field"><span>Tipo</span><select aria-label="Tipo de ingrediente" value={item.role} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,role:e.target.value}:x))}><option value="main">Principal</option><option value="secondary">Secundario</option></select></label>
+    <label className="review-line-field"><span>Cantidad</span><input placeholder="Ej. 200 g" value={item.quantity_text} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,quantity_text:e.target.value}:x))}/></label>
+    <label className="review-line-field"><span>Ingrediente</span><input placeholder="Ej. tomate" value={item.original_name} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,original_name:e.target.value}:x))}/></label>
+    <label className="review-line-field"><span>Nota</span><input placeholder="Opcional" value={item.note} onChange={e=>setIngredients(list=>list.map((x,i)=>i===index?{...x,note:e.target.value}:x))}/></label>
+    <button type="button" aria-label="Eliminar ingrediente" className="icon-delete" onClick={()=>setIngredients(list=>list.filter((_,i)=>i!==index))}><Trash2/></button>
    </div>)}</div>
   </div>
 
   <div className="review-section">
    <div className="review-section-title"><h3>Preparación</h3><button onClick={()=>setSteps(list=>[...list,blankStep()])}><Plus/>Añadir</button></div>
-   <div className="review-lines">{steps.map((item,index)=><div className="review-step" key={index}><b>{index+1}</b><textarea value={item.instruction} onChange={e=>setSteps(list=>list.map((x,i)=>i===index?{...x,instruction:e.target.value}:x))}/><button className="icon-delete" onClick={()=>setSteps(list=>list.filter((_,i)=>i!==index))}><Trash2/></button></div>)}</div>
+   <div className="review-lines">{steps.map((item,index)=><div className="review-step" key={index}><b>{index+1}</b><textarea value={item.instruction} onChange={e=>setSteps(list=>list.map((x,i)=>i===index?{...x,instruction:e.target.value}:x))}/><button type="button" aria-label="Eliminar paso" className="icon-delete" onClick={()=>setSteps(list=>list.filter((_,i)=>i!==index))}><Trash2/></button></div>)}</div>
   </div>
 
   <div className="review-grid">
