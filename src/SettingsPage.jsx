@@ -3,7 +3,7 @@ import {supabase} from './supabase.js';
 import HouseholdSettings from './HouseholdSettings.jsx';
 import {userErrorMessage} from './userError.js';
 
-const sections=['Cuenta','Pantalla','Mi hogar','Recetas','IA e importaciones','Datos'];
+const sections=['Cuenta','Pantalla','Mi hogar','IA e importaciones'];
 
 export default function SettingsPage({session,initialSection='Cuenta',notice='',uiSize='normal',onUiSizeChange}){
  const [section,setSection]=useState(initialSection);
@@ -38,6 +38,9 @@ export default function SettingsPage({session,initialSection='Cuenta',notice='',
  };
 
  return <section className="settings-page">
+  <label className="settings-mobile-section">Sección
+   <select value={section} onChange={e=>{setSection(e.target.value);setMessage('')}}>{sections.map(x=><option key={x} value={x}>{x}</option>)}</select>
+  </label>
   <div className="settings-tabs">{sections.map(x=><button key={x} className={section===x?'active':''} onClick={()=>{setSection(x);setMessage('')}}>{x}</button>)}</div>
   {notice&&<p className="settings-message">{notice}</p>}
   <div className="settings-content">
@@ -62,9 +65,7 @@ export default function SettingsPage({session,initialSection='Cuenta',notice='',
     </div>
    </>}
    {section==='Mi hogar'&&<HouseholdSettings session={session}/>}
-   {section==='Recetas'&&<><h2>Recetas</h2><p>Preferencias generales para guardar y organizar tus recetas.</p><div className="setting-row"><span><b>Privacidad por defecto</b><small>Quién podrá ver una receta nueva</small></span><strong>Mi hogar</strong></div></>}
    {section==='IA e importaciones'&&<><h2>IA e importaciones</h2><p>Chefcita no completará datos que no pueda obtener de la fuente. Lo que falte quedará para validar.</p></>}
-   {section==='Datos'&&<><h2>Datos</h2><p>Importación de Chefcita 1.0 y futuras opciones de exportación.</p><div className="setting-row"><span><b>Chefcita 1.0</b><small>Biblioteca anterior importada a Chefcita 2.0</small></span><strong>Migración completada</strong></div></>}
   </div>
  </section>;
 }
