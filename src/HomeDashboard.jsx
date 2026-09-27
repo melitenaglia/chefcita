@@ -1,58 +1,143 @@
 import React,{useEffect,useState} from 'react';
-import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Plus} from 'lucide-react';
+import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Instagram,Sparkles} from 'lucide-react';
 import {supabase} from './supabase.js';
 
-export default function HomeDashboard({onNavigate,onAdd}){
+const IDEA_TYPES=['Desayuno','Almuerzo/Cena','Merienda','Snack','Postre','Bebida'];
+const normalize=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.message||error||''));
+
+export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe}){
  const [data,setData]=useState({recipes:0,pending:0,favorites:0,recent:[]});
+ const [ideaOptions,setIdeaOptions]=useState([]);
+ const [ideaType,setIdeaType]=useState('');
+ const [ideaBusy,setIdeaBusy]=useState(false);
+ const [ideaMessage,setIdeaMessage]=useState('');
  const [loading,setLoading]=useState(true);
- const [error,setError]=useState('');
+ const [summaryReady,setSummaryReady]=useState(false);
 
  useEffect(()=>{
   let active=true;
-  (async()=>{
-   setLoading(true);setError('');
-   const [recipesRes,reviewRes,importsRes,userRes,recentRes]=await Promise.all([
+
+  const fetchSummary=async()=>{
+   const [recipesRes,reviewRes,importsRes,userRes,recentRes,categoriesRes,mealTypesRes]=await Promise.all([
     supabase.from('recipes').select('id',{count:'exact',head:true}).eq('review_status','recipe'),
     supabase.from('recipes').select('id',{count:'exact',head:true}).eq('review_status','to_validate'),
     supabase.from('imports').select('id',{count:'exact',head:true}).neq('status','processed'),
     supabase.from('user_recipes').select('recipe_id,is_favorite,tried_status'),
-    supabase.from('recipes').select('id,title,image_url,total_minutes,categories(name),meal_types(name)').eq('review_status','recipe').order('created_at',{ascending:false}).limit(4)
+    supabase.from('recipes').select('id,title,image_url,total_minutes,categories(name),meal_types(name)').eq('review_status','recipe').order('created_at',{ascending:false}).limit(4),
+    supabase.from('categories').select('id,name').order('sort_order'),
+    supabase.from('meal_types').select('id,name').order('sort_order')
    ]);
 
-   const firstError=recipesRes.error||reviewRes.error||importsRes.error||userRes.error||recentRes.error;
-   if(!active)return;
-   if(firstError){setError(firstError.message);setLoading(false);return}
+   const mainError=recipesRes.error||reviewRes.error||importsRes.error||userRes.error||recentRes.error;
+   if(mainError)return {error:mainError};
 
-   const favorites=(userRes.data||[]).filter(x=>x.is_favorite).length;
-   setData({
-    recipes:recipesRes.count||0,
-    pending:(reviewRes.count||0)+(importsRes.count||0),
-    favorites,
-    recent:recentRes.data||[]
-   });
+   const allTaxonomies=[
+    ...(categoriesRes.data||[]).map(x=>({...x,field:'category_id'})),
+    ...(mealTypesRes.data||[]).map(x=>({...x,field:'meal_type_id'}))
+   ];
+   const options=IDEA_TYPES.map(label=>{
+    const wanted=normalize(label);
+    const row=allTaxonomies.find(x=>{
+     const n=normalize(x.name);
+     if(wanted==='almuerzocena')return n==='almuerzocena'||n==='almuerzoycena'||n==='almuerzo'||n==='cena';
+     return n===wanted;
+    });
+    return row?{label,id:row.id,field:row.field}:null;
+   }).filter(Boolean);
+
+   return {
+    data:{
+     recipes:recipesRes.count||0,
+     pending:(reviewRes.count||0)+(importsRes.count||0),
+     favorites:(userRes.data||[]).filter(x=>x.is_favorite).length,
+     recent:recentRes.data||[]
+    },
+    options
+   };
+  };
+
+  (async()=>{
+   setLoading(true);
+   let result=await fetchSummary();
+
+   if(result.error&&isJwtClockError(result.error)){
+    try{
+     await supabase.auth.refreshSession();
+     await new Promise(resolve=>setTimeout(resolve,350));
+     result=await fetchSummary();
+    }catch{}
+   }
+
+   if(!active)return;
+   if(result.data){setData(result.data);setSummaryReady(true)}
+   else setSummaryReady(false);
+   if(result.options)setIdeaOptions(result.options);
+   if(result.error)console.warn('No se pudo actualizar el resumen de inicio.',result.error);
    setLoading(false);
   })();
+
   return()=>{active=false};
  },[]);
 
+ const surpriseMe=async()=>{
+  const option=ideaOptions.find(x=>x.label===ideaType);
+  if(!option)return;
+  setIdeaBusy(true);setIdeaMessage('');
+  const {data:recipes,error}=await supabase.from('recipes').select('id').eq('review_status','recipe').eq(option.field,option.id);
+  setIdeaBusy(false);
+  if(error){
+   if(isJwtClockError(error)){
+    try{await supabase.auth.refreshSession()}catch{}
+   }
+   setIdeaMessage('No pude buscar una idea ahora. Probá de nuevo.');
+   return;
+  }
+  if(!recipes?.length){
+   setIdeaMessage(`Todavía no hay recetas de ${ideaType.toLowerCase()}.`);
+   return;
+  }
+  const index=Math.floor(Math.random()*recipes.length);
+  onOpenRecipe?.(recipes[index].id);
+ };
+
  return <>
-  <section className="welcome">
-   <div><span>Tu cocina empieza acá</span><h2>¿Qué cocinamos hoy?</h2><p>¿Viste una receta en Instagram que querés guardar? Tocá <b>Añadir receta</b> y después <b>Pegar enlace</b>. Chefcita hace el resto.</p><button className="welcome-add" onClick={onAdd}><Plus/>Añadir receta</button></div>
-   <ChefHat/>
+  <section className="welcome home-welcome">
+   <div className="welcome-copy">
+    <span>TU RECETARIO</span>
+    <h2>¿Qué cocinamos hoy?</h2>
+    <p>Explorá tus recetas guardadas y elegí qué preparar.</p>
+    <button className="welcome-recipes" onClick={()=>onNavigate('Recetas')}><BookOpen/>Ver recetas</button>
+   </div>
+   <button className="welcome-instagram" onClick={onAdd}>
+    <Instagram/>
+    <span><b>Guardar desde Instagram</b><small>Pegá un Reel o post</small></span>
+    <ArrowRight/>
+   </button>
   </section>
 
-  {error&&<p className="message">No pude actualizar el resumen: {error}</p>}
-
   <div className="cards dashboard-cards">
-   <button onClick={()=>onNavigate('Recetas')}><BookOpen/><b>Recetas</b><strong>{loading?'–':data.recipes}</strong><small>Tu biblioteca aprobada.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading?'–':data.favorites}</strong><small>Las que siempre querés repetir.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Recetas')}><BookOpen/><b>Recetas</b><strong>{loading||!summaryReady?'–':data.recipes}</strong><small>Tu biblioteca aprobada.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading||!summaryReady?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading||!summaryReady?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
   </div>
+
+  <section className="idea-picker">
+   <div className="idea-picker-copy"><Sparkles/><span><small>¿SIN IDEAS?</small><b>Elegí el tipo de comida y te damos una receta al azar.</b></span></div>
+   <div className="idea-picker-actions">
+    <select value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('')}} aria-label="Tipo de comida">
+     <option value="">Tipo de comida</option>
+     {ideaOptions.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}
+    </select>
+    <button disabled={!ideaType||ideaBusy} onClick={surpriseMe}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
+   </div>
+   {ideaMessage&&<small className="idea-picker-message">{ideaMessage}</small>}
+  </section>
 
   <section className="home-recent">
    <div className="home-section-head"><div><small>ÚLTIMAS RECETAS</small><h2>Agregadas recientemente</h2></div>{data.recent.length>0&&<button onClick={()=>onNavigate('Recetas')}>Ver todas <ArrowRight/></button>}</div>
-   {!loading&&data.recent.length===0?<div className="home-empty"><ChefHat/><p>Todavía no hay recetas aprobadas.</p><button onClick={onAdd}>Añadir la primera</button></div>
-   :<div className="recent-grid">{data.recent.map(recipe=><button key={recipe.id} onClick={()=>onNavigate('Recetas')}>
+   {!loading&&summaryReady&&data.recent.length===0?<div className="home-empty"><ChefHat/><p>Todavía no hay recetas aprobadas.</p><button onClick={onAdd}>Añadir la primera</button></div>
+   :<div className="recent-grid">{data.recent.map(recipe=><button key={recipe.id} onClick={()=>onOpenRecipe?.(recipe.id)}>
      <div className="recent-thumb">{recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
      <span><b>{recipe.title}</b><small>{[recipe.categories?.name,recipe.meal_types?.name].filter(Boolean).join(' · ')||'Receta'}</small>{recipe.total_minutes!=null&&<em><Clock/>{recipe.total_minutes} min</em>}</span>
     </button>)}</div>}
