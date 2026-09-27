@@ -37,7 +37,7 @@ export default function HomeDashboard({onNavigate,onAdd}){
 
  return <>
   <section className="welcome">
-   <div><span>Tu cocina empieza acá</span><h2>¿Qué cocinamos hoy?</h2><p>Guardá recetas, organizalas y convertí ese Reel que nunca volvés a encontrar en una receta de verdad.</p><button className="welcome-add" onClick={onAdd}><Plus/>Añadir receta</button></div>
+   <div><span>Tu cocina empieza acá</span><h2>¿Qué cocinamos hoy?</h2><p>¿Viste una receta en Instagram que querés guardar? Tocá <b>Añadir receta</b> y después <b>Pegar enlace</b>. Chefcita hace el resto.</p><button className="welcome-add" onClick={onAdd}><Plus/>Añadir receta</button></div>
    <ChefHat/>
   </section>
 

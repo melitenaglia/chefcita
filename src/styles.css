@@ -71,3 +71,201 @@
 
 
 .ai-thinking{margin-top:12px;padding:12px 14px;border-radius:12px;background:#f5eee8;border:1px solid #e5d5c9;display:flex;align-items:flex-start;gap:10px;color:#5f5550}.ai-thinking>svg{width:19px;flex:0 0 auto;margin-top:2px;color:#9b6c42}.ai-thinking span{display:grid;gap:2px}.ai-thinking b{font-size:13px}.ai-thinking small{color:#746a64;line-height:1.4}.spin{animation:chefcita-spin .9s linear infinite}@keyframes chefcita-spin{to{transform:rotate(360deg)}}
+
+
+
+/* Mobile-first UX pass */
+.mobile-nav-add,.mobile-settings{display:none}
+.header-actions{display:flex;align-items:center;gap:8px}
+.instagram-guide{display:grid;gap:9px;margin:4px 0 18px;padding:14px;border-radius:16px;background:#faf6f2;border:1px solid #eee3db}
+.instagram-guide>div{display:flex;align-items:flex-start;gap:10px}
+.instagram-guide>div>span{width:28px;height:28px;flex:0 0 28px;border-radius:50%;display:grid;place-items:center;background:#312c29;color:#fff;font-weight:800;font-size:13px}
+.instagram-guide p{margin:3px 0 0;color:#5f5550;line-height:1.45}
+.instagram-link-field{margin:0 0 8px}
+.instagram-link-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+.paste-link{border:0;background:#efe1d5;color:#5c3d29;border-radius:11px;padding:0 14px;min-height:48px;display:flex;align-items:center;gap:7px;font-weight:800;cursor:pointer;white-space:nowrap}
+.paste-link svg{width:18px}
+.link-ready{display:flex;align-items:center;gap:8px;color:#3f6f45;background:#eef7ef;border-radius:11px;padding:9px 11px;margin:8px 0 2px;font-weight:700;font-size:13px}
+.link-ready svg{width:18px}
+.advanced-import{margin:18px 0 8px;border:1px solid #eadfd6;border-radius:14px;background:#fff}
+.advanced-import>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;font-weight:750}
+.advanced-import>summary::-webkit-details-marker{display:none}
+.advanced-import>summary span{display:grid;gap:2px}
+.advanced-import>summary small{font-weight:500;color:#81756e}
+.advanced-import>summary svg{width:18px;transition:transform .15s ease}
+.advanced-import[open]>summary svg{transform:rotate(180deg)}
+.advanced-import-content{padding:0 14px 14px;border-top:1px solid #f0e6df}
+.manual-intro{display:grid;gap:3px;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#faf6f2;color:#655c56}
+.caption-recovery{margin:16px 0;padding:16px;border-radius:16px;background:#fff8ec;border:1px solid #ecd5ad;display:grid;gap:11px}
+.caption-recovery>div{display:flex;gap:9px;align-items:flex-start}
+.caption-recovery>div>svg{width:20px;color:#9b6c42;flex:0 0 20px}
+.caption-recovery>div span{display:grid;gap:3px}
+.caption-recovery>div small{color:#746a64;line-height:1.4}
+.caption-recovery textarea{min-height:150px}
+.paste-caption-large{border:1px solid #d8c5b5;background:#fff;border-radius:11px;padding:11px 13px;display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;cursor:pointer}
+.paste-caption-large svg{width:17px}
+.import-working{display:flex;align-items:flex-start;gap:11px;margin:16px 0;padding:14px;border-radius:14px;background:#f5eee8;border:1px solid #e5d5c9}
+.import-working>svg{width:21px;flex:0 0 21px;color:#9b6c42;margin-top:2px}
+.import-working span{display:grid;gap:2px}
+.import-working small{color:#746a64;line-height:1.4}
+.form-error{padding:10px 12px;border-radius:10px;background:#fff1ef;color:#8f4339}
+.review-card-thumb{width:62px;height:62px;flex:0 0 62px;border-radius:12px;object-fit:cover;background:#f5ebe3}
+.review-card-thumb.placeholder{display:grid;place-items:center}
+.review-card-thumb.placeholder svg{width:24px;opacity:.24}
+.review-card em{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.review-card em svg{width:15px}
+body:has(.modal-backdrop){overflow:hidden}
+
+@media(max-width:760px){
+  :root{font-size:16px}
+  body{background:#fffaf5}
+  button,input,select,textarea{font-size:16px}
+  button{touch-action:manipulation}
+  .shell{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+  aside{z-index:50;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:#fffffff7;backdrop-filter:blur(14px)}
+  nav{grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:2px}
+  nav button{min-height:56px;padding:6px 2px;border-radius:12px;font-size:11px;font-weight:700;justify-content:center}
+  nav button svg{width:21px;height:21px}
+  nav button span{display:block;white-space:nowrap}
+  .mobile-nav-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#312c29;color:#fff!important;border-radius:18px!important;transform:translateY(-8px);box-shadow:0 8px 20px #312c2930}
+  .mobile-nav-add svg{width:24px!important;height:24px!important}
+  .content{padding:20px 16px calc(28px + env(safe-area-inset-bottom));overflow-x:hidden}
+  header{margin-bottom:22px;align-items:center;gap:12px}
+  header h1{font-size:28px;line-height:1.08}
+  .eyebrow{margin-bottom:5px}
+  .header-actions .add{display:none}
+  .mobile-settings{display:grid;place-items:center;width:46px;height:46px;border:1px solid #e7dbd2;background:#fff;border-radius:14px;color:#655c56}
+  .mobile-settings svg{width:20px}
+  .welcome{padding:24px 20px;border-radius:22px}
+  .welcome h2{font-size:27px;line-height:1.12}
+  .welcome p{font-size:16px;line-height:1.55}
+  .welcome-add{min-height:48px;font-size:16px;padding:12px 15px}
+  .dashboard-cards button{min-height:128px;padding:20px}
+  .dashboard-cards b{font-size:17px}
+  .dashboard-cards small{font-size:14px;line-height:1.4}
+
+  .modal-backdrop{padding:0;align-items:stretch;place-items:stretch;background:#fff}
+  .recipe-form,.recipe-detail{width:100%;height:100dvh;max-height:none;border-radius:0;box-shadow:none;padding:0 18px calc(96px + env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;scroll-padding-bottom:120px}
+  .form-head,.detail-head{position:sticky;top:0;z-index:12;background:#fff;padding:16px 0 13px;margin:0 0 16px;border-bottom:1px solid #f1e8e1}
+  .form-head h2,.detail-head h2{font-size:25px;line-height:1.15}
+  .form-head>button,.close-detail{width:46px;height:46px;min-width:46px}
+  .add-modes{grid-template-columns:1fr 1fr;margin:0 0 18px;padding:4px}
+  .add-modes button{min-height:48px;padding:10px 8px;font-size:15px}
+  .add-modes button svg{width:19px}
+  .instagram-guide{font-size:15px}
+  .instagram-link-row{grid-template-columns:1fr}
+  .instagram-link-row input{min-height:52px;width:100%}
+  .paste-link{justify-content:center;min-height:50px;font-size:16px}
+  .link-ready{font-size:14px;padding:11px 12px}
+  .advanced-import>summary{min-height:52px;padding:13px}
+  .strategy-grid,.scope-grid{grid-template-columns:1fr}
+  .strategy-card,.scope-card{min-height:72px;padding:14px}
+  .tag-chip{min-height:40px;padding:8px 11px;font-size:14px}
+  .recipe-form label{font-size:15px}
+  .recipe-form input,.recipe-form select,.recipe-form textarea,
+  .review-editor input,.review-editor select,.review-editor textarea,
+  .search-box input,.library-filters select,.personal-box textarea{
+    font-size:16px!important;
+    min-height:48px;
+  }
+  .recipe-form textarea,.review-editor textarea{line-height:1.45}
+  .form-actions{position:sticky;bottom:0;z-index:14;margin:24px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d;display:grid;grid-template-columns:auto 1fr;gap:8px}
+  .form-actions .cancel,.form-actions .primary{min-height:50px;padding:12px 14px;font-size:15px}
+  .form-actions .primary{width:100%}
+  .caption-recovery{padding:14px}
+  .caption-recovery textarea{min-height:180px}
+  .inline-choice-actions{display:grid;grid-template-columns:1fr}
+  .inline-choice-actions button{min-height:48px;justify-content:center}
+
+  .pending-tabs,.import-status-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;position:sticky;top:0;z-index:4;background:#fffaf5;padding:4px 0 10px}
+  .pending-tabs button,.import-status-tabs button{min-height:46px;padding:9px 8px;font-size:14px;justify-content:center}
+  .pending-head{gap:10px}
+  .pending-head p{font-size:15px;line-height:1.5}
+  .pending-head>button{min-height:44px}
+  .pending-list article{align-items:flex-start;padding:13px;border-radius:16px}
+  .source-icon{width:64px;height:64px;flex-basis:64px;border-radius:12px}
+  .pending-copy b{font-size:16px}
+  .pending-copy p{font-size:14px}
+  .pending-actions{display:grid;grid-template-columns:1fr}
+  .pending-actions button{min-height:46px;justify-content:center}
+  .caption-editor textarea{font-size:16px;min-height:150px}
+  .caption-editor>div{display:grid;grid-template-columns:1fr 1fr}
+  .caption-editor button{min-height:46px}
+
+  .review-list{gap:10px}
+  .review-card{display:grid;grid-template-columns:62px minmax(0,1fr);gap:11px;padding:12px;align-items:center;border-radius:16px}
+  .review-card span{min-width:0}
+  .review-card b{font-size:17px;line-height:1.25}
+  .review-card small{font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .review-card em{grid-column:2;color:#7c4d2c;font-size:14px}
+  .review-editor{margin:0 -16px;border-left:0;border-right:0;border-radius:0;padding:16px 16px 110px}
+  .review-editor-head{position:sticky;top:-16px;z-index:8;background:#fff;padding:16px 0 12px;margin:0 0 14px;border-bottom:1px solid #eee3db}
+  .review-editor-head h2{font-size:24px;line-height:1.2}
+  .review-editor-head>button{min-height:44px}
+  .source-review-box{padding:13px}
+  .source-review-content{display:grid;grid-template-columns:82px 1fr;gap:11px}
+  .source-review-content img{width:82px;height:82px}
+  .source-review-content p{font-size:14px;max-height:150px}
+  .ai-enrich-box{padding:14px;margin:15px 0 20px}
+  .ai-enrich-head>button{min-height:46px}
+  .ai-enrich-box textarea{min-height:170px}
+  .ai-enrich-actions .primary{min-height:48px;font-size:15px}
+  .review-section{margin-top:22px}
+  .review-section-title{align-items:flex-start;gap:10px}
+  .review-section-title button{min-height:44px}
+  .review-ingredient.v1-parity{grid-template-columns:1fr}
+  .review-ingredient.v1-parity .icon-delete{grid-column:1;justify-self:end}
+  .review-step{grid-template-columns:32px 1fr}
+  .review-step textarea{min-height:120px}
+  .review-actions{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom));z-index:10;margin:26px -16px 0;padding:12px 16px 14px;background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d}
+  .review-actions-main{display:grid;grid-template-columns:1fr 1.3fr}
+  .review-actions-main>button,.delete-pending-review{min-height:50px;font-size:15px}
+
+  .library-toolbar{gap:10px}
+  .search-box{width:100%;min-height:50px}
+  .library-filters{grid-template-columns:1fr;margin:0 0 18px}
+  .library-filters select{width:100%;min-height:48px;font-size:16px}
+  .kitchen-tabs{grid-template-columns:1fr 1fr 1fr;gap:5px}
+  .kitchen-tabs button{min-height:48px;font-size:12px;line-height:1.15;padding:7px 4px}
+  .recipe-card{border-radius:18px}
+  .recipe-card-top{height:220px}
+  .recipe-card-body{padding:17px}
+  .recipe-card-body h3{font-size:21px;line-height:1.2}
+  .recipe-card-body p{font-size:15px}
+  .favorite{width:46px;height:46px}
+  .tried-toggle{min-height:42px;font-size:14px}
+
+  .detail-head-actions{gap:6px}
+  .edit-recipe{min-height:44px}
+  .detail-hero{gap:15px}
+  .detail-hero>img,.detail-placeholder{height:250px;border-radius:16px}
+  .detail-summary>p{font-size:16px}
+  .detail-facts{font-size:14px}
+  .detail-facts span{padding:7px 10px}
+  .personal-actions{display:grid;grid-template-columns:1fr 1fr}
+  .personal-action{min-height:48px;justify-content:center;border-radius:12px}
+  .rating-row{align-items:flex-start;flex-direction:column}
+  .rating-row button{padding:7px}
+  .rating-row svg{width:28px;height:28px}
+  .save-notes{min-height:48px;justify-content:center}
+  .ingredient-list>div{grid-template-columns:82px 1fr;padding:12px}
+  .ingredient-list>div b{font-size:16px}
+  .step-list>div{gap:12px}
+  .step-list p{font-size:16px}
+  .video-source-cta a{min-height:44px}
+  .detail-footer{padding-bottom:20px}
+
+  .account-page,.settings-page{margin:0 -4px;padding:18px;border-radius:18px}
+  .account-actions button,.setting-form .secondary,.household-empty .secondary,.invite-form .secondary{min-height:48px}
+  .settings-tabs{display:grid;grid-template-columns:1fr 1fr}
+  .settings-tabs button{min-height:44px}
+}
+
+@media(max-width:390px){
+  .content{padding-left:12px;padding-right:12px}
+  nav button{font-size:10px}
+  .form-actions{grid-template-columns:1fr}
+  .form-actions .cancel{order:2}
+  .personal-actions{grid-template-columns:1fr}
+  .kitchen-tabs{grid-template-columns:1fr}
+}

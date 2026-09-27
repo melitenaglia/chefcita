@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2} from 'lucide-react';
+import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2,LoaderCircle,CheckCircle2,ChevronDown} from 'lucide-react';
 import {supabase} from './supabase.js';
 
 function normalizeInstagramRecipeUrl(value){
@@ -74,21 +74,21 @@ export default function AddRecipe({session,onClose,onSaved}){
   if(status==='needs_input'){
    setPendingImportId(importId);
    setImportStage('needs_input');
-   setImportMessage('Instagram no pudo entregar el caption. Pegalo acá y seguimos desde esta misma pantalla; todavía no se usó IA.');
+   setImportMessage('No pude leer todo el texto desde Instagram. Pegá acá el caption o la receta y seguimos desde esta misma pantalla.');
    setBusy(false);
    return true;
   }
   if(status==='needs_choice'){
    setPendingImportId(importId);
    setImportStage('needs_choice');
-   setImportMessage('El texto parece incompleto para una receta. Chefcita frenó antes de gastar IA. Elegí cómo seguir.');
+   setImportMessage('El texto parece incompleto. Chefcita frenó antes de gastar IA para que decidas cómo seguir.');
    setBusy(false);
    return true;
   }
   if(status==='ready_for_ai'){
    setPendingImportId(importId);
    setImportStage('error');
-   setImportMessage('El contenido está listo, pero la IA no está disponible en este momento.');
+   setImportMessage('La receta quedó guardada, pero la IA no está disponible en este momento.');
    setBusy(false);
    return true;
   }
@@ -100,7 +100,7 @@ export default function AddRecipe({session,onClose,onSaved}){
   if(invokeError){
    setPendingImportId(importId);
    setImportStage('error');
-   setImportMessage('La importación quedó guardada, pero no pude terminar el procesamiento. Podés reintentar sin volver a crearla.');
+   setImportMessage('La receta quedó guardada, pero no pude terminar el procesamiento. Podés reintentar sin volver a cargarla.');
    setError(invokeError.message);
    setBusy(false);
    return;
@@ -108,7 +108,7 @@ export default function AddRecipe({session,onClose,onSaved}){
   if(!finishImportResponse(importId,data)){
    setPendingImportId(importId);
    setImportStage('error');
-   setImportMessage('La importación quedó guardada. Podés reintentarla desde acá.');
+   setImportMessage('La receta quedó guardada. Podés reintentar desde acá.');
    setBusy(false);
   }
  };
@@ -118,7 +118,7 @@ export default function AddRecipe({session,onClose,onSaved}){
   const rawUrl=sourceUrl.trim();
   if(!rawUrl)return;
   if(!isInstagramRecipeUrl(rawUrl)){
-   setError('Pegá un enlace válido de un Reel o post de Instagram.');
+   setError('Ese enlace no parece ser un Reel o post de Instagram. Volvé a Instagram, tocá Compartir → Copiar enlace y pegalo acá.');
    return;
   }
   const url=normalizeInstagramRecipeUrl(rawUrl);
@@ -207,7 +207,22 @@ export default function AddRecipe({session,onClose,onSaved}){
    const text=await navigator.clipboard.readText();
    if(text)setPastedContent(text);
   }catch{
-   setError('El navegador no permitió leer el portapapeles. Podés pegar el texto manualmente.');
+   setError('El navegador no permitió leer el portapapeles. Mantené pulsado dentro del cuadro y elegí Pegar.');
+  }
+ };
+
+ const pasteInstagramLink=async()=>{
+  setError('');
+  try{
+   const text=(await navigator.clipboard.readText()).trim();
+   if(!text)return;
+   if(!isInstagramRecipeUrl(text)){
+    setError('Lo que hay copiado no parece ser un enlace de Instagram. En Instagram tocá Compartir → Copiar enlace.');
+    return;
+   }
+   setSourceUrl(text);
+  }catch{
+   setError('No pude leer el portapapeles. Mantené pulsado dentro del campo y elegí Pegar.');
   }
  };
 
@@ -247,71 +262,85 @@ export default function AddRecipe({session,onClose,onSaved}){
  };
 
  const linkSubmit=pendingImportId&&importStage==='needs_input'?continueWithCaption:queueImport;
+ const linkReady=isInstagramRecipeUrl(sourceUrl);
 
- return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-  <form className="recipe-form" onSubmit={mode==='manual'?saveManual:linkSubmit}>
-   <div className="form-head"><div><small>NUEVA RECETA</small><h2>Añadir receta</h2></div><button type="button" onClick={onClose}><X/></button></div>
+ return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)onClose()}}>
+  <form className="recipe-form add-recipe-form" onSubmit={mode==='manual'?saveManual:linkSubmit}>
+   <div className="form-head"><div><small>NUEVA RECETA</small><h2>{mode==='link'?'Añadir desde Instagram':'Añadir manualmente'}</h2></div><button type="button" disabled={busy} onClick={onClose}><X/></button></div>
 
    <div className="add-modes">
-    <button type="button" disabled={Boolean(pendingImportId)} className={mode==='link'?'active':''} onClick={()=>{setMode('link');setError('')}}><LinkIcon/>Desde Instagram</button>
-    <button type="button" disabled={Boolean(pendingImportId)} className={mode==='manual'?'active':''} onClick={()=>{setMode('manual');setError('')}}><PenLine/>Manual</button>
+    <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='link'?'active':''} onClick={()=>{setMode('link');setError('')}}><LinkIcon/><span>Instagram</span></button>
+    <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='manual'?'active':''} onClick={()=>{setMode('manual');setError('')}}><PenLine/><span>Cargar a mano</span></button>
    </div>
 
    {mode==='link'?<>
-    <label>Enlace del Reel o post *<input autoFocus disabled={Boolean(pendingImportId)} type="url" value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} placeholder="https://www.instagram.com/reel/..."/></label>
+    {!pendingImportId&&<div className="instagram-guide" aria-label="Cómo añadir una receta desde Instagram">
+     <div><span>1</span><p>En Instagram tocá <b>Compartir</b> y después <b>Copiar enlace</b>.</p></div>
+     <div><span>2</span><p>Volvé a Chefcita y tocá <b>Pegar enlace</b>.</p></div>
+    </div>}
 
-    {!pendingImportId&&<>
-     <div className="strategy-title"><b>¿Qué querés que haga Chefcita?</b><small>Podés decidir cuánto usar IA antes de guardar.</small></div>
-     <div className="strategy-grid">
-      <button type="button" className={importStrategy==='smart'?'strategy-card active':'strategy-card'} onClick={()=>setImportStrategy('smart')}>
-       <Sparkles/><span><b>Ahorro inteligente</b><small>Primero revisa gratis el caption. Solo usa OpenAI si detecta suficiente receta.</small></span>
-      </button>
-      <button type="button" className={importStrategy==='manual'?'strategy-card active':'strategy-card'} onClick={()=>setImportStrategy('manual')}>
-       <BookmarkPlus/><span><b>Guardar sin IA</b><small>0 tokens. Guarda el link, nombre y etiquetas para que la completes después.</small></span>
-      </button>
+    <label className="instagram-link-field">
+     <span>Enlace de Instagram</span>
+     <div className="instagram-link-row">
+      <input disabled={Boolean(pendingImportId)||busy} type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" value={sourceUrl} onChange={e=>{setSourceUrl(e.target.value);setError('')}} placeholder="Pegá acá el enlace del Reel"/>
+      {!pendingImportId&&<button type="button" className="paste-link" disabled={busy} onClick={pasteInstagramLink}><ClipboardPaste/>Pegar enlace</button>}
      </div>
+    </label>
 
-     {importStrategy==='smart'&&<>
-      <div className="scope-title"><b>¿Qué querés sacar del caption?</b><small>Para Reels, Ficha rápida suele ser suficiente y usa menos salida de IA.</small></div>
-      <div className="scope-grid">
-       <button type="button" className={aiScope==='quick'?'scope-card active':'scope-card'} onClick={()=>setAiScope('quick')}>
-        <span><b>Ficha rápida · recomendada</b><small>Nombre, ingredientes, categoría, tipo, nivel y etiquetas. No transcribe los pasos.</small></span>
+    {!pendingImportId&&linkReady&&<div className="link-ready"><CheckCircle2/><span>Enlace listo. Ya podés importar la receta.</span></div>}
+
+    {!pendingImportId&&<details className="advanced-import">
+     <summary><span>Opciones de importación <small>No hace falta tocar esto</small></span><ChevronDown/></summary>
+     <div className="advanced-import-content">
+      <div className="strategy-title"><b>Procesamiento</b><small>“Ahorro inteligente” es la opción recomendada.</small></div>
+      <div className="strategy-grid">
+       <button type="button" className={importStrategy==='smart'?'strategy-card active':'strategy-card'} onClick={()=>setImportStrategy('smart')}>
+        <Sparkles/><span><b>Ahorro inteligente</b><small>Lee el caption y usa IA solo si hace falta.</small></span>
        </button>
-       <button type="button" className={aiScope==='full'?'scope-card active':'scope-card'} onClick={()=>setAiScope('full')}>
-        <span><b>Receta completa</b><small>También intenta estructurar pasos, tiempos y demás datos que estén escritos.</small></span>
+       <button type="button" className={importStrategy==='manual'?'strategy-card active':'strategy-card'} onClick={()=>setImportStrategy('manual')}>
+        <BookmarkPlus/><span><b>Guardar sin IA</b><small>Guarda el enlace para completar después.</small></span>
        </button>
       </div>
-     </>}
 
-     <label>Nombre {importStrategy==='manual'?'*':'(opcional)'}<input value={hintTitle} onChange={e=>setHintTitle(e.target.value)} placeholder="Ej. Pasta cremosa del Reel"/></label>
+      {importStrategy==='smart'&&<>
+       <div className="scope-title"><b>Nivel de detalle</b><small>Ficha rápida alcanza para la mayoría de los Reels.</small></div>
+       <div className="scope-grid">
+        <button type="button" className={aiScope==='quick'?'scope-card active':'scope-card'} onClick={()=>setAiScope('quick')}><span><b>Ficha rápida · recomendada</b><small>Ingredientes y clasificación; menos consumo.</small></span></button>
+        <button type="button" className={aiScope==='full'?'scope-card active':'scope-card'} onClick={()=>setAiScope('full')}><span><b>Receta completa</b><small>También intenta extraer pasos y tiempos escritos.</small></span></button>
+       </div>
+      </>}
 
-     <div className="tag-field">
-      <span>Etiquetas <small>Opcionales</small></span>
-      <div className="tag-picker">{tags.map(tag=><button type="button" key={tag.id} className={selectedTags.includes(tag.name)?'tag-chip selected':'tag-chip'} onClick={()=>toggleTag(tag.name)}>{tag.name}</button>)}</div>
+      <label>Nombre {importStrategy==='manual'?'*':'(opcional)'}<input value={hintTitle} onChange={e=>setHintTitle(e.target.value)} placeholder="Ej. Pasta cremosa"/></label>
+
+      {importStrategy==='smart'&&<label>
+       <span className="caption-label">¿Ya tenés el texto de la receta? <small>Opcional</small><button type="button" className="paste-caption" onClick={pasteClipboard}><ClipboardPaste/>Pegar</button></span>
+       <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Podés pegar acá el caption, ingredientes o pasos..."/>
+      </label>}
+
+      <div className="tag-field">
+       <span>Etiquetas <small>Opcionales</small></span>
+       <div className="tag-picker">{tags.map(tag=><button type="button" key={tag.id} className={selectedTags.includes(tag.name)?'tag-chip selected':'tag-chip'} onClick={()=>toggleTag(tag.name)}>{tag.name}</button>)}</div>
+      </div>
      </div>
-    </>}
+    </details>}
 
-    {importStrategy==='smart'&&<label className={importStage==='needs_input'?'caption-required':''}>
-     <span className="caption-label">Texto de la publicación <small>{pendingImportId?'Necesario para continuar':'Opcional'}</small><button type="button" className="paste-caption" onClick={pasteClipboard}><ClipboardPaste/>Pegar portapapeles</button></span>
-     <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Pegá acá el caption o la receta escrita..."/>
-    </label>}
-
-    {importMessage&&<div className={'inline-import-state '+importStage}><b>{importStage==='needs_input'?'Falta el caption':importStage==='needs_choice'?'Antes de gastar IA':'Importación pendiente'}</b><p>{importMessage}</p></div>}
-
-    {!pendingImportId&&<div className="import-note strong">
-     {importStrategy==='smart'
-      ?'Chefcita intenta leer Instagram gratis. Si no puede, te pide el caption acá mismo. '+(aiScope==='quick'?'Si hay contenido suficiente, extrae principalmente ingredientes y clasificación.':'Si hay contenido suficiente, estructura la receta completa.')
-      :'Se crea una receta para revisar manualmente. No se hace ninguna llamada a OpenAI.'}
+    {pendingImportId&&importStage==='needs_input'&&<div className="caption-recovery">
+     <div><Sparkles/><span><b>Me falta el texto de la receta</b><small>Copiá el caption o el comentario con la receta y pegalo acá. No necesitás empezar de nuevo.</small></span></div>
+     <button type="button" className="paste-caption-large" onClick={pasteClipboard}><ClipboardPaste/>Pegar texto copiado</button>
+     <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Pegá acá la receta..."/>
     </div>}
+
+    {importMessage&&<div className={'inline-import-state '+importStage}><b>{importStage==='needs_input'?'Necesito un dato más':importStage==='needs_choice'?'Antes de gastar IA':'Importación pendiente'}</b><p>{importMessage}</p></div>}
 
     {pendingImportId&&importStage==='needs_choice'&&<div className="inline-choice-actions">
      <button type="button" disabled={busy} onClick={forceAi}><Sparkles/>Procesar igual con IA</button>
-     <button type="button" disabled={busy} onClick={savePendingWithoutAi}><BookmarkPlus/>Guardar para completar · 0 IA</button>
+     <button type="button" disabled={busy} onClick={savePendingWithoutAi}><BookmarkPlus/>Guardar para completar</button>
     </div>}
 
     {pendingImportId&&importStage==='error'&&<div className="inline-choice-actions"><button type="button" disabled={busy} onClick={retryImport}>Reintentar</button></div>}
    </>:<>
-    <label>Título *<input autoFocus value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ej. Pasta cremosa de calabaza"/></label>
+    <div className="manual-intro"><b>Completá solo lo que sepas.</b><span>Después podés editar la receta cuando quieras.</span></div>
+    <label>Título *<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ej. Pasta cremosa de calabaza"/></label>
     <label>Descripción<input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Una descripción breve"/></label>
     <div className="form-grid">
      <label>Categoría<select value={category} onChange={e=>setCategory(e.target.value)}><option value="">Sin definir</option>{categories.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
@@ -327,13 +356,15 @@ export default function AddRecipe({session,onClose,onSaved}){
     </div>
    </>}
 
-   {error&&<p className="message">{error}</p>}
+   {busy&&<div className="import-working" role="status" aria-live="polite"><LoaderCircle className="spin"/><span><b>{pendingImportId?'Chefcita está procesando el texto...':'Chefcita está buscando la receta...'}</b><small>Puede tardar unos segundos. No cierres ni actualices la pantalla.</small></span></div>}
+   {error&&<p className="message form-error">{error}</p>}
+
    <div className="form-actions">
-    {pendingImportId?<button type="button" className="cancel discard-import" onClick={discardPending} disabled={busy}><Trash2/>Descartar</button>:<button type="button" className="cancel" onClick={onClose}>Cancelar</button>}
-    {mode==='link'&&pendingImportId&&importStage==='needs_input'?<button className="primary save-recipe" disabled={busy||!pastedContent.trim()}>{busy?'Procesando...':'Procesar este texto'}</button>
-    :mode==='link'&&pendingImportId?<button type="button" className="primary save-recipe" onClick={onClose}>Cerrar y dejar pendiente</button>
-    :<button className="primary save-recipe" disabled={busy||(mode==='link'?(!sourceUrl.trim()||(importStrategy==='manual'&&!hintTitle.trim())):!title.trim())}>
-     {busy?'Guardando...':mode==='link'?(importStrategy==='manual'?'Guardar para completar':'Guardar e intentar importar'):'Guardar receta'}
+    {pendingImportId?<button type="button" className="cancel discard-import" onClick={discardPending} disabled={busy}><Trash2/>Descartar</button>:<button type="button" className="cancel" disabled={busy} onClick={onClose}>Cancelar</button>}
+    {mode==='link'&&pendingImportId&&importStage==='needs_input'?<button className="primary save-recipe" disabled={busy||!pastedContent.trim()}>{busy?'Procesando...':'Continuar con este texto'}</button>
+    :mode==='link'&&pendingImportId?<button type="button" className="primary save-recipe" onClick={onClose} disabled={busy}>Cerrar y dejar pendiente</button>
+    :<button className="primary save-recipe" disabled={busy||(mode==='link'?(!linkReady||(importStrategy==='manual'&&!hintTitle.trim())):!title.trim())}>
+     {busy?'Procesando...':mode==='link'?(importStrategy==='manual'?'Guardar para después':'Importar receta'):'Guardar receta'}
     </button>}
    </div>
   </form>
