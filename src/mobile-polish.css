@@ -140,3 +140,87 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .personal-notes textarea{font-size:16px!important;min-height:110px}
  .personal-notes .save-notes{width:100%;justify-content:center;min-height:46px}
 }
+
+
+/* Validation mode: scan first, edit only the section that needs it */
+.review-top-actions{position:sticky;top:0;z-index:18;display:flex;gap:8px;justify-content:flex-end;margin:0 0 16px;padding:10px 0;background:#fffffff2;backdrop-filter:blur(14px)}
+.review-top-actions .primary{width:auto;margin:0;min-height:44px}
+.review-save-draft{min-height:44px;border:1px solid #ddd1c8;background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+.review-block{margin-top:12px;padding:16px;border:1px solid #eee3db;border-radius:16px;background:#fff}
+.review-block.editing{border-color:#d8bca7;background:#fffaf6}
+.review-block-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.review-block-head>div{display:grid;gap:3px}
+.review-block-head h3{margin:0;font-size:18px}
+.review-block-head small{color:#81756e;line-height:1.35}
+.review-section-edit{min-height:40px;border:1px solid #ddd1c8;background:#fff;border-radius:10px;padding:8px 11px;display:flex;align-items:center;gap:6px;font-weight:750;cursor:pointer;color:#655c56}
+.review-section-edit svg{width:16px;height:16px}
+.review-preview-description{margin:0 0 10px;color:#5f5550;line-height:1.5}
+.review-preview-chips,.review-preview-tags{display:flex;flex-wrap:wrap;gap:6px}
+.review-preview-chips span{padding:5px 8px;border-radius:999px;background:#f7f2ee;font-size:12px;color:#655c56}
+.review-preview-tags{margin-top:8px}
+.review-preview-tags span{padding:4px 7px;border:1px solid #e5d9cf;border-radius:999px;font-size:11px;color:#6e625b}
+.review-inline-tags{display:grid;gap:8px;margin-top:14px}
+.review-inline-tags>span{font-size:13px;font-weight:750}
+.review-ingredient-preview{display:grid}
+.review-ingredient-preview>div{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:8px 12px;align-items:start;padding:10px 0;border-top:1px solid #f0e7e0}
+.review-ingredient-preview>div:first-child{border-top:0;padding-top:0}
+.review-ingredient-preview>div>b{font-size:15px;line-height:1.35}
+.review-ingredient-preview>div>span{display:grid;gap:2px}
+.review-ingredient-preview strong{font-size:15px;line-height:1.35}
+.review-ingredient-preview small{color:#81756e;line-height:1.35}
+.review-ingredient-preview em{font-style:normal;font-size:10px;font-weight:750;color:#8a6a55;background:#f7f2ee;border-radius:999px;padding:4px 6px}
+.review-steps-preview{display:grid;gap:10px}
+.review-steps-preview>div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start}
+.review-steps-preview>div>b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#efe1d5;font-size:13px}
+.review-steps-preview p{margin:3px 0 0;color:#4f4844;line-height:1.5}
+.review-organization-preview{display:grid;gap:8px}
+.review-organization-preview p{margin:0;display:grid;gap:3px}
+.review-organization-preview p>b{font-size:12px}
+.review-organization-preview p>span{color:#655c56;line-height:1.45}
+.ingredient-editor-row{display:grid;grid-template-columns:110px 105px 95px minmax(180px,1fr) minmax(150px,.8fr) 42px;gap:8px;align-items:end}
+.ingredient-edit-head{margin-bottom:10px}
+.ai-enrich-disclosure{padding:0;overflow:hidden}
+.ai-enrich-disclosure>summary{list-style:none;min-height:54px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.ai-enrich-disclosure>summary::-webkit-details-marker{display:none}
+.ai-enrich-disclosure>summary>svg{width:19px;color:#9b6c42;flex:0 0 19px}
+.ai-enrich-disclosure>summary>span{display:grid;gap:2px}
+.ai-enrich-disclosure>summary small{font-weight:500;color:#746a64}
+.ai-enrich-disclosure-body{padding:0 14px 14px;border-top:1px solid #eadfd6}
+.ai-enrich-disclosure-body .ai-enrich-head{margin-top:14px}
+.compact-source{padding:12px 14px}
+.source-copy-disclosure{margin-top:8px}
+.source-copy-disclosure summary{cursor:pointer;font-weight:700;color:#655c56;font-size:13px}
+.source-copy-disclosure p{white-space:pre-wrap;line-height:1.45;color:#655c56;max-height:180px;overflow:auto}
+
+@media(max-width:760px){
+ .review-check-mode{margin:0 -4px;padding:14px;border-radius:18px}
+ .review-check-mode .review-editor-head{margin-bottom:8px}
+ .review-check-mode .review-editor-head h2{font-size:24px;line-height:1.15}
+ .review-top-actions{top:0;margin:0 -14px 12px;padding:8px 14px;border-bottom:1px solid #eee3db}
+ .review-top-actions .primary{flex:1;min-height:48px;font-size:16px}
+ .review-save-draft{padding:8px 10px;font-size:13px;white-space:nowrap}
+ .review-block{padding:13px;margin-top:10px;border-radius:14px}
+ .review-block-head{align-items:flex-start;margin-bottom:10px}
+ .review-block-head h3{font-size:17px}
+ .review-block-head small{font-size:12px}
+ .review-section-edit{min-width:76px;min-height:44px;justify-content:center}
+ .review-preview-description{font-size:14px}
+ .review-preview-chips span{font-size:11px}
+ .review-ingredient-preview>div{grid-template-columns:70px minmax(0,1fr);gap:4px 8px;padding:9px 0}
+ .review-ingredient-preview>div>b,.review-ingredient-preview strong{font-size:15px;font-weight:650;color:#312c29}
+ .review-ingredient-preview>div>em{grid-column:2;width:max-content;margin-top:2px}
+ .review-steps-preview p{font-size:15px}
+ .ingredient-editor-row{grid-template-columns:1fr 1fr;padding:12px;border:1px solid #eee3db;border-radius:13px;background:#fff;gap:10px}
+ .ingredient-editor-row .ingredient-type{grid-column:1/-1}
+ .ingredient-editor-row .ingredient-name{grid-column:1/-1}
+ .ingredient-editor-row .ingredient-note{grid-column:1/-1}
+ .ingredient-editor-row .ingredient-delete{grid-column:2;justify-self:end;width:46px;height:46px}
+ .ingredient-edit-head{align-items:center}
+ .compact-source{margin-bottom:10px}
+ .compact-source .source-review-head{align-items:center;flex-direction:row}
+ .compact-source .source-review-head>a{min-height:44px}
+ .ai-enrich-disclosure{margin:10px 0 12px}
+ .ai-enrich-disclosure>summary{min-height:58px}
+ .ai-enrich-disclosure-body{padding:0 12px 12px}
+ .review-actions{margin-top:16px}
+}
