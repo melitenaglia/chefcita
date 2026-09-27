@@ -16,6 +16,8 @@ Estas reglas son la referencia para futuras iteraciones de interfaz. Prioridad: 
 - Objetivo táctil recomendado: **mínimo 44 × 44 CSS px** en móvil.
 
 ## 3. Tipografía y escala
+- La preferencia **Compacto / Normal / Grande** es una densidad de interfaz por dispositivo y debe escalar de forma coherente tipografía, espacios, iconos, tarjetas y navegación.
+- No implementar esta preferencia como “zoom” aislado de un componente.
 - Texto de formularios: mínimo 16 px para evitar zoom automático en Safari iOS.
 - Título principal móvil: aproximadamente 27–31 px, con line-height compacto.
 - Encabezados de sección: aproximadamente 20–22 px.
@@ -29,7 +31,9 @@ Estas reglas son la referencia para futuras iteraciones de interfaz. Prioridad: 
 - Dentro de listas repetitivas, preferir ritmo compacto y escaneable.
 - Evitar tarjetas dentro de tarjetas si no aportan una agrupación real.
 
-## 5. Recetas
+## 5. Inicio y recetas
+- En Inicio, la acción de inspiración **“¿Qué cocinamos hoy?”** tiene mayor jerarquía visual que los accesos secundarios al recetario o a Instagram.
+- La jerarquía debe expresarse con posición, tamaño, contraste y espacio; no solo con el orden DOM.
 - “Abrir publicación original” debe estar disponible cerca del título, no únicamente al final.
 - Ingredientes y preparación son el contenido prioritario.
 - Favorita / Probada deben estar disponibles sin ocupar un panel grande.
@@ -44,10 +48,15 @@ Estas reglas son la referencia para futuras iteraciones de interfaz. Prioridad: 
 - El teclado no debe tapar la acción principal.
 - Mantener borradores cuando el flujo exige salir de Chefcita para copiar contenido.
 
-## 7. Navegación móvil
-- Respetar safe areas.
-- La bottom nav nunca debe tapar contenido ni botones.
-- Un modal largo debe comportarse como pantalla completa.
+## 7. Navegación y arquitectura
+- Debe existir **un único modelo de navegación por breakpoint**: sidebar estable en desktop y menú hamburguesa jerárquico en móvil.
+- No duplicar las mismas secciones simultáneamente en drawer, bottom nav y pantallas internas.
+- En móvil, el menú principal puede tener como máximo un nivel de submenú. Configuración usa ese único nivel para Pantalla / Mi hogar / IA e importaciones.
+- Las pantallas de configuración no deben volver a pedir elegir la misma sección después de haberla elegido en el menú.
+- Mantener navegación y acciones separadas. “Añadir receta” es una acción; “Recetas” o “Pendientes” son destinos.
+- “¿Qué cocinamos?” / Ideas es la entrada prioritaria de inspiración y debe llevar a Inicio con el hero de ideas visible.
+- Respetar safe areas y mantener áreas táctiles de al menos ~44 px aunque la densidad sea Compacta.
+- Un modal largo debe comportarse como pantalla completa en móvil.
 - Evitar encabezados sticky altos; si se necesita persistencia, dejar solo una barra compacta de navegación/acciones.
 
 ## 8. Feedback
@@ -63,5 +72,6 @@ Estas reglas son la referencia para futuras iteraciones de interfaz. Prioridad: 
 - WCAG 2.2 exige al menos 24 × 24 CSS px o espaciado equivalente; Chefcita adopta 44 × 44 como objetivo móvil para mayor comodidad.
 
 ## Referencias
-- Apple Human Interface Guidelines: Buttons, Toolbars, Lists and tables, Labels.
+- Apple Human Interface Guidelines: Design principles, Layout, Menus, Toolbars, Tab bars.
+- Nielsen Norman Group: 10 Usability Heuristics for User Interface Design.
 - W3C WCAG 2.2: Success Criterion 2.5.8 Target Size (Minimum).
