@@ -4,7 +4,7 @@ import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import {formatIngredientQuantity} from './recipeFormat.js';
 
-const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',_initial_unit:'',note:'',section:'',role:'main'});
+const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',_raw_quantity_text:'',quantity:null,unit:'',_initial_unit:'',note:'',section:'',role:'main'});
 const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
 
 export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
@@ -40,11 +40,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   setCategories(cats||[]);setMealTypes(types||[]);setTags(tagRows||[]);
   setSelectedTags((data.recipe_tags||[]).map(x=>x.tag_id));
   setIngredients([...(data.recipe_ingredients||[])].sort((a,b)=>a.sort_order-b.sort_order).map(x=>{
-   const quantityText=x.quantity_text||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):'');
+   const rawQuantityText=x.quantity_text||'';
+   const hasWords=/[A-Za-zÀ-ÿ]/.test(rawQuantityText);
+   const quantityText=hasWords&&x.quantity!==null&&x.quantity!==undefined?String(x.quantity):(rawQuantityText||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):''));
    return {
     original_name:x.original_name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
+    _raw_quantity_text:rawQuantityText,
     quantity:x.quantity,
     unit:x.unit||'',
     _initial_unit:x.unit||'',
@@ -112,11 +115,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   }));
 
   const enrichedIngredients=(result.ingredients||[]).map(x=>{
-   const quantityText=x.quantity_text||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):'');
+   const rawQuantityText=x.quantity_text||'';
+   const hasWords=/[A-Za-zÀ-ÿ]/.test(rawQuantityText);
+   const quantityText=hasWords&&x.quantity!==null&&x.quantity!==undefined?String(x.quantity):(rawQuantityText||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):''));
    return {
     original_name:x.name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
+    _raw_quantity_text:rawQuantityText,
     quantity:x.quantity,
     unit:x.unit||'',
     _initial_unit:x.unit||'',
@@ -187,9 +193,11 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    .filter(x=>x.original_name.trim())
    .map(x=>{
     const quantityChanged=x.quantity_text!==x._initial_quantity_text;
+    const unitChanged=x.unit!==x._initial_unit;
+    const quantityTextToSave=(quantityChanged||unitChanged)?x.quantity_text.trim():(x._raw_quantity_text||x.quantity_text.trim());
     return {
      original_name:x.original_name.trim(),
-     quantity_text:x.quantity_text.trim()||'',
+     quantity_text:quantityTextToSave||'',
      quantity:quantityChanged?null:x.quantity,
      unit:x.unit.trim()||'',
      note:x.note.trim()||'',
