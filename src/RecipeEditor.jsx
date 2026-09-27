@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
-import {formatIngredientQuantity} from './recipeFormat.js';
+import {formatIngredientQuantity,formatIngredientQuantityNote} from './recipeFormat.js';
 
 const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',_raw_quantity_text:'',quantity:null,unit:'',_initial_unit:'',note:'',section:'',role:'main'});
 const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
@@ -269,6 +269,10 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   const changed=item.quantity_text!==item._initial_quantity_text||item.unit!==item._initial_unit;
   return formatIngredientQuantity({...item,quantity_text:changed?item.quantity_text:(item._raw_quantity_text||item.quantity_text)});
  };
+ const previewQuantityNote=item=>{
+  const changed=item.quantity_text!==item._initial_quantity_text||item.unit!==item._initial_unit;
+  return formatIngredientQuantityNote({...item,quantity_text:changed?item.quantity_text:(item._raw_quantity_text||item.quantity_text)});
+ };
  const openSection=name=>setEditSection(current=>current===name?null:name);
  const editButton=name=><button type="button" className="review-section-edit" onClick={()=>openSection(name)}>{editSection===name?<><Check/>Listo</>:<><Edit3/>Editar</>}</button>;
 
@@ -383,7 +387,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   <section className={editSection==='ingredients'?'review-block editing':'review-block'}>
    <div className="review-block-head"><div><h3>Ingredientes</h3><small>{ingredients.length} {ingredients.length===1?'ingrediente':'ingredientes'}</small></div>{!isEdit&&editButton('ingredients')}</div>
    {isEdit||editSection==='ingredients'?ingredientEditor:<div className="review-ingredient-preview">
-    {ingredients.length?ingredients.map((item,index)=><div key={index}><b>{previewQuantity(item)||'—'}</b><span><strong>{item.original_name||'Ingrediente sin nombre'}</strong>{item.note&&<small>{item.note}</small>}</span><em>{item.role==='secondary'?'Secundario':'Principal'}</em></div>):<p className="muted">No hay ingredientes cargados.</p>}
+    {ingredients.length?ingredients.map((item,index)=>{const extra=[previewQuantityNote(item),item.note].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ');return <div key={index}><b className="ingredient-quantity">{previewQuantity(item)||'—'}</b><span><strong>{item.original_name||'Ingrediente sin nombre'}</strong>{extra&&<small>{extra}</small>}</span><em>{item.role==='secondary'?'Secundario':'Principal'}</em></div>}):<p className="muted">No hay ingredientes cargados.</p>}
    </div>}
   </section>
 
