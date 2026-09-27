@@ -20,11 +20,14 @@ async function testViewport(name,viewport){
       smallestControlFont:[...document.querySelectorAll('input,select,textarea')].reduce((min,el)=>{
         const size=parseFloat(getComputedStyle(el).fontSize)||999;
         return Math.min(min,size);
-      },999)
+      },999),
+      viewportMeta:document.querySelector('meta[name="viewport"]')?.content||''
     }));
 
     if(layout.scrollWidth>layout.clientWidth+2)throw new Error(name+': horizontal overflow detected');
     if(viewport.width<=430&&layout.smallestControlFont<16)throw new Error(name+': form controls below 16px can trigger mobile zoom');
+    if(viewport.width<=430&&!layout.viewportMeta.includes('viewport-fit=cover'))throw new Error(name+': viewport-fit=cover missing');
+    if(viewport.width<=430&&!layout.viewportMeta.includes('interactive-widget=resizes-content'))throw new Error(name+': interactive keyboard viewport mode missing');
     if(errors.length)throw new Error(errors.join('\n'));
     console.log('Chefcita '+name+' render smoke test OK');
   }finally{
@@ -34,7 +37,9 @@ async function testViewport(name,viewport){
 
 try{
   await testViewport('desktop',{width:1280,height:900});
+  await testViewport('mobile-small',{width:360,height:800});
   await testViewport('mobile',{width:390,height:844});
+  await testViewport('mobile-large',{width:430,height:932});
 }finally{
   await browser.close();
 }
