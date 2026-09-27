@@ -28,7 +28,7 @@ begin
         from pg_attribute a
         where a.attrelid=pi.indrelid
           and a.attname='user_id'
-          and a.attnum=any(pi.indkey)
+          and a.attnum=any(pi.indkey::smallint[])
       )
       and not exists (
         select 1 from pg_constraint c where c.conindid=pi.indexrelid
