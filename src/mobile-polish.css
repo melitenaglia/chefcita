@@ -346,3 +346,74 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .idea-picker-message{margin-left:0}
  .home-recent{margin-top:28px!important}
 }
+
+
+/* Per-device interface density */
+.ui-size-setting{display:grid;gap:10px;margin-top:18px}
+.ui-size-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ui-size-options button{min-height:78px;border:1px solid #e2d6cd;background:#fff;border-radius:14px;padding:12px;display:grid;gap:4px;text-align:left;cursor:pointer;color:#4f4844}
+.ui-size-options button b{font-size:14px}
+.ui-size-options button small{font-size:12px;line-height:1.3;color:#81756e;font-weight:500}
+.ui-size-options button.active{border-color:#b98965;background:#f7eee7;box-shadow:0 0 0 1px #b98965 inset}
+.ui-size-device-note{color:#81756e}
+
+@media(max-width:760px){
+ :root[data-ui-size="compact"]{
+  --nav-btn-h:44px;--nav-icon:17px;--nav-label:9.5px;--nav-add-icon:20px;--nav-lift:-4px;
+  --nav-pad-y:4px;--content-x:14px;--header-title:24px;--card-min:102px;--card-pad:14px;
+ }
+ :root[data-ui-size="normal"]{
+  --nav-btn-h:50px;--nav-icon:19px;--nav-label:10px;--nav-add-icon:21px;--nav-lift:-5px;
+  --nav-pad-y:5px;--content-x:16px;--header-title:27px;--card-min:112px;--card-pad:16px;
+ }
+ :root[data-ui-size="large"]{
+  --nav-btn-h:58px;--nav-icon:22px;--nav-label:11.5px;--nav-add-icon:24px;--nav-lift:-7px;
+  --nav-pad-y:7px;--content-x:18px;--header-title:30px;--card-min:132px;--card-pad:20px;
+ }
+
+ aside{padding:var(--nav-pad-y) 7px calc(var(--nav-pad-y) + env(safe-area-inset-bottom))!important}
+ nav{gap:1px!important}
+ nav button{
+  min-height:var(--nav-btn-h)!important;
+  padding:4px 1px!important;
+  border-radius:10px!important;
+  font-size:var(--nav-label)!important;
+  gap:2px!important;
+  line-height:1.05;
+ }
+ nav button svg{width:var(--nav-icon)!important;height:var(--nav-icon)!important}
+ .mobile-nav-add{
+  min-height:var(--nav-btn-h)!important;
+  border-radius:14px!important;
+  transform:translateY(var(--nav-lift))!important;
+  box-shadow:0 5px 14px #312c2926!important;
+ }
+ .mobile-nav-add svg{width:var(--nav-add-icon)!important;height:var(--nav-add-icon)!important}
+ .content{padding-left:var(--content-x)!important;padding-right:var(--content-x)!important}
+ header h1{font-size:var(--header-title)!important}
+ .dashboard-cards button{min-height:var(--card-min)!important;padding:var(--card-pad)!important}
+ .ui-size-options{grid-template-columns:1fr}
+ .ui-size-options button{min-height:60px;grid-template-columns:1fr auto;align-items:center}
+ .ui-size-options button small{text-align:right;max-width:150px}
+ .settings-tabs button{min-height:40px!important;padding:7px 10px!important;font-size:13px}
+
+ :root[data-ui-size="compact"] .mobile-settings{width:42px;height:42px;border-radius:12px}
+ :root[data-ui-size="compact"] .mobile-settings svg{width:18px}
+ :root[data-ui-size="compact"] .home-welcome{padding:18px!important}
+ :root[data-ui-size="compact"] .home-welcome .welcome-copy h2{font-size:24px!important}
+ :root[data-ui-size="compact"] .home-welcome .welcome-copy p{font-size:13px!important}
+ :root[data-ui-size="compact"] .welcome-instagram{min-height:56px!important;padding:10px 12px!important}
+ :root[data-ui-size="compact"] .idea-picker{padding:12px!important}
+ :root[data-ui-size="compact"] .dashboard-cards strong{font-size:24px!important}
+ :root[data-ui-size="compact"] .dashboard-cards b{font-size:15px!important}
+ :root[data-ui-size="compact"] .dashboard-cards small{font-size:11px!important}
+
+ :root[data-ui-size="large"] .mobile-settings{width:50px;height:50px}
+ :root[data-ui-size="large"] .mobile-settings svg{width:22px}
+ :root[data-ui-size="large"] .home-welcome .welcome-copy h2{font-size:30px!important}
+ :root[data-ui-size="large"] .home-welcome .welcome-copy p{font-size:16px!important}
+ :root[data-ui-size="large"] .welcome-instagram{min-height:72px!important}
+ :root[data-ui-size="large"] .dashboard-cards strong{font-size:31px!important}
+ :root[data-ui-size="large"] .dashboard-cards b{font-size:18px!important}
+ :root[data-ui-size="large"] .dashboard-cards small{font-size:14px!important}
+}
