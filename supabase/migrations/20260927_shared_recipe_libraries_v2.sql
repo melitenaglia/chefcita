@@ -117,7 +117,8 @@ begin
   on conflict (household_id,user_id) do nothing;
 
   update public.household_invites
-  set accepted_at=now()
+  set accepted_at=now(),
+      accepted_by=v_user
   where id=v_invite.id;
 
   return v_invite.household_id;
@@ -223,6 +224,39 @@ grant execute on function public.set_recipe_library_share(uuid,uuid,boolean) to 
 
 revoke insert,update,delete on public.recipe_library_shares from anon,authenticated;
 grant select on public.recipe_library_shares to authenticated;
+
+-- Extend the existing access helper so shared members can also use their own
+-- user_recipes row (favorite / tried / personal notes) without gaining edit
+-- permission over the recipe itself.
+create or replace function private.can_access_recipe(rid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path='public','private'
+as $
+  select exists(
+    select 1
+    from public.recipes r
+    where r.id=rid
+      and (
+        r.owner_id=auth.uid()
+        or (
+          r.visibility in ('household','link')
+          and r.household_id is not null
+          and private.is_household_member(r.household_id)
+        )
+        or r.visibility='link'
+        or exists (
+          select 1
+          from public.recipe_library_shares rls
+          join public.household_members hm on hm.household_id=rls.household_id
+          where rls.recipe_id=r.id
+            and hm.user_id=auth.uid()
+        )
+      )
+  );
+$;
 
 -- Shared members can read the recipe itself. Existing UPDATE/DELETE policies
 -- are intentionally untouched, so sharing never grants recipe editing.
