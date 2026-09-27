@@ -16,6 +16,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  const [mealFilter,setMealFilter]=useState('');
  const [levelFilter,setLevelFilter]=useState('');
  const [personalFilter,setPersonalFilter]=useState('');
+ const [libraryFilter,setLibraryFilter]=useState('');
  const [sort,setSort]=useState('newest');
  const [kitchenView,setKitchenView]=useState('favorites');
  const [filtersOpen,setFiltersOpen]=useState(false);
@@ -39,7 +40,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
   setError('');
   const {data,error}=await supabase
    .from('recipes')
-   .select('id,title,description,image_url,level,total_minutes,reviewed_at,created_at,categories(name),meal_types(name),recipe_ingredients(original_name,role),recipe_tags(tags(name)),user_recipes!left(is_favorite,tried_status,rating,tried_at)')
+   .select('id,title,description,image_url,level,total_minutes,reviewed_at,created_at,household_id,households(name),categories(name),meal_types(name),recipe_ingredients(original_name,role),recipe_tags(tags(name)),user_recipes!left(is_favorite,tried_status,rating,tried_at)')
    .eq('review_status','recipe')
    .order('created_at',{ascending:false});
   if(error){setError(userErrorMessage(error,'No pude cargar tus recetas. Probá de nuevo.'));setRecipes([])}
@@ -57,6 +58,13 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
 
  const categories=useMemo(()=>[...new Set(recipes.map(x=>x.categories?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
  const mealTypes=useMemo(()=>[...new Set(recipes.map(x=>x.meal_types?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
+ const libraries=useMemo(()=>{
+  const map=new Map();
+  for(const recipe of recipes){
+   if(recipe.household_id&&recipe.households?.name)map.set(recipe.household_id,recipe.households.name);
+  }
+  return [...map.entries()].map(([id,name])=>({id,name})).sort((a,b)=>a.name.localeCompare(b.name,'es'));
+ },[recipes]);
 
  const kitchenCounts=useMemo(()=>{
   let favorites=0,toTry=0,tried=0;
@@ -84,6 +92,8 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
    if(categoryFilter&&recipe.categories?.name!==categoryFilter)return false;
    if(mealFilter&&recipe.meal_types?.name!==mealFilter)return false;
    if(levelFilter&&recipe.level!==levelFilter)return false;
+   if(libraryFilter==='personal'&&recipe.household_id)return false;
+   if(libraryFilter&&libraryFilter!=='personal'&&recipe.household_id!==libraryFilter)return false;
 
    if(personalFilter==='favorite'&&!personal.is_favorite)return false;
    if(personalFilter==='to_try'&&(personal.tried_status||'to_try')!=='to_try')return false;
@@ -107,7 +117,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
    }
    return new Date(b.created_at)-new Date(a.created_at);
   });
- },[recipes,search,mode,kitchenView,categoryFilter,mealFilter,levelFilter,personalFilter,sort]);
+ },[recipes,search,mode,kitchenView,categoryFilter,mealFilter,levelFilter,libraryFilter,personalFilter,sort]);
 
  const updatePersonal=async(recipe,changes)=>{
   const current=recipe.user_recipes?.[0]||{};
@@ -138,11 +148,11 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  };
 
  const clearFilters=()=>{
-  setCategoryFilter('');setMealFilter('');setLevelFilter('');setPersonalFilter('');setSort('newest');
+  setCategoryFilter('');setMealFilter('');setLevelFilter('');setLibraryFilter('');setPersonalFilter('');setSort('newest');
  };
 
- const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||personalFilter||sort!=='newest');
- const filterCount=[categoryFilter,mealFilter,levelFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
+ const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||libraryFilter||personalFilter||sort!=='newest');
+ const filterCount=[categoryFilter,mealFilter,levelFilter,libraryFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
 
  return <section className="recipe-library">
   {mode==='kitchen'&&<div className="kitchen-tabs">
@@ -162,6 +172,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
    <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">Todas las categorías</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
    <select value={mealFilter} onChange={e=>setMealFilter(e.target.value)}><option value="">Todos los tipos</option>{mealTypes.map(x=><option key={x}>{x}</option>)}</select>
    <select value={levelFilter} onChange={e=>setLevelFilter(e.target.value)}><option value="">Cualquier nivel</option><option value="initial">Inicial</option><option value="intermediate">Intermedio</option><option value="expert">Experto</option></select>
+   <select value={libraryFilter} onChange={e=>setLibraryFilter(e.target.value)}><option value="">Todas las bibliotecas</option><option value="personal">Personal</option>{libraries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>
    {mode==='all'&&<select value={personalFilter} onChange={e=>setPersonalFilter(e.target.value)}><option value="">Cualquier estado</option><option value="favorite">Favoritas</option><option value="to_try">Por probar</option><option value="tried">Probadas</option></select>}
    <select value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Más recientes</option><option value="title">A–Z</option><option value="time">Menor tiempo</option></select>
    {filtersActive&&<button onClick={clearFilters}>Limpiar</button>}
@@ -183,7 +194,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
       <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label="Favorita"><Heart/></button>
      </div>
      <div className="recipe-card-body">
-      <div className="recipe-meta">{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}</div>
+      <div className="recipe-meta">{recipe.household_id&&recipe.households?.name&&<span className="shared-library-chip">{recipe.households.name}</span>}{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}</div>
       <h3>{recipe.title}</h3>
       {recipe.description&&<p>{recipe.description}</p>}
       {mainIngredients.length>0&&<div className="card-ingredients">{mainIngredients.map((x,i)=><span key={i}>{x.original_name}</span>)}</div>}
