@@ -12,6 +12,8 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
  const [ideaType,setIdeaType]=useState('');
  const [ideaBusy,setIdeaBusy]=useState(false);
  const [ideaMessage,setIdeaMessage]=useState('');
+ const [ideaPool,setIdeaPool]=useState([]);
+ const [ideaRecipe,setIdeaRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
  const [summaryReady,setSummaryReady]=useState(false);
  const ideaRef=useRef(null);
@@ -86,25 +88,44 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
   });
  },[ideaFocusKey]);
 
- const surpriseMe=async()=>{
+ const pickDifferent=pool=>{
+  if(!pool.length)return null;
+  const options=ideaRecipe&&pool.length>1?pool.filter(x=>x.id!==ideaRecipe.id):pool;
+  return options[Math.floor(Math.random()*options.length)]||pool[0];
+ };
+
+ const surpriseMe=async({reuse=false}={})=>{
   const option=ideaOptions.find(x=>x.label===ideaType);
   if(!option)return;
   setIdeaBusy(true);setIdeaMessage('');
-  const {data:recipes,error}=await supabase.from('recipes').select('id').eq('review_status','recipe').in('category_id',option.ids);
-  setIdeaBusy(false);
-  if(error){
-   if(isJwtClockError(error)){
-    try{await supabase.auth.refreshSession()}catch{}
+
+  let pool=reuse?ideaPool:[];
+  if(!pool.length){
+   const {data:recipes,error}=await supabase.from('recipes')
+    .select('id,title,description,image_url,total_minutes,categories(name),meal_types(name)')
+    .eq('review_status','recipe')
+    .in('category_id',option.ids);
+
+   if(error){
+    setIdeaBusy(false);
+    if(isJwtClockError(error)){
+     try{await supabase.auth.refreshSession()}catch{}
+    }
+    setIdeaMessage('No pude buscar una idea ahora. Probá de nuevo.');
+    return;
    }
-   setIdeaMessage('No pude buscar una idea ahora. Probá de nuevo.');
-   return;
+   pool=recipes||[];
+   setIdeaPool(pool);
   }
-  if(!recipes?.length){
+
+  setIdeaBusy(false);
+  if(!pool.length){
+   setIdeaRecipe(null);
    setIdeaMessage(`Todavía no hay recetas de ${ideaType.toLowerCase()}.`);
    return;
   }
-  const index=Math.floor(Math.random()*recipes.length);
-  onOpenRecipe?.(recipes[index].id);
+
+  setIdeaRecipe(pickDifferent(pool));
  };
 
  return <>
@@ -112,19 +133,31 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
    <div className="idea-hero-copy">
     <span className="idea-hero-icon"><WandSparkles/></span>
     <div>
-     <small>¿SIN IDEAS?</small>
      <h2>¿Qué cocinamos hoy?</h2>
      <p>Elegí el momento del día y Chefcita te propone una receta al azar.</p>
     </div>
    </div>
    <div className="idea-hero-actions">
-    <select ref={ideaSelectRef} value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('')}} aria-label="Tipo de comida">
+    <select ref={ideaSelectRef} value={ideaType} onChange={e=>{setIdeaType(e.target.value);setIdeaMessage('');setIdeaPool([]);setIdeaRecipe(null)}} aria-label="Tipo de comida">
      <option value="">Elegí el tipo de comida</option>
      {ideaOptions.map(option=><option key={option.label} value={option.label}>{option.label}</option>)}
     </select>
-    <button disabled={!ideaType||ideaBusy} onClick={surpriseMe}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
+    <button disabled={!ideaType||ideaBusy} onClick={()=>surpriseMe()}><Sparkles/>{ideaBusy?'Buscando...':'Dame una idea'}</button>
    </div>
    {ideaMessage&&<small className="idea-hero-message">{ideaMessage}</small>}
+   {ideaRecipe&&<article className="idea-result-card">
+    <div className="idea-result-image">{ideaRecipe.image_url?<img src={ideaRecipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
+    <div className="idea-result-copy">
+     <div className="idea-result-meta">{[ideaRecipe.categories?.name,ideaRecipe.meal_types?.name].filter(Boolean).map(x=><span key={x}>{x}</span>)}</div>
+     <h3>{ideaRecipe.title}</h3>
+     {ideaRecipe.description&&<p>{ideaRecipe.description}</p>}
+     {ideaRecipe.total_minutes!=null&&<small><Clock/>{ideaRecipe.total_minutes} min</small>}
+     <div className="idea-result-actions">
+      <button className="secondary" onClick={()=>surpriseMe({reuse:true})} disabled={ideaBusy||ideaPool.length<=1}><Sparkles/>Otra idea</button>
+      <button className="primary" onClick={()=>onOpenRecipe?.(ideaRecipe.id)}>Ver receta <ArrowRight/></button>
+     </div>
+    </div>
+   </article>}
   </section>
 
   <section className="home-library-banner">
