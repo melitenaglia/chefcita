@@ -44,7 +44,7 @@ export default function App(){
   const token=new URLSearchParams(window.location.search).get('invite');
   if(!token)return;
   supabase.rpc('accept_household_invite',{p_token:token}).then(({error})=>{
-   setSettingsStart('Mi hogar');
+   setSettingsStart('Bibliotecas');
    setTab('Configuración');
    if(error)setInviteNotice('No pude aceptar esta invitación. Comprobá que hayas iniciado sesión con el mismo email al que se envió y que el enlace no haya vencido.');
    else setInviteNotice('Listo. Ya te uniste al hogar.');
@@ -136,14 +136,14 @@ export default function App(){
       <div className="drawer-group">
        <small>CUENTA</small>
        <button onClick={()=>{closeMenu();setTab('Mi cuenta')}}><UserRound/><span><b>Mi cuenta</b><small>Nombre, email y contraseña</small></span></button>
-       <button onClick={()=>setMobileMenuLevel('settings')}><Settings/><span><b>Configuración</b><small>Pantalla, hogar e importaciones</small></span><ChevronRight/></button>
+       <button onClick={()=>setMobileMenuLevel('settings')}><Settings/><span><b>Configuración</b><small>Pantalla, bibliotecas e importaciones</small></span><ChevronRight/></button>
        <button className="drawer-logout" onClick={()=>supabase.auth.signOut()}><LogOut/><span><b>Salir</b></span></button>
       </div>
      </>:<>
       <div className="drawer-group settings-submenu">
        <small>CONFIGURACIÓN</small>
        <button onClick={()=>openSettings('Pantalla')}><Settings/><span><b>Pantalla</b><small>Tamaño y densidad de interfaz</small></span></button>
-       <button onClick={()=>openSettings('Mi hogar')}><Home/><span><b>Mi hogar</b><small>Integrantes e invitaciones</small></span></button>
+       <button onClick={()=>openSettings('Bibliotecas')}><BookOpen/><span><b>Bibliotecas</b><small>Recetas compartidas e invitaciones</small></span></button>
        <button onClick={()=>openSettings('IA e importaciones')}><WandSparkles/><span><b>IA e importaciones</b><small>Cómo se procesan las recetas</small></span></button>
       </div>
      </>}
