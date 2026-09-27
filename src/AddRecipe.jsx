@@ -2,14 +2,22 @@ import React,{useEffect,useState} from 'react';
 import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2} from 'lucide-react';
 import {supabase} from './supabase.js';
 
-function isInstagramRecipeUrl(value){
+function normalizeInstagramRecipeUrl(value){
  try{
   const url=new URL(value);
   const host=url.hostname.toLowerCase();
   const validHost=host==='instagram.com'||host==='www.instagram.com';
-  const path=url.pathname.toLowerCase();
-  return url.protocol==='https:'&&validHost&&(path.startsWith('/reel/')||path.startsWith('/p/')||path.startsWith('/tv/'));
- }catch{return false}
+  if(url.protocol!=='https:'||!validHost)return '';
+  let path=url.pathname;
+  if(path.toLowerCase().startsWith('/reels/'))path='/reel/'+path.slice('/reels/'.length);
+  const lower=path.toLowerCase();
+  if(!(lower.startsWith('/reel/')||lower.startsWith('/p/')||lower.startsWith('/tv/')))return '';
+  return url.origin+path;
+ }catch{return ''}
+}
+
+function isInstagramRecipeUrl(value){
+ return Boolean(normalizeInstagramRecipeUrl(value));
 }
 
 export default function AddRecipe({session,onClose,onSaved}){
@@ -107,12 +115,13 @@ export default function AddRecipe({session,onClose,onSaved}){
 
  const queueImport=async e=>{
   e.preventDefault();
-  const url=sourceUrl.trim();
-  if(!url)return;
-  if(!isInstagramRecipeUrl(url)){
+  const rawUrl=sourceUrl.trim();
+  if(!rawUrl)return;
+  if(!isInstagramRecipeUrl(rawUrl)){
    setError('Pegá un enlace válido de un Reel o post de Instagram.');
    return;
   }
+  const url=normalizeInstagramRecipeUrl(rawUrl);
   if(importStrategy==='manual'&&!hintTitle.trim()){
    setError('Para guardar sin IA, poné un nombre para reconocer la receta después.');
    return;
