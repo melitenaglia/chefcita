@@ -6,6 +6,7 @@ const labels={queued:'Pendiente',processing:'Procesando',processed:'Procesada',f
 
 export default function PendingImports(){
  const [items,setItems]=useState([]);
+ const [view,setView]=useState('pending');
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [editing,setEditing]=useState(null);
@@ -21,7 +22,7 @@ export default function PendingImports(){
   else{
    const rows=data||[];
    setItems(rows);
-   const firstNeedsInput=rows.find(x=>x.needs_input);
+   const firstNeedsInput=rows.find(x=>x.status!=='processed'&&x.needs_input);
    if(firstNeedsInput&&editing===null){
     setEditing(firstNeedsInput.id);
     setCaption(firstNeedsInput.pasted_content||firstNeedsInput.extracted_content||'');
@@ -71,18 +72,32 @@ export default function PendingImports(){
  };
 
  const canOfferChoice=item=>item.status!=='processed'&&(item.content_quality==='limited'||item.needs_input);
+ const pendingItems=items.filter(item=>item.status!=='processed');
+ const processedItems=items.filter(item=>item.status==='processed');
+ const visibleItems=view==='processed'?processedItems:pendingItems;
 
  return <section className="pending-page">
   <div className="pending-head">
-   <div><h2>Recetas pendientes</h2><p>Chefcita frena antes de usar IA cuando el contenido parece insuficiente, para no gastar tokens sin sentido.</p></div>
+   <div><h2>Importaciones</h2><p>Separá lo que todavía necesita atención de lo que Chefcita ya procesó.</p></div>
    <button onClick={load}><RefreshCw/>Actualizar</button>
+  </div>
+
+  <div className="import-status-tabs">
+   <button className={view==='pending'?'active':''} onClick={()=>setView('pending')}>
+    Por procesar <span>{pendingItems.length}</span>
+   </button>
+   <button className={view==='processed'?'active':''} onClick={()=>{setView('processed');setEditing(null);setCaption('')}}>
+    Procesadas <span>{processedItems.length}</span>
+   </button>
   </div>
 
   {loading&&<div className="library-state"><Inbox/><p>Cargando pendientes...</p></div>}
   {!loading&&error&&<div className="library-state error"><p>No pudimos cargar los pendientes.</p><small>{error}</small><button onClick={load}>Reintentar</button></div>}
-  {!loading&&!error&&items.length===0&&<div className="library-state"><Inbox/><h2>No hay pendientes</h2><p>Pegá un Reel o post desde Añadir receta y aparecerá acá.</p></div>}
+  {!loading&&!error&&items.length===0&&<div className="library-state"><Inbox/><h2>No hay importaciones</h2><p>Pegá un Reel o post desde Añadir receta y aparecerá acá.</p></div>}
 
-  {!loading&&!error&&items.length>0&&<div className="pending-list">{items.map(item=><article key={item.id}>
+  {!loading&&!error&&items.length>0&&visibleItems.length===0&&<div className="library-state"><Inbox/><h2>{view==='processed'?'Todavía no hay procesadas':'Todo procesado'}</h2><p>{view==='processed'?'Cuando Chefcita termine una importación, la vas a encontrar acá.':'No hay importaciones que necesiten atención.'}</p></div>}
+
+  {!loading&&!error&&visibleItems.length>0&&<div className="pending-list">{visibleItems.map(item=><article key={item.id}>
    <div className="source-icon"><Instagram/></div>
    <div className="pending-copy">
     <div className="pending-row-title">
