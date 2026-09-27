@@ -16,7 +16,7 @@ export default function PendingImports(){
  const load=async()=>{
   setLoading(true);setError('');
   const {data,error}=await supabase.from('imports')
-   .select('id,source_type,source_url,pasted_content,extracted_content,status,error_message,recipe_id,created_at,needs_input,input_message,processing_mode,user_hints,content_quality,content_score,ai_scope')
+   .select('id,source_type,source_url,pasted_content,extracted_content,status,error_message,recipe_id,created_at,needs_input,input_message,processing_mode,user_hints,content_quality,content_score,ai_scope,source_image_url,source_author_handle')
    .order('created_at',{ascending:false});
   if(error){setError(error.message);setItems([])}
   else{
@@ -98,10 +98,10 @@ export default function PendingImports(){
   {!loading&&!error&&items.length>0&&visibleItems.length===0&&<div className="library-state"><Inbox/><h2>{view==='processed'?'Todavía no hay procesadas':'Todo procesado'}</h2><p>{view==='processed'?'Cuando Chefcita termine una importación, la vas a encontrar acá.':'No hay importaciones que necesiten atención.'}</p></div>}
 
   {!loading&&!error&&visibleItems.length>0&&<div className="pending-list">{visibleItems.map(item=><article key={item.id}>
-   <div className="source-icon"><Instagram/></div>
+   <div className="source-icon import-thumb">{item.source_image_url?<img src={item.source_image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<Instagram/>}</div>
    <div className="pending-copy">
     <div className="pending-row-title">
-     <b>{item.user_hints?.title||'Instagram'}</b>
+     <b>{item.user_hints?.title||item.source_author_handle||'Instagram'}</b>
      <span className={'status '+item.status}>{labels[item.status]||item.status}</span>
      {item.processing_mode==='manual'&&<span className="status no-ai">Sin IA</span>}
      {item.processing_mode!=='manual'&&<span className="status scope">{item.ai_scope==='full'?'Completa':'Ficha rápida'}</span>}
