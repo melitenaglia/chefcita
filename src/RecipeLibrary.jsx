@@ -53,7 +53,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
 
  useEffect(()=>{load()},[]);
  useEffect(()=>{
-  const handlePopState=()=>setSelectedId(window.history.state?.chefcitaRecipeId||null);
+  const handlePopState=()=>{const id=window.history.state?.chefcitaRecipeId||null;setSelectedId(id);if(!id)setSelectedLibraryContext(null)};
   window.addEventListener('popstate',handlePopState);
   return()=>window.removeEventListener('popstate',handlePopState);
  },[]);
