@@ -25,11 +25,20 @@ const COUNTABLE_SINGULARS={
 
 const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
 const normalizeUnit=value=>clean(value).toLowerCase().replace(/\.$/,'');
-const isOne=value=>/^1(?:[.,]0+)?$/.test(clean(value));
+const FRACTIONS={'½':.5,'¼':.25,'¾':.75,'⅓':1/3,'⅔':2/3,'⅛':.125,'⅜':.375,'⅝':.625,'⅞':.875};
 const numericValue=value=>{
  const raw=clean(value).replace(',','.');
+ if(raw in FRACTIONS)return FRACTIONS[raw];
+ if(/^\d+\/\d+$/.test(raw)){
+  const [a,b]=raw.split('/').map(Number);
+  return b? a/b:null;
+ }
  if(!/^\d+(?:\.\d+)?$/.test(raw))return null;
  return Number(raw);
+};
+const singularQuantity=value=>{
+ const number=numericValue(value);
+ return number!=null&&number>0&&number<=1;
 };
 
 const compactUnit=(value,quantity='')=>{
@@ -38,7 +47,7 @@ const compactUnit=(value,quantity='')=>{
  const key=normalizeUnit(raw);
  const labels=UNIT_LABELS[key];
  if(!labels)return raw;
- return isOne(quantity)?labels.one:labels.many;
+ return singularQuantity(quantity)?labels.one:labels.many;
 };
 
 const quantityToken='([\\d.,/½¼¾⅓⅔⅛⅜⅝⅞]+(?:\\s*(?:a|–|-)\\s*[\\d.,/½¼¾⅓⅔⅛⅜⅝⅞]+)?)';
