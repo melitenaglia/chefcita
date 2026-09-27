@@ -234,7 +234,7 @@ language sql
 stable
 security definer
 set search_path='public','private'
-as $
+as $access$
   select exists(
     select 1
     from public.recipes r
@@ -256,7 +256,7 @@ as $
         )
       )
   );
-$;
+$access$;
 
 -- Shared members can read the recipe itself. Existing UPDATE/DELETE policies
 -- are intentionally untouched, so sharing never grants recipe editing.
