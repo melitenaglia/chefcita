@@ -1,4 +1,4 @@
-import React, {useEffect,useState} from 'react';
+import React, {useEffect,useLayoutEffect,useState} from 'react';
 import {Heart,Inbox,BookOpen,Plus,ChefHat,Home,LogOut,UserRound,Settings} from 'lucide-react';
 import {supabase} from './supabase.js';
 import Auth from './Auth.jsx';
@@ -20,9 +20,12 @@ export default function App(){
  const [openRecipeId,setOpenRecipeId]=useState(null);
  const [inviteNotice,setInviteNotice]=useState('');
  const [uiSize,setUiSize]=useState(()=>{
-  try{return localStorage.getItem('chefcita:ui-size')||'normal'}catch{return 'normal'}
+  try{
+   const saved=localStorage.getItem('chefcita:ui-size');
+   return ['compact','normal','large'].includes(saved)?saved:'normal';
+  }catch{return 'normal'}
  });
- useEffect(()=>{
+ useLayoutEffect(()=>{
   document.documentElement.dataset.uiSize=uiSize;
   try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
  },[uiSize]);
