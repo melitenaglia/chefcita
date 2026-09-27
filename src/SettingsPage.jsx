@@ -3,9 +3,9 @@ import {supabase} from './supabase.js';
 import HouseholdSettings from './HouseholdSettings.jsx';
 import {userErrorMessage} from './userError.js';
 
-const sections=['Cuenta','Mi hogar','Recetas','IA e importaciones','Datos'];
+const sections=['Cuenta','Pantalla','Mi hogar','Recetas','IA e importaciones','Datos'];
 
-export default function SettingsPage({session,initialSection='Cuenta',notice=''}){
+export default function SettingsPage({session,initialSection='Cuenta',notice='',uiSize='normal',onUiSizeChange}){
  const [section,setSection]=useState(initialSection);
  const [name,setName]=useState(session.user.user_metadata?.name||'');
  const [password,setPassword]=useState('');
