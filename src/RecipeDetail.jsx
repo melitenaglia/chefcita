@@ -93,8 +93,9 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <article className="recipe-detail">
    <div className="detail-head">
-    <small>RECETA</small>
+    <span className="detail-head-label">Receta</span>
     <div className="detail-head-actions">
+     {source?.source_url&&<a className="source-head-action" href={source.source_url} target="_blank" rel="noreferrer" aria-label="Abrir publicación original"><ExternalLink/></a>}
      {recipe?.owner_id===session.user.id&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
      <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
     </div>
@@ -106,8 +107,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
     <h2 className="detail-title">{recipe.title||'Receta'}</h2>
 
     {source?.source_url&&<a className="detail-source-quick" href={source.source_url} target="_blank" rel="noreferrer">
-     <ExternalLink/>
-     <span><b>Abrir publicación original</b><small>{source.author_handle||'Instagram'}</small></span>
+     <ExternalLink/><span>Instagram · Abrir original</span>
     </a>}
 
     {recipe.image_url&&<div className="detail-image"><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
@@ -126,8 +126,8 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
     <section className="personal-quick" aria-label="Mi receta">
      <div className="personal-actions">
-      <button className={personal.is_favorite?'personal-action active':''} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Favorita'}</button>
-      <button className={personal.tried_status==='tried'?'personal-action active tried':''} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
+      <button className={personal.is_favorite?'personal-action active':'personal-action'} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Favorita'}</button>
+      <button className={personal.tried_status==='tried'?'personal-action active tried':'personal-action'} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
      </div>
      {personal.tried_status==='tried'&&<div className="rating-row"><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{!personal.rating&&<p className="rating-prompt">Tocá de 1 a 5 estrellas.</p>}</div>}
     </section>
