@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
+import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
@@ -19,7 +20,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
   const {data,error}=await supabase.from('recipes')
    .select('*,categories(name),meal_types(name),recipe_ingredients(*),recipe_steps(*),recipe_tags(tags(name)),recipe_sources(*),user_recipes!left(is_favorite,tried_status,rating,personal_notes,tried_at)')
    .eq('id',recipeId).single();
-  if(error){setError(error.message);setLoading(false);return}
+  if(error){setError(userErrorMessage(error,'No pude cargar esta receta. Probá de nuevo.'));setLoading(false);return}
   setRecipe(data);
   const p=data.user_recipes?.[0]||{};
   setPersonal({
@@ -65,7 +66,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
    tried_at:next.tried_at
   },{onConflict:'user_id,recipe_id'});
   setBusy(false);
-  if(error){setError(error.message);return}
+  if(error){setError(userErrorMessage(error,'No pude guardar este cambio. Probá de nuevo.'));return}
   setPersonal(next);
   onChanged?.();
  };
@@ -78,7 +79,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
   setBusy(true);setError('');
   const {error}=await supabase.from('recipes').delete().eq('id',recipe.id);
   setBusy(false);
-  if(error){setError(error.message);return}
+  if(error){setError(userErrorMessage(error,'No pude eliminar esta receta. Probá de nuevo.'));return}
   onDeleted?.(recipe.id);
   onClose();
  };
@@ -122,7 +123,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
       <button className={personal.is_favorite?'personal-action active':''} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Marcar favorita'}</button>
       <button className={personal.tried_status==='tried'?'personal-action active tried':''} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
      </div>
-     <div className={personal.tried_status==='tried'?'rating-row':'rating-row disabled'}><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy||personal.tried_status!=='tried'} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div></div>
+     <div className={personal.tried_status==='tried'?'rating-row':'rating-row disabled'}><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy||personal.tried_status!=='tried'} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{personal.tried_status==='tried'&&!personal.rating&&<p className="rating-prompt">¿Qué te pareció? Tocá de 1 a 5 estrellas.</p>}</div>
      <label>Mis notas<textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Qué cambiarías, con qué lo acompañaste, si gustó en casa..."/></label>
      <button className="save-notes" disabled={busy} onClick={saveNotes}><Save/>Guardar notas</button>
     </section>
