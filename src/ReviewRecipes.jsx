@@ -27,8 +27,8 @@ export default function ReviewRecipes(){
    recipeId={selected}
    mode="review"
    onBack={()=>setSelected(null)}
-   onSaved={async({approved})=>{
-    if(approved){
+   onSaved={async({approved,deleted})=>{
+    if(approved||deleted){
      setSelected(null);
      await loadList();
     }
