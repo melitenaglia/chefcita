@@ -1,6 +1,7 @@
 import React,{useState} from 'react';
 import {supabase} from './supabase.js';
 import HouseholdSettings from './HouseholdSettings.jsx';
+import {userErrorMessage} from './userError.js';
 
 const sections=['Cuenta','Mi hogar','Recetas','IA e importaciones','Datos'];
 
@@ -18,11 +19,11 @@ export default function SettingsPage({session,initialSection='Cuenta'}){
   if(!error){
    const {error:profileError}=await supabase.from('profiles').update({display_name:name.trim()}).eq('id',session.user.id);
    setBusy(false);
-   setMessage(profileError?profileError.message:'Nombre guardado.');
+   setMessage(profileError?userErrorMessage(profileError,'No pude guardar el nombre. Probá de nuevo.'):'Nombre guardado.');
    return;
   }
   setBusy(false);
-  setMessage(error.message);
+  setMessage(userErrorMessage(error,'No pude guardar el nombre. Probá de nuevo.'));
  };
 
  const savePassword=async()=>{
@@ -32,7 +33,7 @@ export default function SettingsPage({session,initialSection='Cuenta'}){
   setBusy(true);
   const {error}=await supabase.auth.updateUser({password});
   setBusy(false);
-  if(error){setMessage(error.message);return;}
+  if(error){setMessage(userErrorMessage(error,'No pude cambiar la contraseña. Probá de nuevo.'));return;}
   setPassword(''); setConfirmPassword(''); setMessage('Contraseña actualizada.');
  };
 
@@ -50,7 +51,7 @@ export default function SettingsPage({session,initialSection='Cuenta'}){
    {section==='Mi hogar'&&<HouseholdSettings session={session}/>}
    {section==='Recetas'&&<><h2>Recetas</h2><p>Preferencias generales para guardar y organizar tus recetas.</p><div className="setting-row"><span><b>Privacidad por defecto</b><small>Quién podrá ver una receta nueva</small></span><strong>Mi hogar</strong></div></>}
    {section==='IA e importaciones'&&<><h2>IA e importaciones</h2><p>Chefcita no completará datos que no pueda obtener de la fuente. Lo que falte quedará para validar.</p></>}
-   {section==='Datos'&&<><h2>Datos</h2><p>Importación de Chefcita 1.0 y futuras opciones de exportación.</p><div className="setting-row"><span><b>Chefcita 1.0</b><small>Biblioteca anterior</small></span><em>Pendiente de migrar</em></div></>}
+   {section==='Datos'&&<><h2>Datos</h2><p>Importación de Chefcita 1.0 y futuras opciones de exportación.</p><div className="setting-row"><span><b>Chefcita 1.0</b><small>Biblioteca anterior importada a Chefcita 2.0</small></span><strong>Migración completada</strong></div></>}
   </div>
  </section>;
 }
