@@ -1,9 +1,10 @@
 import React,{useEffect,useState} from 'react';
-import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle} from 'lucide-react';
+import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste,LoaderCircle,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
+import {formatIngredientQuantity} from './recipeFormat.js';
 
-const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
+const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',_initial_unit:'',note:'',section:'',role:'main'});
 const blankStep=()=>({instruction:'',duration_minutes:null,temperature_c:null,note:''});
 
 export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
@@ -21,6 +22,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
  const [aiMessage,setAiMessage]=useState('');
  const [supplementalToSave,setSupplementalToSave]=useState('');
  const [error,setError]=useState('');
+ const [editSection,setEditSection]=useState(null);
 
  const load=async()=>{
   setLoading(true);setError('');
@@ -38,13 +40,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   setCategories(cats||[]);setMealTypes(types||[]);setTags(tagRows||[]);
   setSelectedTags((data.recipe_tags||[]).map(x=>x.tag_id));
   setIngredients([...(data.recipe_ingredients||[])].sort((a,b)=>a.sort_order-b.sort_order).map(x=>{
-   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   const quantityText=x.quantity_text||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):'');
    return {
     original_name:x.original_name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
     quantity:x.quantity,
     unit:x.unit||'',
+    _initial_unit:x.unit||'',
     note:x.note||'',
     section:x.section||'',
     role:x.role||'main'
@@ -109,13 +112,14 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
   }));
 
   const enrichedIngredients=(result.ingredients||[]).map(x=>{
-   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   const quantityText=x.quantity_text||(x.quantity!==null&&x.quantity!==undefined?String(x.quantity):'');
    return {
     original_name:x.name||'',
     quantity_text:quantityText,
     _initial_quantity_text:quantityText,
     quantity:x.quantity,
     unit:x.unit||'',
+    _initial_unit:x.unit||'',
     note:x.note||'',
     section:x.section||'',
     role:x.role==='secondary'?'secondary':'main'
@@ -187,7 +191,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
      original_name:x.original_name.trim(),
      quantity_text:x.quantity_text.trim()||'',
      quantity:quantityChanged?null:x.quantity,
-     unit:quantityChanged?'':x.unit,
+     unit:x.unit.trim()||'',
      note:x.note.trim()||'',
      section:x.section.trim()||'',
      role:x.role==='secondary'?'secondary':'main'
