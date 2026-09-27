@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2,LoaderCircle,CheckCircle2,ChevronDown} from 'lucide-react';
 import {supabase} from './supabase.js';
+import {userErrorMessage} from './userError.js';
 
 function normalizeInstagramRecipeUrl(value){
  try{
@@ -20,7 +21,7 @@ function isInstagramRecipeUrl(value){
  return Boolean(normalizeInstagramRecipeUrl(value));
 }
 
-export default function AddRecipe({session,onClose,onSaved}){
+export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
  const [mode,setMode]=useState('link');
  const [sourceUrl,setSourceUrl]=useState('');
  const [pastedContent,setPastedContent]=useState('');
@@ -42,6 +43,28 @@ export default function AddRecipe({session,onClose,onSaved}){
  const [pendingImportId,setPendingImportId]=useState(null);
  const [importStage,setImportStage]=useState('');
  const [importMessage,setImportMessage]=useState('');
+ const [draftRestored,setDraftRestored]=useState(false);
+ const draftKey=`chefcita:add-draft:${session.user.id}`;
+
+ useEffect(()=>{
+  try{
+   const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');
+   if(saved){
+    setSourceUrl(saved.sourceUrl||'');
+    setPastedContent(saved.pastedContent||'');
+    setHintTitle(saved.hintTitle||'');
+    setSelectedTags(Array.isArray(saved.selectedTags)?saved.selectedTags:[]);
+   }
+  }catch{}
+  setDraftRestored(true);
+ },[draftKey]);
+
+ useEffect(()=>{
+  if(!draftRestored||pendingImportId)return;
+  const hasDraft=sourceUrl.trim()||pastedContent.trim()||hintTitle.trim()||selectedTags.length;
+  if(!hasDraft){sessionStorage.removeItem(draftKey);return}
+  sessionStorage.setItem(draftKey,JSON.stringify({sourceUrl,pastedContent,hintTitle,selectedTags}));
+ },[draftRestored,pendingImportId,sourceUrl,pastedContent,hintTitle,selectedTags,draftKey]);
 
  useEffect(()=>{
   Promise.all([
@@ -60,6 +83,8 @@ export default function AddRecipe({session,onClose,onSaved}){
   return data?.household_id||null;
  };
 
+ const clearDraft=()=>{try{sessionStorage.removeItem(draftKey)}catch{}};
+
  const toggleTag=name=>{
   setSelectedTags(list=>list.includes(name)?list.filter(x=>x!==name):[...list,name]);
  };
@@ -67,6 +92,7 @@ export default function AddRecipe({session,onClose,onSaved}){
  const finishImportResponse=(importId,response)=>{
   const status=response?.status||'';
   if(status==='processed'||status==='processed_without_ai'){
+   clearDraft();
    setBusy(false);
    onSaved('Por validar');
    return true;
@@ -101,7 +127,7 @@ export default function AddRecipe({session,onClose,onSaved}){
    setPendingImportId(importId);
    setImportStage('error');
    setImportMessage('La receta quedó guardada, pero no pude terminar el procesamiento. Podés reintentar sin volver a cargarla.');
-   setError(invokeError.message);
+   setError(userErrorMessage(invokeError,'No pude terminar el procesamiento. Podés reintentarlo sin volver a cargar la receta.'));
    setBusy(false);
    return;
   }
@@ -128,6 +154,32 @@ export default function AddRecipe({session,onClose,onSaved}){
   }
 
   setBusy(true);setError('');setImportMessage('');
+
+  const [{data:existingSource},{data:existingImport}]=await Promise.all([
+   supabase.from('recipe_sources').select('recipe_id').eq('source_url',url).limit(1).maybeSingle(),
+   supabase.from('imports').select('id,status,recipe_id,needs_input').eq('user_id',session.user.id).eq('source_url',url).order('created_at',{ascending:false}).limit(1).maybeSingle()
+  ]);
+
+  const existingRecipeId=existingSource?.recipe_id||existingImport?.recipe_id;
+  if(existingRecipeId){
+   clearDraft();
+   setBusy(false);
+   onExistingRecipe?.(existingRecipeId);
+   return;
+  }
+
+  if(existingImport?.id){
+   clearDraft();
+   setPendingImportId(existingImport.id);
+   if(existingImport.needs_input&&pastedContent.trim()){
+    await supabase.from('imports').update({
+     pasted_content:pastedContent.trim(),status:'queued',needs_input:false,input_message:null,error_message:null,content_quality:'unknown',content_score:0
+    }).eq('id',existingImport.id);
+   }
+   await invokeImport(existingImport.id);
+   return;
+  }
+
   const householdId=await getHousehold();
   const {data,error:insertError}=await supabase.from('imports').insert({
    user_id:session.user.id,
@@ -144,7 +196,7 @@ export default function AddRecipe({session,onClose,onSaved}){
    }
   }).select('id').single();
 
-  if(insertError){setBusy(false);setError(insertError.message);return}
+  if(insertError){setBusy(false);setError(userErrorMessage(insertError,'No pude guardar la importación. Probá de nuevo.'));return}
   setPendingImportId(data.id);
   await invokeImport(data.id);
  };
@@ -162,7 +214,7 @@ export default function AddRecipe({session,onClose,onSaved}){
    content_quality:'unknown',
    content_score:0
   }).eq('id',pendingImportId);
-  if(updateError){setBusy(false);setError(updateError.message);return}
+  if(updateError){setBusy(false);setError(userErrorMessage(updateError,'No pude guardar el texto. Probá de nuevo.'));return}
   await invokeImport(pendingImportId);
  };
 
@@ -183,7 +235,7 @@ export default function AddRecipe({session,onClose,onSaved}){
    needs_input:false,
    error_message:null
   }).eq('id',pendingImportId);
-  if(updateError){setBusy(false);setError(updateError.message);return}
+  if(updateError){setBusy(false);setError(userErrorMessage(updateError,'No pude preparar esta receta para guardar. Probá de nuevo.'));return}
   await invokeImport(pendingImportId);
  };
 
@@ -198,7 +250,8 @@ export default function AddRecipe({session,onClose,onSaved}){
   setBusy(true);setError('');
   const {error:deleteError}=await supabase.from('imports').delete().eq('id',pendingImportId);
   setBusy(false);
-  if(deleteError){setError(deleteError.message);return}
+  if(deleteError){setError(userErrorMessage(deleteError,'No pude descartar esta importación. Probá de nuevo.'));return}
+  clearDraft();
   setPendingImportId(null);setImportStage('');setImportMessage('');
  };
 
@@ -244,19 +297,25 @@ export default function AddRecipe({session,onClose,onSaved}){
    visibility:householdId?'household':'private'
   }).select('id').single();
 
-  if(saveError){setBusy(false);setError(saveError.message);return}
+  if(saveError){setBusy(false);setError(userErrorMessage(saveError,'No pude guardar la receta. Probá de nuevo.'));return}
 
   const {error:sourceError}=await supabase.from('recipe_sources').insert({
    recipe_id:data.id,source_type:'manual',is_primary:true
   });
-  if(sourceError){setBusy(false);setError(sourceError.message);return}
+  if(sourceError){
+   await supabase.from('recipes').delete().eq('id',data.id);
+   setBusy(false);
+   setError(userErrorMessage(sourceError,'No pude terminar de guardar la receta. No se creó una copia incompleta; probá de nuevo.'));
+   return;
+  }
 
   const tagIds=tags.filter(t=>selectedTags.includes(t.name)).map(t=>t.id);
   if(tagIds.length){
    const {error:tagError}=await supabase.from('recipe_tags').insert(tagIds.map(tag_id=>({recipe_id:data.id,tag_id})));
-   if(tagError){setBusy(false);setError(tagError.message);return}
+   if(tagError){setBusy(false);setError(userErrorMessage(tagError,'La receta se guardó, pero no pude guardar sus etiquetas. Podés editarlas después.'));return}
   }
 
+  clearDraft();
   setBusy(false);
   onSaved('Recetas');
  };

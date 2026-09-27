@@ -1,10 +1,11 @@
 import React,{useEffect,useState} from 'react';
 import {Inbox,Instagram,RefreshCw,ExternalLink,Trash2,Sparkles,PenLine} from 'lucide-react';
 import {supabase} from './supabase.js';
+import {userErrorMessage} from './userError.js';
 
 const labels={queued:'Pendiente',processing:'Procesando',processed:'Procesada',failed:'Con error'};
 
-export default function PendingImports(){
+export default function PendingImports({onOpenRecipe}){
  const [items,setItems]=useState([]);
  const [view,setView]=useState('pending');
  const [loading,setLoading]=useState(true);
@@ -18,7 +19,7 @@ export default function PendingImports(){
   const {data,error}=await supabase.from('imports')
    .select('id,source_type,source_url,pasted_content,extracted_content,status,error_message,recipe_id,created_at,needs_input,input_message,processing_mode,user_hints,content_quality,content_score,ai_scope,source_image_url,source_author_handle')
    .order('created_at',{ascending:false});
-  if(error){setError(error.message);setItems([])}
+  if(error){setError(userErrorMessage(error,'No pude cargar las importaciones. Probá de nuevo.'));setItems([])}
   else{
    const rows=data||[];
    setItems(rows);
@@ -36,7 +37,7 @@ export default function PendingImports(){
  const processImport=async(id,extra={})=>{
   setBusy(true);setError('');
   const {error}=await supabase.functions.invoke('process-recipe-import',{body:{import_id:id,...extra}});
-  if(error)setError(error.message);
+  if(error)setError(userErrorMessage(error,'No pude procesar esta importación. Podés reintentarlo.'));
   setBusy(false);
   await load();
  };
@@ -48,7 +49,7 @@ export default function PendingImports(){
   const {error}=await supabase.from('imports').update({
    pasted_content:text,needs_input:false,input_message:null,status:'queued',content_quality:'unknown',content_score:0
   }).eq('id',item.id);
-  if(error){setBusy(false);setError(error.message);return}
+  if(error){setBusy(false);setError(userErrorMessage(error,'No pude guardar el texto. Probá de nuevo.'));return}
   setEditing(null);setCaption('');
   setBusy(false);
   await processImport(item.id);
@@ -57,7 +58,7 @@ export default function PendingImports(){
  const saveWithoutAi=async item=>{
   setBusy(true);setError('');
   const {error}=await supabase.from('imports').update({processing_mode:'manual',status:'queued',needs_input:false,error_message:null}).eq('id',item.id);
-  if(error){setBusy(false);setError(error.message);return}
+  if(error){setBusy(false);setError(userErrorMessage(error,'No pude preparar esta receta para completar después.'));return}
   setBusy(false);
   await processImport(item.id);
  };
@@ -67,7 +68,7 @@ export default function PendingImports(){
   setBusy(true);setError('');
   const {error}=await supabase.from('imports').delete().eq('id',item.id);
   setBusy(false);
-  if(error){setError(error.message);return}
+  if(error){setError(userErrorMessage(error,'No pude descartar esta importación. Probá de nuevo.'));return}
   await load();
  };
 
@@ -78,7 +79,7 @@ export default function PendingImports(){
 
  return <section className="pending-page">
   <div className="pending-head">
-   <div><h2>Importaciones</h2><p>Separá lo que todavía necesita atención de lo que Chefcita ya procesó.</p></div>
+   <div><h2>Importaciones</h2><p>Acá ves lo que todavía necesita tu ayuda y las recetas que Chefcita ya terminó.</p></div>
    <button onClick={load}><RefreshCw/>Actualizar</button>
   </div>
 
@@ -103,18 +104,18 @@ export default function PendingImports(){
     <div className="pending-row-title">
      <b>{item.user_hints?.title||item.source_author_handle||'Instagram'}</b>
      <span className={'status '+item.status}>{labels[item.status]||item.status}</span>
-     {item.processing_mode==='manual'&&<span className="status no-ai">Sin IA</span>}
+     {item.processing_mode==='manual'&&<span className="status no-ai">Para completar</span>}
      {item.processing_mode!=='manual'&&<span className="status scope">{item.ai_scope==='full'?'Completa':'Ficha rápida'}</span>}
      {item.needs_input&&<span className="status paused">Falta caption</span>}
-     {item.content_quality==='limited'&&item.status!=='processed'&&<span className="status paused">IA detenida</span>}
+     {item.content_quality==='limited'&&item.status!=='processed'&&<span className="status paused">Necesita revisión</span>}
      {item.content_quality==='good'&&item.status!=='processed'&&<span className="status good">Contenido útil</span>}
     </div>
 
-    <a href={item.source_url} target="_blank" rel="noreferrer">{item.source_url}<ExternalLink/></a>
+    <a href={item.source_url} target="_blank" rel="noreferrer">Abrir publicación de Instagram <ExternalLink/></a>
 
     {(item.pasted_content||item.extracted_content)&&<p>{item.pasted_content||item.extracted_content}</p>}
     {item.input_message&&<small className="pending-info">{item.input_message}</small>}
-    {item.error_message&&<small className="pending-error">{item.error_message}</small>}
+    {item.error_message&&<small className="pending-error">No pude terminar esta importación. Podés reintentarla sin volver a cargarla.</small>}
 
     {item.user_hints?.tags?.length>0&&<div className="mini-tags">{item.user_hints.tags.map(tag=><span key={tag}>{tag}</span>)}</div>}
 
@@ -122,11 +123,12 @@ export default function PendingImports(){
      {canOfferChoice(item)&&<>
       {item.needs_input&&<button disabled={busy} onClick={()=>processImport(item.id)}><RefreshCw/>Reintentar lectura</button>}
       <button onClick={()=>{setEditing(item.id);setCaption(item.pasted_content||item.extracted_content||'')}}><PenLine/>Pegar caption</button>
-      <button disabled={busy} onClick={()=>saveWithoutAi(item)}>Guardar para completar · 0 IA</button>
+      <button disabled={busy} onClick={()=>saveWithoutAi(item)}>Guardar para completar</button>
       {item.content_quality==='limited'&&<button className="force-ai" disabled={busy} onClick={()=>processImport(item.id,{force_ai:true})}><Sparkles/>Procesar igual</button>}
      </>}
      {!canOfferChoice(item)&&item.status==='queued'&&<button disabled={busy} onClick={()=>processImport(item.id)}><Sparkles/>Procesar</button>}
      {item.status==='failed'&&<button disabled={busy} onClick={()=>processImport(item.id)}>Reintentar</button>}
+     {item.status==='processed'&&item.recipe_id&&<button className="processed-open" onClick={()=>onOpenRecipe?.(item.recipe_id)}>Abrir receta</button>}
      {item.status!=='processed'&&<button className="danger-lite" disabled={busy} onClick={()=>discard(item)}><Trash2/>Descartar</button>}
     </div>
 

@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Home,UserPlus,Users} from 'lucide-react';
 import {supabase} from './supabase.js';
+import {userErrorMessage} from './userError.js';
 
 export default function HouseholdSettings({session}){
  const [household,setHousehold]=useState(null);
@@ -15,7 +16,7 @@ export default function HouseholdSettings({session}){
  const load=async()=>{
   setLoading(true); setMessage('');
   const {data:membership,error:membershipError}=await supabase.from('household_members').select('household_id,role').eq('user_id',session.user.id).limit(1).maybeSingle();
-  if(membershipError){setMessage(membershipError.message);setLoading(false);return;}
+  if(membershipError){setMessage(userErrorMessage(membershipError,'No pude cargar tu hogar. Probá de nuevo.'));setLoading(false);return;}
   if(!membership){setHousehold(null);setMembers([]);setInvites([]);setLoading(false);return;}
   const [{data:h,error:hError},{data:m,error:mError},{data:i,error:iError}]=await Promise.all([
    supabase.from('households').select('id,name,created_by').eq('id',membership.household_id).single(),
@@ -23,7 +24,7 @@ export default function HouseholdSettings({session}){
    membership.role==='owner'?supabase.from('household_invites').select('id,invited_email,token,expires_at,accepted_at').eq('household_id',membership.household_id).is('accepted_at',null).order('created_at',{ascending:false}):Promise.resolve({data:[],error:null})
   ]);
   const error=hError||mError||iError;
-  if(error){setMessage(error.message);setLoading(false);return;}
+  if(error){setMessage(userErrorMessage(error,'No pude cargar tu hogar. Probá de nuevo.'));setLoading(false);return;}
   setHousehold({...h,role:membership.role}); setName(h.name); setMembers(m||[]); setInvites(i||[]); setLoading(false);
  };
 
@@ -34,7 +35,7 @@ export default function HouseholdSettings({session}){
   setBusy(true);setMessage('');
   const {error}=await supabase.rpc('bootstrap_household',{p_name:name.trim()});
   setBusy(false);
-  if(error){setMessage(error.message);return;}
+  if(error){setMessage(userErrorMessage(error,'No pude guardar este cambio. Probá de nuevo.'));return;}
   setMessage('Hogar creado.'); await load();
  };
 
@@ -43,7 +44,7 @@ export default function HouseholdSettings({session}){
   setBusy(true);setMessage('');
   const {error}=await supabase.from('households').update({name:name.trim()}).eq('id',household.id);
   setBusy(false);
-  if(error){setMessage(error.message);return;}
+  if(error){setMessage(userErrorMessage(error,'No pude guardar este cambio. Probá de nuevo.'));return;}
   setMessage('Nombre del hogar actualizado.'); await load();
  };
 
@@ -53,7 +54,7 @@ export default function HouseholdSettings({session}){
   setBusy(true);setMessage('');
   const {data:newInvite,error}=await supabase.from('household_invites').insert({household_id:household.id,invited_email:clean,invited_by:session.user.id}).select('id,invited_email,token,expires_at,accepted_at').single();
   setBusy(false);
-  if(error){setMessage(error.message);return;}
+  if(error){setMessage(userErrorMessage(error,'No pude guardar este cambio. Probá de nuevo.'));return;}
   setEmail('');setMessage('Invitación creada. Compartí el enlace con esa persona para que se una al hogar.');setInvites(current=>[newInvite,...current]);
  };
 

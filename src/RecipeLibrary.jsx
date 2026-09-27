@@ -1,22 +1,24 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle,SlidersHorizontal,Star} from 'lucide-react';
+import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle,SlidersHorizontal,Star,ChevronDown} from 'lucide-react';
 import {supabase} from './supabase.js';
 import RecipeDetail from './RecipeDetail.jsx';
+import {userErrorMessage} from './userError.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeLibrary({session,mode='all'}){
+export default function RecipeLibrary({session,mode='all',initialRecipeId=null}){
  const [recipes,setRecipes]=useState([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [search,setSearch]=useState('');
- const [selectedId,setSelectedId]=useState(null);
+ const [selectedId,setSelectedId]=useState(initialRecipeId);
  const [categoryFilter,setCategoryFilter]=useState('');
  const [mealFilter,setMealFilter]=useState('');
  const [levelFilter,setLevelFilter]=useState('');
  const [personalFilter,setPersonalFilter]=useState('');
  const [sort,setSort]=useState('newest');
  const [kitchenView,setKitchenView]=useState('favorites');
+ const [filtersOpen,setFiltersOpen]=useState(false);
 
  const load=async()=>{
   setLoading(true);
@@ -26,12 +28,13 @@ export default function RecipeLibrary({session,mode='all'}){
    .select('id,title,description,image_url,level,total_minutes,reviewed_at,created_at,categories(name),meal_types(name),recipe_ingredients(original_name,role),recipe_tags(tags(name)),user_recipes!left(is_favorite,tried_status,rating,tried_at)')
    .eq('review_status','recipe')
    .order('created_at',{ascending:false});
-  if(error){setError(error.message);setRecipes([])}
+  if(error){setError(userErrorMessage(error,'No pude cargar tus recetas. Probá de nuevo.'));setRecipes([])}
   else setRecipes(data||[]);
   setLoading(false);
  };
 
  useEffect(()=>{load()},[]);
+ useEffect(()=>{if(initialRecipeId)setSelectedId(initialRecipeId)},[initialRecipeId]);
 
  const categories=useMemo(()=>[...new Set(recipes.map(x=>x.categories?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
  const mealTypes=useMemo(()=>[...new Set(recipes.map(x=>x.meal_types?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),[recipes]);
@@ -99,7 +102,7 @@ export default function RecipeLibrary({session,mode='all'}){
    tried_at:triedStatus==='tried'?(current.tried_at||new Date().toISOString().slice(0,10)):null
   };
   const {error}=await supabase.from('user_recipes').upsert(next,{onConflict:'user_id,recipe_id'});
-  if(error){setError(error.message);return}
+  if(error){setError(userErrorMessage(error,'No pude guardar este cambio. Probá de nuevo.'));return}
   setRecipes(list=>list.map(item=>item.id===recipe.id?{...item,user_recipes:[{...current,...next}]}:item));
  };
 
@@ -120,6 +123,7 @@ export default function RecipeLibrary({session,mode='all'}){
  };
 
  const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||personalFilter||sort!=='newest');
+ const filterCount=[categoryFilter,mealFilter,levelFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
 
  return <section className="recipe-library">
   {mode==='kitchen'&&<div className="kitchen-tabs">
@@ -133,7 +137,8 @@ export default function RecipeLibrary({session,mode='all'}){
    <span>{visible.length} {visible.length===1?'receta':'recetas'}</span>
   </div>
 
-  <div className="library-filters">
+  <button type="button" className="mobile-filter-toggle" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen}><span><SlidersHorizontal/>Filtros</span>{filterCount>0&&<em>{filterCount}</em>}<ChevronDown/></button>
+  <div className={filtersOpen?'library-filters mobile-open':'library-filters'}>
    <span className="filters-label"><SlidersHorizontal/>Filtros</span>
    <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="">Todas las categorías</option>{categories.map(x=><option key={x}>{x}</option>)}</select>
    <select value={mealFilter} onChange={e=>setMealFilter(e.target.value)}><option value="">Todos los tipos</option>{mealTypes.map(x=><option key={x}>{x}</option>)}</select>

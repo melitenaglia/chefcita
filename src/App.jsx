@@ -17,6 +17,8 @@ export default function App(){
  const [adding,setAdding]=useState(false);
  const [recipeRefresh,setRecipeRefresh]=useState(0);
  const [pendingStart,setPendingStart]=useState('imports');
+ const [openRecipeId,setOpenRecipeId]=useState(null);
+ const [inviteNotice,setInviteNotice]=useState('');
  useEffect(()=>{
   supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
@@ -27,8 +29,10 @@ export default function App(){
   const token=new URLSearchParams(window.location.search).get('invite');
   if(!token)return;
   supabase.rpc('accept_household_invite',{p_token:token}).then(({error})=>{
-   if(error) console.error('No se pudo aceptar la invitación',error);
-   else {setSettingsStart('Mi hogar');setTab('Configuración');}
+   setSettingsStart('Mi hogar');
+   setTab('Configuración');
+   if(error)setInviteNotice('No pude aceptar esta invitación. Comprobá que hayas iniciado sesión con el mismo email al que se envió y que el enlace no haya vencido.');
+   else setInviteNotice('Listo. Ya te uniste al hogar.');
    window.history.replaceState({},'',window.location.pathname);
   });
  },[session]);
@@ -36,15 +40,22 @@ export default function App(){
  if(!session)return <Auth/>;
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
  const goToTab=target=>{if(target==='Pendientes')setPendingStart('imports');setTab(target)};
+ const openRecipe=id=>{
+  if(!id)return;
+  setAdding(false);
+  setOpenRecipeId(id);
+  setRecipeRefresh(x=>x+1);
+  setTab('Recetas');
+ };
  return <div className="shell"><aside><div className="logo"><ChefHat/><b>Chefcita</b></div><nav>{nav.slice(0,2).map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>goToTab(n)}><I/><span>{n}</span></button>)}<button className="mobile-nav-add" onClick={()=>setAdding(true)}><Plus/><span>Añadir</span></button>{nav.slice(2).map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>goToTab(n)}><I/><span>{n}</span></button>)}</nav><div className="account-nav"><button onClick={()=>setTab('Mi cuenta')}><UserRound/>Mi cuenta</button><button onClick={()=>setTab('Configuración')}><Settings/>Config.</button><button className="logout" onClick={()=>supabase.auth.signOut()}><LogOut/>Salir</button></div></aside>
  <main className="content"><header><div><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div><div className="header-actions"><button className="mobile-settings" onClick={()=>setTab('Configuración')} aria-label="Abrir configuración"><Settings/></button><button className="add" onClick={()=>setAdding(true)}><Plus/> <span>Añadir receta</span></button></div></header>
  {tab==='Inicio'&&<HomeDashboard onNavigate={goToTab} onAdd={()=>setAdding(true)}/>} 
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
- {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart}/>} 
- {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session}/>} 
+ {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart} notice={inviteNotice}/>} 
+ {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} initialRecipeId={openRecipeId}/>} 
  {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
- {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart}/>} 
+ {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>} 
  {tab!=='Inicio'&&tab!=='Mi cuenta'&&tab!=='Configuración'&&tab!=='Recetas'&&tab!=='Mi cocina'&&tab!=='Pendientes'&&<section className="empty"><ChefHat/><h2>{tab} está listo</h2><p>En el próximo paso conectamos esta sección con tus datos reales.</p></section>}
- {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);if(target==='Por validar'){setPendingStart('review');setTab('Pendientes')}else{if(target==='Pendientes')setPendingStart('imports');setTab(target)}}}/>} 
+ {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{setAdding(false);setRecipeRefresh(x=>x+1);if(target==='Por validar'){setPendingStart('review');setTab('Pendientes')}else{if(target==='Pendientes')setPendingStart('imports');setTab(target)}}}/>} 
  </main></div>;
 }
