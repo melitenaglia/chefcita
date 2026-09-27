@@ -49,6 +49,49 @@ $$;
 revoke all on function public.create_shared_library(text) from public,anon;
 grant execute on function public.create_shared_library(text) to authenticated;
 
+create or replace function public.accept_shared_library_invite(p_token uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_user uuid:=auth.uid();
+  v_email text;
+  v_invite public.household_invites;
+begin
+  if v_user is null then raise exception 'not_authenticated'; end if;
+
+  select email into v_email from auth.users where id=v_user;
+
+  select *
+  into v_invite
+  from public.household_invites
+  where token=p_token
+    and accepted_at is null
+    and expires_at>now()
+  for update;
+
+  if not found then raise exception 'invite_invalid_or_expired'; end if;
+  if lower(coalesce(v_invite.invited_email,''))<>lower(coalesce(v_email,'')) then
+    raise exception 'invite_email_mismatch';
+  end if;
+
+  insert into public.household_members(household_id,user_id,role)
+  values(v_invite.household_id,v_user,'member')
+  on conflict (household_id,user_id) do nothing;
+
+  update public.household_invites
+  set accepted_at=now()
+  where id=v_invite.id;
+
+  return v_invite.household_id;
+end;
+$;
+
+revoke all on function public.accept_shared_library_invite(uuid) from public,anon;
+grant execute on function public.accept_shared_library_invite(uuid) to authenticated;
+
 -- A recipe always remains personal/owned by its creator.
 -- Sharing adds read access; it does not move or duplicate the recipe.
 create table if not exists public.recipe_library_shares (
@@ -69,7 +112,7 @@ where r.household_id is not null
 on conflict (recipe_id,household_id) do nothing;
 
 -- Under the new model the recipe itself is always personal.
-update public.recipes set household_id=null where household_id is not null;
+update public.recipes set household_id=null, visibility='private' where household_id is not null;
 update public.imports set household_id=null where household_id is not null;
 
 drop policy if exists recipe_library_shares_select on public.recipe_library_shares;
