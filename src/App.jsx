@@ -43,11 +43,11 @@ export default function App(){
   if(!session)return;
   const token=new URLSearchParams(window.location.search).get('invite');
   if(!token)return;
-  supabase.rpc('accept_household_invite',{p_token:token}).then(({error})=>{
+  supabase.rpc('accept_shared_library_invite',{p_token:token}).then(({error})=>{
    setSettingsStart('Bibliotecas');
    setTab('Configuración');
    if(error)setInviteNotice('No pude aceptar esta invitación. Comprobá que hayas iniciado sesión con el mismo email al que se envió y que el enlace no haya vencido.');
-   else setInviteNotice('Listo. Ya te uniste al hogar.');
+   else setInviteNotice('Listo. Ya te uniste a la biblioteca compartida.');
    window.history.replaceState({},'',window.location.pathname);
   });
  },[session]);
