@@ -143,7 +143,7 @@ from public.ingredients i
 on conflict (normalized_alias)
 do update set ingredient_id=excluded.ingredient_id, alias_text=excluded.alias_text;
 
-with extra(alias_text,target_name) as (
+with extra_raw(alias_text,target_name) as (
  values
   ('patata','papa'),
   ('patatas','papa'),
@@ -168,10 +168,17 @@ with extra(alias_text,target_name) as (
   ('cebolla verde','cebolla de verdeo'),
   ('mozzarella','queso mozzarella'),
   ('parmesano','queso parmesano'),
+  ('sésamo','semillas de sésamo'),
   ('sesamo','semillas de sésamo'),
   ('huevos','huevo'),
   ('tomates cherry','tomate cherry'),
   ('sriracha sauce','sriracha')
+),
+extra as (
+ select distinct on (private.normalize_ingredient_name(alias_text))
+        alias_text,target_name
+ from extra_raw
+ order by private.normalize_ingredient_name(alias_text),alias_text
 )
 insert into public.ingredient_aliases(alias_text,normalized_alias,ingredient_id)
 select e.alias_text,
