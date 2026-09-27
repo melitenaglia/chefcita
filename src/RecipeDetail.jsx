@@ -93,7 +93,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <article className="recipe-detail">
    <div className="detail-head">
-    <div><small>RECETA</small><h2>{recipe?.title||'Receta'}</h2></div>
+    <small>RECETA</small>
     <div className="detail-head-actions">
      {recipe?.owner_id===session.user.id&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
      <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
@@ -103,29 +103,33 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
    {error&&<p className="message">{error}</p>}
 
    {recipe&&<>
-    <div className="detail-hero">
-     {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="detail-placeholder"><ChefHat/></div>}
-     <div className="detail-summary">
-      <div className="recipe-meta">{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}{recipe.level&&<span>{levelLabel[recipe.level]}</span>}</div>
-      {recipe.description&&<p>{recipe.description}</p>}
-      <div className="detail-facts">
-       {recipe.total_minutes!=null&&<span><Clock/>{recipe.total_minutes} min</span>}
-       {recipe.prep_minutes!=null&&<span>Prep. {recipe.prep_minutes} min</span>}
-       {recipe.cook_minutes!=null&&<span>Cocción {recipe.cook_minutes} min</span>}
-       {recipe.servings!=null&&<span>{recipe.servings} {recipe.servings_unit||'porciones'}</span>}
-      </div>
-      {tags.length>0&&<div className="card-tags">{tags.map(tag=><span key={tag}>{tag}</span>)}</div>}
+    <h2 className="detail-title">{recipe.title||'Receta'}</h2>
+
+    {source?.source_url&&<a className="detail-source-quick" href={source.source_url} target="_blank" rel="noreferrer">
+     <ExternalLink/>
+     <span><b>Abrir publicación original</b><small>{source.author_handle||'Instagram'}</small></span>
+    </a>}
+
+    {recipe.image_url&&<div className="detail-image"><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
+
+    <div className="detail-summary">
+     <div className="recipe-meta">{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}{recipe.level&&<span>{levelLabel[recipe.level]}</span>}</div>
+     {recipe.description&&<p>{recipe.description}</p>}
+     <div className="detail-facts">
+      {recipe.total_minutes!=null&&<span><Clock/>{recipe.total_minutes} min</span>}
+      {recipe.prep_minutes!=null&&<span>Prep. {recipe.prep_minutes} min</span>}
+      {recipe.cook_minutes!=null&&<span>Cocción {recipe.cook_minutes} min</span>}
+      {recipe.servings!=null&&<span>{recipe.servings} {recipe.servings_unit||'porciones'}</span>}
      </div>
+     {tags.length>0&&<div className="card-tags">{tags.map(tag=><span key={tag}>{tag}</span>)}</div>}
     </div>
 
-    <section className="personal-box">
+    <section className="personal-quick" aria-label="Mi receta">
      <div className="personal-actions">
-      <button className={personal.is_favorite?'personal-action active':''} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Marcar favorita'}</button>
+      <button className={personal.is_favorite?'personal-action active':''} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Favorita'}</button>
       <button className={personal.tried_status==='tried'?'personal-action active tried':''} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
      </div>
-     <div className={personal.tried_status==='tried'?'rating-row':'rating-row disabled'}><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy||personal.tried_status!=='tried'} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{personal.tried_status==='tried'&&!personal.rating&&<p className="rating-prompt">¿Qué te pareció? Tocá de 1 a 5 estrellas.</p>}</div>
-     <label>Mis notas<textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Qué cambiarías, con qué lo acompañaste, si gustó en casa..."/></label>
-     <button className="save-notes" disabled={busy} onClick={saveNotes}><Save/>Guardar notas</button>
+     {personal.tried_status==='tried'&&<div className="rating-row"><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{!personal.rating&&<p className="rating-prompt">Tocá de 1 a 5 estrellas.</p>}</div>}
     </section>
 
     <div className="detail-columns">
@@ -145,6 +149,14 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
      :source?.source_url?<div className="video-source-cta"><p>Esta receta está guardada como ficha rápida. Abrí la publicación original para ver la preparación.</p><a href={source.source_url} target="_blank" rel="noreferrer">Abrir original <ExternalLink/></a></div>
      :<p className="muted">No hay pasos cargados.</p>}
     </section>
+
+    <details className="personal-notes">
+     <summary><span><b>Mis notas</b><small>{notes.trim()?'Tenés notas guardadas':'Agregá cambios, acompañamientos o cómo salió'}</small></span><span className="personal-notes-open">Abrir</span></summary>
+     <div className="personal-notes-body">
+      <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Qué cambiarías, con qué lo acompañaste, si gustó en casa..."/>
+      <button className="save-notes" disabled={busy} onClick={saveNotes}><Save/>Guardar notas</button>
+     </div>
+    </details>
 
     {(recipe.storage_notes||recipe.freezer_notes||recipe.meal_prep_notes)&&<section className="detail-section detail-notes"><h3>Conservación y organización</h3><div>{recipe.storage_notes&&<p><b>Conservación</b><span>{recipe.storage_notes}</span></p>}{recipe.freezer_notes&&<p><b>Freezer</b><span>{recipe.freezer_notes}</span></p>}{recipe.meal_prep_notes&&<p><b>Meal prep</b><span>{recipe.meal_prep_notes}</span></p>}</div></section>}
 
