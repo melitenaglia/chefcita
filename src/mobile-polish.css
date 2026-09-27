@@ -298,3 +298,51 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .recipe-detail .ingredient-list>div>b{font-size:15.5px;font-weight:600}
  .recipe-detail .ingredient-list>div>small{font-size:13px}
 }
+
+
+/* Home: recipes first, one Instagram CTA, lightweight inspiration */
+.home-welcome{gap:28px}
+.home-welcome .welcome-copy{min-width:0}
+.home-welcome .welcome-copy>span{font-size:11px;letter-spacing:.12em}
+.home-welcome .welcome-copy h2{margin:6px 0 6px}
+.home-welcome .welcome-copy p{margin:0;max-width:520px}
+.welcome-recipes{margin-top:16px;min-height:44px;border:0;background:#312c29;color:#fff;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:7px;font-weight:750;cursor:pointer}
+.welcome-recipes svg{width:17px}
+.welcome-instagram{min-width:230px;min-height:74px;border:1px solid #d8c5b6;background:#fff9f4;border-radius:18px;padding:13px 14px;display:grid;grid-template-columns:34px 1fr 18px;gap:10px;align-items:center;text-align:left;color:#5f4b3e;cursor:pointer}
+.welcome-instagram>svg:first-child{width:24px;height:24px;opacity:.9}
+.welcome-instagram>svg:last-child{width:17px;height:17px}
+.welcome-instagram>span{display:grid;gap:2px;color:inherit}
+.welcome-instagram b{font-size:14px}
+.welcome-instagram small{font-size:12px;color:#81756e;font-weight:500}
+
+.idea-picker{margin-top:22px;border:1px solid #eadfd6;background:#fff;border-radius:18px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 18px;align-items:center}
+.idea-picker-copy{display:flex;align-items:center;gap:10px;min-width:0}
+.idea-picker-copy>svg{width:20px;height:20px;flex:0 0 20px;color:#9b6c42}
+.idea-picker-copy>span{display:grid;gap:2px}
+.idea-picker-copy small{font-size:10px;letter-spacing:.12em;color:#a06c49;font-weight:800}
+.idea-picker-copy b{font-size:15px;line-height:1.35}
+.idea-picker-actions{display:flex;gap:8px;align-items:center}
+.idea-picker select{min-height:44px;border:1px solid #ddd1c8;background:#fff;border-radius:11px;padding:9px 34px 9px 11px;font:inherit;font-size:14px;color:#4f4844}
+.idea-picker button{min-height:44px;border:0;background:#312c29;color:#fff;border-radius:11px;padding:9px 12px;display:flex;align-items:center;gap:6px;font-weight:750;cursor:pointer;white-space:nowrap}
+.idea-picker button:disabled{opacity:.45;cursor:default}
+.idea-picker button svg{width:16px;height:16px}
+.idea-picker-message{grid-column:1/-1;color:#81756e;font-size:12px;margin-left:30px}
+
+@media(max-width:760px){
+ .home-welcome{padding:22px!important;display:grid!important;gap:18px!important}
+ .home-welcome .welcome-copy h2{font-size:27px;margin-top:5px}
+ .home-welcome .welcome-copy p{font-size:14px;line-height:1.45}
+ .welcome-recipes{width:100%;justify-content:center;min-height:48px}
+ .welcome-instagram{width:100%;min-width:0;min-height:64px;border-radius:14px}
+ .dashboard-cards{gap:10px!important;margin-top:14px!important}
+ .dashboard-cards button{padding:17px!important;border-radius:16px!important}
+ .dashboard-cards strong{font-size:28px!important}
+ .dashboard-cards small{font-size:12px}
+ .idea-picker{margin-top:14px;padding:14px;grid-template-columns:1fr;gap:12px;border-radius:15px}
+ .idea-picker-copy b{font-size:14px}
+ .idea-picker-actions{display:grid;grid-template-columns:minmax(0,1fr) auto}
+ .idea-picker select{width:100%;font-size:16px}
+ .idea-picker button{min-height:48px}
+ .idea-picker-message{margin-left:0}
+ .home-recent{margin-top:28px!important}
+}
