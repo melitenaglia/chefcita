@@ -5,7 +5,7 @@ import {userErrorMessage} from './userError.js';
 
 const sections=['Cuenta','Mi hogar','Recetas','IA e importaciones','Datos'];
 
-export default function SettingsPage({session,initialSection='Cuenta'}){
+export default function SettingsPage({session,initialSection='Cuenta',notice=''}){
  const [section,setSection]=useState(initialSection);
  const [name,setName]=useState(session.user.user_metadata?.name||'');
  const [password,setPassword]=useState('');
@@ -39,6 +39,7 @@ export default function SettingsPage({session,initialSection='Cuenta'}){
 
  return <section className="settings-page">
   <div className="settings-tabs">{sections.map(x=><button key={x} className={section===x?'active':''} onClick={()=>{setSection(x);setMessage('')}}>{x}</button>)}</div>
+  {notice&&<p className="settings-message">{notice}</p>}
   <div className="settings-content">
    {section==='Cuenta'&&<>
     <h2>Cuenta</h2>
