@@ -19,6 +19,13 @@ export default function App(){
  const [pendingStart,setPendingStart]=useState('imports');
  const [openRecipeId,setOpenRecipeId]=useState(null);
  const [inviteNotice,setInviteNotice]=useState('');
+ const [uiSize,setUiSize]=useState(()=>{
+  try{return localStorage.getItem('chefcita:ui-size')||'normal'}catch{return 'normal'}
+ });
+ useEffect(()=>{
+  document.documentElement.dataset.uiSize=uiSize;
+  try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
+ },[uiSize]);
  useEffect(()=>{
   supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
@@ -51,7 +58,7 @@ export default function App(){
  <main className="content"><header><div><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div><div className="header-actions"><button className="mobile-settings" onClick={()=>setTab('Configuración')} aria-label="Abrir configuración"><Settings/></button><button className="add" onClick={()=>setAdding(true)}><Plus/> <span>Añadir receta</span></button></div></header>
  {tab==='Inicio'&&<HomeDashboard onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>} 
  {tab==='Mi cuenta'&&<Account session={session} onProfile={()=>setTab('Configuración')} onSettings={()=>setTab('Configuración')} onLogout={()=>supabase.auth.signOut()}/>}
- {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart} notice={inviteNotice}/>} 
+ {tab==='Configuración'&&<SettingsPage session={session} initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize}/>} 
  {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} initialRecipeId={openRecipeId}/>} 
  {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
  {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>} 
