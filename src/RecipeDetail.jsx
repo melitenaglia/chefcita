@@ -3,7 +3,7 @@ import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
-import {formatIngredientQuantity} from './recipeFormat.js';
+import {formatIngredientQuantity,formatIngredientQuantityNote} from './recipeFormat.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -86,6 +86,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  };
 
  const quantityLabel=item=>formatIngredientQuantity(item);
+ const quantityNote=item=>formatIngredientQuantityNote(item);
 
  if(loading)return <div className="modal-backdrop"><div className="recipe-detail loading"><ChefHat/><p>Cargando receta...</p></div></div>;
 
@@ -136,11 +137,11 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
     <div className="detail-columns">
      <section className="detail-section">
       <h3>Ingredientes principales</h3>
-      {mainIngredients.length? <div className="ingredient-list">{mainIngredients.map(item=><div key={item.id}><span>{quantityLabel(item)}</span><b>{item.original_name}</b>{item.note&&<small>{item.note}</small>}</div>)}</div>:<p className="muted">No hay ingredientes principales cargados.</p>}
+      {mainIngredients.length? <div className="ingredient-list">{mainIngredients.map(item=>{const extra=[quantityNote(item),item.note].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ');return <div key={item.id}><span className="ingredient-quantity">{quantityLabel(item)}</span><b>{item.original_name}</b>{extra&&<small>{extra}</small>}</div>})}</div>:<p className="muted">No hay ingredientes principales cargados.</p>}
      </section>
      <section className="detail-section">
       <h3>Secundarios y condimentos</h3>
-      {secondaryIngredients.length?<div className="ingredient-list">{secondaryIngredients.map(item=><div key={item.id}><span>{quantityLabel(item)}</span><b>{item.original_name}</b>{item.note&&<small>{item.note}</small>}</div>)}</div>:<p className="muted">Sin secundarios registrados.</p>}
+      {secondaryIngredients.length?<div className="ingredient-list">{secondaryIngredients.map(item=>{const extra=[quantityNote(item),item.note].filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ');return <div key={item.id}><span className="ingredient-quantity">{quantityLabel(item)}</span><b>{item.original_name}</b>{extra&&<small>{extra}</small>}</div>})}</div>:<p className="muted">Sin secundarios registrados.</p>}
      </section>
     </div>
 

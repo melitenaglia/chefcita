@@ -225,3 +225,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  .ai-enrich-disclosure-body{padding:0 12px 12px}
  .review-actions{margin-top:16px}
 }
+
+
+/* Ingredient quantity: quantity + UDM is an indivisible visual unit. */
+.recipe-detail .ingredient-list>div{
+ grid-template-columns:max-content minmax(0,1fr)!important;
+}
+.recipe-detail .ingredient-list>div>.ingredient-quantity,
+.review-ingredient-preview>div>.ingredient-quantity{
+ display:block;
+ width:max-content;
+ min-width:max-content;
+ max-width:none;
+ white-space:nowrap!important;
+ overflow-wrap:normal!important;
+ word-break:keep-all!important;
+ hyphens:none;
+}
+.review-ingredient-preview>div{
+ grid-template-columns:max-content minmax(0,1fr)!important;
+}
