@@ -3,6 +3,7 @@ import {X,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
+import {formatIngredientQuantity} from './recipeFormat.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
@@ -84,7 +85,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
   onClose();
  };
 
- const quantityLabel=item=>item.quantity_text||[item.quantity,item.unit].filter(Boolean).join(' ');
+ const quantityLabel=item=>formatIngredientQuantity(item);
 
  if(loading)return <div className="modal-backdrop"><div className="recipe-detail loading"><ChefHat/><p>Cargando receta...</p></div></div>;
 
