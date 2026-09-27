@@ -56,8 +56,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    duration_minutes:x.duration_minutes,
    temperature_c:x.temperature_c,
    note:x.note||''
-  }));
-  if(enrichedSteps.length)setSteps(enrichedSteps);
+  })));
   setLoading(false);
  };
 
@@ -129,7 +128,8 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
    duration_minutes:x.duration_minutes,
    temperature_c:x.temperature_c,
    note:x.note||''
-  })));
+  }));
+  if(enrichedSteps.length)setSteps(enrichedSteps);
 
   const tagIds=(result.tags||[]).map(name=>tags.find(tag=>tag.name===name)?.id).filter(Boolean);
   if(tagIds.length)setSelectedTags(tagIds);
