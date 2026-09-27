@@ -32,9 +32,11 @@ export default function RecipeSharePanel({recipeId,ownerId,session,onClose,onCha
   if(!isOwner||busyId)return;
   const active=sharedIds.has(library.id);
   setBusyId(library.id);setMessage('');
-  const result=active
-   ?await supabase.from('recipe_library_shares').delete().eq('recipe_id',recipeId).eq('household_id',library.id)
-   :await supabase.from('recipe_library_shares').insert({recipe_id:recipeId,household_id:library.id,shared_by:session.user.id});
+  const result=await supabase.rpc('set_recipe_library_share',{
+   p_recipe_id:recipeId,
+   p_household_id:library.id,
+   p_shared:!active
+  });
   setBusyId('');
   if(result.error){
    setMessage(userErrorMessage(result.error,active?'No pude quitar esta biblioteca.':'No pude compartir la receta.'));
