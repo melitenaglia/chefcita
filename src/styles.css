@@ -169,7 +169,7 @@ body:has(.modal-backdrop){overflow:hidden}
     min-height:48px;
   }
   .recipe-form textarea,.review-editor textarea{line-height:1.45}
-  .form-actions{position:sticky;bottom:calc(-1 * (96px + env(safe-area-inset-bottom)));z-index:14;margin:24px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d;display:grid;grid-template-columns:auto 1fr;gap:8px}
+  .form-actions{position:sticky;bottom:0;z-index:14;margin:24px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d;display:grid;grid-template-columns:auto 1fr;gap:8px}
   .form-actions .cancel,.form-actions .primary{min-height:50px;padding:12px 14px;font-size:15px}
   .form-actions .primary{width:100%}
   .caption-recovery{padding:14px}
@@ -217,7 +217,7 @@ body:has(.modal-backdrop){overflow:hidden}
   .review-ingredient.v1-parity .icon-delete{grid-column:1;justify-self:end}
   .review-step{grid-template-columns:32px 1fr}
   .review-step textarea{min-height:120px}
-  .review-actions{position:sticky;bottom:calc(-1 * (110px + env(safe-area-inset-bottom)));z-index:10;margin:26px -16px -110px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d}
+  .review-actions{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom));z-index:10;margin:26px -16px -110px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eee3db;box-shadow:0 -10px 24px #312c290d}
   .review-actions-main{display:grid;grid-template-columns:1fr 1.3fr}
   .review-actions-main>button,.delete-pending-review{min-height:50px;font-size:15px}
 
