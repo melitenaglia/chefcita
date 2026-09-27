@@ -57,3 +57,6 @@
 
 .import-status-tabs{display:flex;gap:8px;margin:4px 0 18px;border-bottom:1px solid #eee3db;padding-bottom:10px}.import-status-tabs button{border:1px solid transparent;background:transparent;border-radius:999px;padding:8px 11px;display:flex;align-items:center;gap:7px;font-weight:700;color:#746a64;cursor:pointer}.import-status-tabs button span{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#f5eee8;display:grid;place-items:center;font-size:11px}.import-status-tabs button.active{background:#312c29;color:#fff}.import-status-tabs button.active span{background:#ffffff22}
 @media(max-width:600px){.import-status-tabs{display:grid;grid-template-columns:1fr 1fr}.import-status-tabs button{justify-content:center}}
+
+
+.source-icon.import-thumb{overflow:hidden;background:#f7f2ee}.source-icon.import-thumb img{width:100%;height:100%;object-fit:cover;display:block}.source-icon.import-thumb svg{width:20px}
