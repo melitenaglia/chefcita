@@ -26,6 +26,9 @@ for (const ref of refs) {
 const quantityCases=[
  [{quantity_text:'4',quantity:4,unit:'unidad'},'4 uds.'],
  [{quantity_text:'120',quantity:120,unit:'g'},'120 grs.'],
+ [{quantity_text:'2',quantity:2,unit:'kg'},'2 kgs.'],
+ [{quantity_text:'250',quantity:250,unit:'ml'},'250 ml.'],
+ [{quantity_text:'1',quantity:1,unit:'taza'},'1 tza.'],
  [{quantity_text:'300 g',quantity:300,unit:'g'},'300 g'],
  [{quantity_text:'3 a 4',quantity:3,unit:'lonchas'},'3 a 4 lonchas'],
  [{quantity_text:'a gusto',quantity:null,unit:''},'a gusto']

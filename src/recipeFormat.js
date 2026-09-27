@@ -1,9 +1,12 @@
 const UNIT_LABELS={
  g:'grs.',gr:'grs.',grs:'grs.',gramo:'grs.',gramos:'grs.',
+ kg:'kgs.',kgs:'kgs.',kilo:'kgs.',kilos:'kgs.',kilogramo:'kgs.',kilogramos:'kgs.',
  unidad:'uds.',unidades:'uds.',ud:'uds.',uds:'uds.',
- ml:'ml',kg:'kg',
- cda:'cdas.',cucharada:'cdas.',cucharadas:'cdas.',
- cdta:'cdtas.',cdita:'cdtas.',cucharadita:'cdtas.',cucharaditas:'cdtas.'
+ ml:'ml.',mililitro:'ml.',mililitros:'ml.',
+ l:'l.',lt:'l.',lts:'l.',litro:'l.',litros:'l.',
+ cda:'cdas.',cdas:'cdas.',cucharada:'cdas.',cucharadas:'cdas.',
+ cdta:'cdtas.',cdtas:'cdtas.',cdita:'cdtas.',cucharadita:'cdtas.',cucharaditas:'cdtas.',
+ taza:'tza.',tazas:'tzas.'
 };
 
 const compactUnit=value=>{
