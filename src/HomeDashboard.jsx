@@ -21,31 +21,27 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
   let active=true;
 
   const fetchSummary=async()=>{
-   const [recipesRes,reviewRes,importsRes,userRes,recentRes,categoriesRes,mealTypesRes]=await Promise.all([
+   const [recipesRes,reviewRes,importsRes,userRes,recentRes,categoriesRes]=await Promise.all([
     supabase.from('recipes').select('id',{count:'exact',head:true}).eq('review_status','recipe'),
     supabase.from('recipes').select('id',{count:'exact',head:true}).eq('review_status','to_validate'),
     supabase.from('imports').select('id',{count:'exact',head:true}).neq('status','processed'),
     supabase.from('user_recipes').select('recipe_id,is_favorite,tried_status'),
     supabase.from('recipes').select('id,title,image_url,total_minutes,categories(name),meal_types(name)').eq('review_status','recipe').order('created_at',{ascending:false}).limit(4),
-    supabase.from('categories').select('id,name').order('sort_order'),
-    supabase.from('meal_types').select('id,name').order('sort_order')
+    supabase.from('categories').select('id,name').order('sort_order')
    ]);
 
    const mainError=recipesRes.error||reviewRes.error||importsRes.error||userRes.error||recentRes.error;
    if(mainError)return {error:mainError};
 
-   const allTaxonomies=[
-    ...(categoriesRes.data||[]).map(x=>({...x,field:'category_id'})),
-    ...(mealTypesRes.data||[]).map(x=>({...x,field:'meal_type_id'}))
-   ];
+   const categories=categoriesRes.data||[];
    const options=IDEA_TYPES.map(label=>{
     const wanted=normalize(label);
-    const row=allTaxonomies.find(x=>{
+    const matches=categories.filter(x=>{
      const n=normalize(x.name);
-     if(wanted==='almuerzocena')return n==='almuerzocena'||n==='almuerzoycena'||n==='almuerzo'||n==='cena';
+     if(wanted==='almuerzocena')return ['almuerzocena','almuerzoycena','almuerzo','cena'].includes(n);
      return n===wanted;
     });
-    return row?{label,id:row.id,field:row.field}:null;
+    return matches.length?{label,ids:matches.map(x=>x.id)}:null;
    }).filter(Boolean);
 
    return {
@@ -94,7 +90,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
   const option=ideaOptions.find(x=>x.label===ideaType);
   if(!option)return;
   setIdeaBusy(true);setIdeaMessage('');
-  const {data:recipes,error}=await supabase.from('recipes').select('id').eq('review_status','recipe').eq(option.field,option.id);
+  const {data:recipes,error}=await supabase.from('recipes').select('id').eq('review_status','recipe').in('category_id',option.ids);
   setIdeaBusy(false);
   if(error){
    if(isJwtClockError(error)){
