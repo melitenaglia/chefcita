@@ -14,8 +14,27 @@ begin
   loop
     execute format('alter table public.household_members drop constraint %I',v_constraint.conname);
   end loop;
+  for v_constraint in
+    select idx.relname
+    from pg_index pi
+    join pg_class idx on idx.oid=pi.indexrelid
+    where pi.indrelid='public.household_members'::regclass
+      and pi.indisunique
+      and pi.indnatts=1
+      and (
+        select a.attname
+        from pg_attribute a
+        where a.attrelid=pi.indrelid
+          and a.attnum=(pi.indkey::smallint[])[0]
+      )='user_id'
+      and not exists (
+        select 1 from pg_constraint c where c.conindid=pi.indexrelid
+      )
+  loop
+    execute format('drop index if exists public.%I',v_constraint.conname);
+  end loop;
 end;
-$$;
+$;
 
 create unique index if not exists household_members_household_user_uidx
   on public.household_members(household_id,user_id);
@@ -49,7 +68,7 @@ $$;
 revoke all on function public.create_shared_library(text) from public,anon;
 grant execute on function public.create_shared_library(text) to authenticated;
 
-create or replace function public.accept_shared_library_invite(p_token uuid)
+create or replace function public.accept_shared_library_invite(p_token text)
 returns uuid
 language plpgsql
 security definer
@@ -67,9 +86,9 @@ begin
   select *
   into v_invite
   from public.household_invites
-  where token=p_token
+  where token::text=p_token
     and accepted_at is null
-    and expires_at>now()
+    and (expires_at is null or expires_at>now())
   for update;
 
   if not found then raise exception 'invite_invalid_or_expired'; end if;
@@ -89,8 +108,8 @@ begin
 end;
 $;
 
-revoke all on function public.accept_shared_library_invite(uuid) from public,anon;
-grant execute on function public.accept_shared_library_invite(uuid) to authenticated;
+revoke all on function public.accept_shared_library_invite(text) from public,anon;
+grant execute on function public.accept_shared_library_invite(text) to authenticated;
 
 -- A recipe always remains personal/owned by its creator.
 -- Sharing adds read access; it does not move or duplicate the recipe.
