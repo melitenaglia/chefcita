@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {Check,ChefHat,Plus,Trash2,ExternalLink,Save} from 'lucide-react';
+import {Check,ChefHat,Plus,Trash2,ExternalLink,Save,Sparkles,ClipboardPaste} from 'lucide-react';
 import {supabase} from './supabase.js';
 
 const blankIngredient=()=>({original_name:'',quantity_text:'',_initial_quantity_text:'',quantity:null,unit:'',note:'',section:'',role:'main'});
@@ -15,13 +15,16 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
  const [selectedTags,setSelectedTags]=useState([]);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
+ const [aiBusy,setAiBusy]=useState(false);
+ const [extraText,setExtraText]=useState('');
+ const [aiMessage,setAiMessage]=useState('');
  const [error,setError]=useState('');
 
  const load=async()=>{
   setLoading(true);setError('');
   const [{data,error},{data:cats},{data:types},{data:tagRows}]=await Promise.all([
    supabase.from('recipes')
-    .select('*,recipe_ingredients(*),recipe_steps(*),recipe_tags(tag_id),recipe_sources(source_url,original_copy,author_handle,original_image_url,is_primary)')
+    .select('*,recipe_ingredients(*),recipe_steps(*),recipe_tags(tag_id),recipe_sources(id,source_url,original_copy,supplemental_copy,author_handle,original_image_url,is_primary)')
     .eq('id',recipeId).single(),
    supabase.from('categories').select('id,name').order('sort_order'),
    supabase.from('meal_types').select('id,name').order('sort_order'),
@@ -58,6 +61,76 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
 
  const setField=(name,value)=>setRecipe(r=>({...r,[name]:value}));
  const toggleTag=id=>setSelectedTags(list=>list.includes(id)?list.filter(x=>x!==id):[...list,id]);
+
+ const pasteExtra=async()=>{
+  try{
+   const text=await navigator.clipboard.readText();
+   if(text)setExtraText(text);
+  }catch{
+   setError('El navegador no permitió leer el portapapeles. Podés pegar el texto manualmente.');
+  }
+ };
+
+ const enrichWithAi=async()=>{
+  if(!extraText.trim())return;
+  setAiBusy(true);setError('');setAiMessage('');
+  const {data,error:aiError}=await supabase.functions.invoke('enrich-recipe-with-ai',{
+   body:{recipe_id:recipe.id,supplemental_text:extraText.trim()}
+  });
+  setAiBusy(false);
+  if(aiError||!data?.structured){
+   setError(aiError?.message||data?.error||'No pude procesar la información adicional.');
+   return;
+  }
+
+  const result=data.structured;
+  const categoryId=categories.find(x=>x.name===result.category)?.id||null;
+  const mealTypeId=mealTypes.find(x=>x.name===result.meal_type)?.id||null;
+
+  setRecipe(r=>({
+   ...r,
+   title:result.title||r.title,
+   description:result.description??r.description,
+   category_id:categoryId,
+   meal_type_id:mealTypeId,
+   level:result.level||null,
+   prep_minutes:result.prep_minutes,
+   cook_minutes:result.cook_minutes,
+   total_minutes:result.total_minutes,
+   servings:result.servings,
+   servings_unit:result.servings_unit||'',
+   storage_notes:result.storage_notes||'',
+   freezer_notes:result.freezer_notes||'',
+   meal_prep_notes:result.meal_prep_notes||''
+  }));
+
+  const enrichedIngredients=(result.ingredients||[]).map(x=>{
+   const quantityText=x.quantity_text||[x.quantity,x.unit].filter(Boolean).join(' ');
+   return {
+    original_name:x.name||'',
+    quantity_text:quantityText,
+    _initial_quantity_text:quantityText,
+    quantity:x.quantity,
+    unit:x.unit||'',
+    note:x.note||'',
+    section:x.section||'',
+    role:x.role==='secondary'?'secondary':'main'
+   };
+  });
+  setIngredients(enrichedIngredients);
+
+  setSteps((result.steps||[]).map(x=>({
+   instruction:x.instruction||'',
+   duration_minutes:x.duration_minutes,
+   temperature_c:x.temperature_c,
+   note:x.note||''
+  })));
+
+  const tagIds=(result.tags||[]).map(name=>tags.find(tag=>tag.name===name)?.id).filter(Boolean);
+  setSelectedTags(tagIds);
+  setAiMessage('Listo: incorporé la información adicional a la ficha. Revisá los cambios y después guardá o aprobá.');
+  setExtraText('');
+ };
 
  const save=async approve=>{
   if(!recipe?.title?.trim())return;
@@ -150,7 +223,21 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     {source.original_image_url&&<img src={source.original_image_url} alt="Miniatura de la fuente" onError={e=>{e.currentTarget.style.display='none'}}/>}
     {source.original_copy?<p>{source.original_copy}</p>:<small>No hay texto original guardado. Completá solo lo que conozcas.</small>}
    </div>
+   {source.supplemental_copy&&<details className="supplemental-source"><summary>Ver información adicional ya incorporada</summary><p>{source.supplemental_copy}</p></details>}
   </div>}
+
+  <div className="ai-enrich-box">
+   <div className="ai-enrich-head">
+    <div><Sparkles/><span><b>¿Tenés más información?</b><small>Pegá, por ejemplo, la receta completa del primer comentario. La IA la combina con lo que ya existe sin tocar el copy original.</small></span></div>
+    <button type="button" onClick={pasteExtra}><ClipboardPaste/>Pegar portapapeles</button>
+   </div>
+   <textarea value={extraText} onChange={e=>setExtraText(e.target.value)} placeholder="Pegá acá ingredientes, pasos o el texto completo que faltaba..."/>
+   <div className="ai-enrich-actions">
+    <small>No se guarda nada automáticamente: primero vas a ver el resultado en esta ficha.</small>
+    <button type="button" className="primary" disabled={aiBusy||!extraText.trim()} onClick={enrichWithAi}><Sparkles/>{aiBusy?'Procesando...':'Completar con IA'}</button>
+   </div>
+   {aiMessage&&<p className="ai-success">{aiMessage}</p>}
+  </div>
 
   <div className="review-grid">
    <label>Título *<input value={recipe?.title||''} onChange={e=>setField('title',e.target.value)}/></label>
