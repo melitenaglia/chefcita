@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
@@ -15,6 +15,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const [editing,setEditing]=useState(false);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
+ const swipeStart=useRef(null);
 
  const load=async()=>{
   setLoading(true);setError('');
@@ -86,13 +87,28 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  };
 
  const ingredientDisplay=item=>formatIngredientDisplay(item);
+ const startEdgeSwipe=e=>{
+  const standalone=window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
+  const touch=e.touches?.[0];
+  if(standalone&&touch&&touch.clientX<=28)swipeStart.current={x:touch.clientX,y:touch.clientY};
+ };
+ const endEdgeSwipe=e=>{
+  if(!swipeStart.current)return;
+  const touch=e.changedTouches?.[0];
+  const start=swipeStart.current;
+  swipeStart.current=null;
+  if(!touch)return;
+  const dx=touch.clientX-start.x;
+  const dy=Math.abs(touch.clientY-start.y);
+  if(dx>=72&&dy<=60)onClose();
+ };
 
  if(loading)return <div className="modal-backdrop"><div className="recipe-detail loading"><ChefHat/><p>Cargando receta...</p></div></div>;
 
  if(editing)return <div className="modal-backdrop"><div className="recipe-detail editor-shell"><RecipeEditor recipeId={recipeId} mode="edit" onBack={()=>setEditing(false)} onSaved={async()=>{setEditing(false);await load();onChanged?.()}}/></div></div>;
 
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-  <article className="recipe-detail">
+  <article className="recipe-detail" onTouchStart={startEdgeSwipe} onTouchEnd={endEdgeSwipe}>
    <div className="detail-head">
     <span className="detail-head-label">Receta</span>
     <button className="detail-back" onClick={onClose} aria-label="Volver a recetas"><ChevronLeft/><span>Volver</span></button>
