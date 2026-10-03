@@ -8,7 +8,7 @@ async function testViewport(name,viewport){
   page.on('pageerror',e=>errors.push('pageerror: '+e.message));
   page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
   try{
-    const response=await page.goto('http://127.0.0.1:4173/chefcita/',{waitUntil:'networkidle',timeout:30000});
+    const response=await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle',timeout:30000});
     if(!response||!response.ok())throw new Error(name+': Preview HTTP failed');
     const text=(await page.locator('body').innerText()).trim();
     if(!text.includes('Chefcita'))throw new Error(name+': Chefcita did not render');
