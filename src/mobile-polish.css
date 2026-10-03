@@ -1381,3 +1381,89 @@ body{font-size:calc(16px * var(--ui-text-scale))}
  .share-panel{width:100%;max-height:86dvh;border-radius:22px 22px 0 0;padding:15px 15px calc(15px + env(safe-area-inset-bottom))}
  .share-library-list>button{min-height:64px}
 }
+
+
+/* Chefcita palette: manteca + tomate + mostaza */
+:root{
+ --chef-bg:#FCF8F1;
+ --chef-surface:#FFFDFB;
+ --chef-tomato:#C75C47;
+ --chef-tomato-dark:#964131;
+ --chef-tomato-soft:#F7DED7;
+ --chef-mustard:#E5BE73;
+ --chef-mustard-soft:#F8ECCF;
+ --chef-border:#E8DCCF;
+ --chef-text:#352A25;
+ --chef-muted:#7D6F66;
+ --chef-success:#7B9C6B;
+ --chef-danger:#A34C42;
+}
+
+html,body,.content{background:var(--chef-bg)!important;color:var(--chef-text)}
+.desktop-sidebar{background:var(--chef-surface)!important;border-color:var(--chef-border)!important}
+.eyebrow{color:var(--chef-tomato)!important}
+
+.primary,.add,.welcome-recipes,.idea-hero-actions button,.idea-result-actions .primary,.drawer-primary{
+ background:var(--chef-tomato-dark)!important;color:#fff!important
+}
+.desktop-nav button.active,.account-nav button.active,.settings-tabs button.active{
+ background:var(--chef-tomato-soft)!important;color:var(--chef-tomato-dark)!important
+}
+input:focus,select:focus,textarea:focus{border-color:var(--chef-tomato)!important}
+
+.idea-hero{
+ background:linear-gradient(135deg,var(--chef-mustard-soft),#FCF4DE 60%,#F8E2D9)!important;
+ border-color:#E7D19A!important
+}
+.idea-hero-icon{background:var(--chef-surface)!important;color:#A77829!important}
+.idea-hero-copy p,.idea-result-copy p,.idea-result-copy>small{color:var(--chef-muted)!important}
+.idea-result-card{background:var(--chef-surface)!important;border-color:#E4CFBF!important}
+.idea-result-meta span{background:#F8EFE9!important;color:#6C5548!important}
+.idea-result-actions .secondary{background:var(--chef-surface)!important;border-color:#DFCABD!important;color:var(--chef-tomato-dark)!important}
+
+.home-library-banner,.dashboard-cards button,.recent-grid>button,.recipe-card,.settings-page,.account-page,.review-card{
+ background:var(--chef-surface)!important;border-color:var(--chef-border)!important
+}
+.home-library-banner>div small{color:var(--chef-tomato)!important}
+.welcome-instagram{background:#FFF3ED!important;border-color:#EACEC1!important;color:var(--chef-tomato-dark)!important}
+.dashboard-cards small,.recipe-card-body p,.recipe-facts,.recent-grid small{color:var(--chef-muted)!important}
+
+.favorite.active{color:var(--chef-tomato)!important}
+.personal-quick .personal-action.active{
+ background:var(--chef-tomato-soft)!important;border-color:#E4B4A8!important;color:var(--chef-tomato-dark)!important
+}
+.rating-row button.active{color:#B17E28!important}
+
+.pending-tabs button.active,.import-status-tabs button.active,.add-modes button.active,.tag-chip.active{
+ background:var(--chef-tomato-soft)!important;color:var(--chef-tomato-dark)!important;border-color:#E2B5A9!important
+}
+.pending-tabs,.import-status-tabs{background:var(--chef-bg)!important}
+
+.recipe-detail,.recipe-form,.share-panel{background:var(--chef-surface)!important}
+.detail-source-quick,.source-head-action,.detail-back,.personal-notes-open,.share-recipe{color:var(--chef-tomato-dark)!important}
+.personal-notes,.personal-quick{border-color:var(--chef-border)!important}
+.shared-readonly-banner{background:#FFF0E9!important;border-color:#E6BDAE!important;color:#704638!important}
+
+.ui-size-options button.active{background:var(--chef-tomato-soft)!important;border-color:var(--chef-tomato)!important}
+.ui-size-options button.active b{color:var(--chef-tomato-dark)!important}
+
+.shared-library-chip{background:var(--chef-tomato-soft)!important;color:var(--chef-tomato-dark)!important;border-color:#E2B4A8!important}
+.personal-library-card,.shared-library-card,.share-library-list>button{background:var(--chef-surface)!important;border-color:var(--chef-border)!important}
+.personal-library-card>span,.shared-library-icon,.share-library-icon,.member-avatar,.account-avatar{
+ background:var(--chef-mustard-soft)!important;color:#815E23!important
+}
+.create-shared-library{background:#FFF4EE!important;border-color:#EACEC1!important}
+.share-library-list>button.active{background:#FFF0EA!important;border-color:#DCA896!important}
+.share-library-list>button.active .share-check{background:var(--chef-tomato-dark)!important;border-color:var(--chef-tomato-dark)!important;color:#fff!important}
+.delete-recipe,.delete-pending-review,.drawer-logout{color:var(--chef-danger)!important}
+
+.mobile-bottom-nav{background:#FFFDFBF4!important;border-color:var(--chef-border)!important}
+.mobile-bottom-nav button.active{background:var(--chef-tomato-soft)!important;color:var(--chef-tomato-dark)!important}
+.mobile-bottom-nav button:nth-child(3){background:var(--chef-mustard-soft)!important;color:#8B6421!important;border-color:#E2C478!important}
+.mobile-bottom-nav button:nth-child(3).active{background:var(--chef-tomato-dark)!important;color:#fff!important;border-color:var(--chef-tomato-dark)!important}
+
+@media(max-width:760px){
+ .app-header{background:#FCF8F1EE!important;border-color:var(--chef-border)!important}
+ .mobile-menu-trigger{background:var(--chef-surface)!important;border-color:var(--chef-border)!important;color:var(--chef-tomato-dark)!important}
+ .form-head,.detail-head,.form-actions{background:#FFFDFBF3!important;border-color:var(--chef-border)!important}
+}
