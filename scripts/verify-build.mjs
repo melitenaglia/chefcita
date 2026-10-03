@@ -9,14 +9,14 @@ if (html.includes('/src/main.jsx')) {
 
 const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
   .map((match) => match[1])
-  .filter((ref) => ref.startsWith('/chefcita/assets/'));
+  .filter((ref) => ref.startsWith('/assets/'));
 
 if (refs.length === 0) {
   throw new Error('No compiled assets were found in production HTML');
 }
 
 for (const ref of refs) {
-  const relative = ref.replace('/chefcita/', '');
+  const relative = ref.replace(/^\//, '');
   const file = 'dist/' + relative;
   if (!fs.existsSync(file)) {
     throw new Error('Missing compiled asset: ' + file);
