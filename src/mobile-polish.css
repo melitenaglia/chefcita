@@ -1467,3 +1467,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--chef-tomato)!importan
  .mobile-menu-trigger{background:var(--chef-surface)!important;border-color:var(--chef-border)!important;color:var(--chef-tomato-dark)!important}
  .form-head,.detail-head,.form-actions{background:#FFFDFBF3!important;border-color:var(--chef-border)!important}
 }
+
+
+/* Signup confirmation */
+.signup-confirmation{margin-top:28px;display:grid;justify-items:start;gap:10px}
+.signup-confirmation-icon{width:54px;height:54px;border-radius:16px;background:#F8ECCF;color:#946D28;display:grid;place-items:center}
+.signup-confirmation-icon svg{width:26px;height:26px}
+.signup-confirmation h2{margin:4px 0 0;font-size:24px;color:#352A25}
+.signup-confirmation p{margin:0;color:#5F5149;line-height:1.5}
+.signup-confirmation small{color:#7D6F66;line-height:1.45}
+.signup-confirmation .primary{margin-top:10px}
+.signup-confirmation-actions{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.secondary-auth{min-height:42px;border:1px solid #E0CBBF;background:#FFFDFB;color:#964131;border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:6px;font-weight:750;cursor:pointer}
+.secondary-auth svg{width:16px;height:16px}
+.auth-link-button{border:0;background:transparent;color:#964131;font-weight:750;padding:8px;cursor:pointer}
+@media(max-width:760px){
+ .signup-confirmation{margin-top:24px}
+ .signup-confirmation-actions{display:grid;grid-template-columns:1fr}
+ .secondary-auth,.auth-link-button{width:100%;min-height:44px;justify-content:center}
+}
