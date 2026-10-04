@@ -3,21 +3,26 @@ import {ArrowLeft,ChefHat,LoaderCircle,MailCheck,RefreshCw} from 'lucide-react';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 
-export default function Auth(){
+export default function Auth({notice='',onNoticeConsumed}){
  const [email,setEmail]=useState('');
  const [password,setPassword]=useState('');
  const [mode,setMode]=useState('login');
  const [msg,setMsg]=useState('');
  const [busy,setBusy]=useState(false);
  const [confirmationEmail,setConfirmationEmail]=useState('');
+ const [externalNotice,setExternalNotice]=useState(notice);
  const [resendBusy,setResendBusy]=useState(false);
 
  const redirectTo=`${window.location.origin}/`;
+
+ React.useEffect(()=>{setExternalNotice(notice)},[notice]);
 
  const submit=async(e)=>{
   e.preventDefault();
   setBusy(true);
   setMsg('');
+  setExternalNotice('');
+  onNoticeConsumed?.();
 
   if(mode==='login'){
    const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});
@@ -72,6 +77,8 @@ export default function Auth(){
    <div className="brandmark"><ChefHat/></div>
    <h1>Chefcita</h1>
    <p className="subtitle">Tu recetario, ordenado a tu manera.</p>
+
+   {externalNotice&&<div className={externalNotice.startsWith('Email confirmado')?'auth-notice success':'auth-notice'}>{externalNotice}</div>}
 
    {confirmationEmail?<>
     <div className="signup-confirmation">
