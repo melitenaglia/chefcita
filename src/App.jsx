@@ -11,6 +11,7 @@ import HomeDashboard from './HomeDashboard.jsx';
 export default function App(){
  const [session,setSession]=useState(null);
  const [loading,setLoading]=useState(true);
+ const [authNotice,setAuthNotice]=useState('');
  const [tab,setTab]=useState('Inicio');
  const [settingsStart,setSettingsStart]=useState('Pantalla');
  const [adding,setAdding]=useState(false);
@@ -34,9 +35,42 @@ export default function App(){
  },[uiSize]);
 
  useEffect(()=>{
-  supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));
-  return()=>subscription.unsubscribe();
+  let cancelled=false;
+  let handlingConfirmation=false;
+
+  const initAuth=async()=>{
+   const params=new URLSearchParams(window.location.search);
+   const tokenHash=params.get('token_hash');
+   const type=params.get('type');
+   const confirmSignup=params.get('confirm_signup')==='1';
+
+   if(confirmSignup&&tokenHash&&type==='email'){
+    handlingConfirmation=true;
+    const {error}=await supabase.auth.verifyOtp({token_hash:tokenHash,type:'email'});
+    await supabase.auth.signOut();
+    window.history.replaceState({},'',window.location.pathname);
+    if(cancelled)return;
+    setSession(null);
+    setAuthNotice(error
+     ?'No pudimos confirmar el email. El enlace puede haber vencido; podés pedir uno nuevo desde Crear cuenta.'
+     :'Email confirmado. Ya podés iniciar sesión con tu contraseña.'
+    );
+    setLoading(false);
+    return;
+   }
+
+   const {data}=await supabase.auth.getSession();
+   if(cancelled)return;
+   setSession(data.session);
+   setLoading(false);
+  };
+
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,nextSession)=>{
+   if(!handlingConfirmation)setSession(nextSession);
+  });
+
+  initAuth();
+  return()=>{cancelled=true;subscription.unsubscribe()};
  },[]);
 
  useEffect(()=>{
@@ -53,7 +87,7 @@ export default function App(){
  },[session]);
 
  if(loading)return <div className="splash"><ChefHat/><span>Chefcita</span></div>;
- if(!session)return <Auth/>;
+ if(!session)return <Auth notice={authNotice} onNoticeConsumed={()=>setAuthNotice('')}/>;
 
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
  const mobileNav=[['Inicio',Home],['Recetas',BookOpen],['Ideas',WandSparkles],['Pendientes',Inbox],['Mi cocina',Heart]];
