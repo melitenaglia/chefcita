@@ -1486,3 +1486,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--chef-tomato)!importan
  .signup-confirmation-actions{display:grid;grid-template-columns:1fr}
  .secondary-auth,.auth-link-button{width:100%;min-height:44px;justify-content:center}
 }
+
+
+.auth-notice{margin:22px 0 4px;padding:12px 14px;border:1px solid #E2C7BA;background:#FFF1EA;color:#74493A;border-radius:12px;font-size:14px;line-height:1.45;font-weight:650}
+.auth-notice.success{border-color:#C9D7C3;background:#EEF4EA;color:#526A4B}
