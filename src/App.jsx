@@ -47,7 +47,7 @@ export default function App(){
    if(confirmSignup&&tokenHash&&type==='email'){
     handlingConfirmation=true;
     const {error}=await supabase.auth.verifyOtp({token_hash:tokenHash,type:'email'});
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({scope:'local'});
     window.history.replaceState({},'',window.location.pathname);
     if(cancelled)return;
     setSession(null);
