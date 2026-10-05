@@ -28,11 +28,29 @@ export default function App(){
    return ['compact','normal','large'].includes(saved)?saved:'normal';
   }catch{return 'normal'}
  });
+ const [theme,setTheme]=useState(()=>{
+  try{
+   const saved=localStorage.getItem('chefcita:theme');
+   return ['sage','olive','tomato','lavender'].includes(saved)?saved:'sage';
+  }catch{return 'sage'}
+ });
 
  useLayoutEffect(()=>{
   document.documentElement.dataset.uiSize=uiSize;
   try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
  },[uiSize]);
+
+ useLayoutEffect(()=>{
+  document.documentElement.dataset.theme=theme;
+  const themeColors={
+   sage:'#F5F7F2',
+   olive:'#F7F6EF',
+   tomato:'#FCF8F1',
+   lavender:'#F8F5F8'
+  };
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',themeColors[theme]||themeColors.sage);
+  try{localStorage.setItem('chefcita:theme',theme)}catch{}
+ },[theme]);
 
  useEffect(()=>{
   let cancelled=false;
