@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 192 192" role="img" aria-label="Chefcita">
+  <rect width="192" height="192" rx="42" fill="#4F6B53"/>
+  <g fill="none" stroke="#FFFDFB" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M61 83c-12-4-20-15-20-28 0-17 14-31 31-31 8 0 15 3 21 8 6-12 18-20 32-20 18 0 33 13 36 30 16 1 29 14 29 31 0 14-9 26-22 30"/>
+    <path d="M61 82v66h106V82"/>
+    <path d="M76 122h76"/>
+  </g>
+</svg>
