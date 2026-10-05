@@ -1,5 +1,5 @@
 import React,{useEffect,useLayoutEffect,useState} from 'react';
-import {Heart,Inbox,BookOpen,Plus,ChefHat,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight} from 'lucide-react';
+import {Heart,Inbox,BookOpen,Plus,ChefHat,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight,Download,Share2,Smartphone} from 'lucide-react';
 import {supabase} from './supabase.js';
 import Auth from './Auth.jsx';
 import SettingsPage from './SettingsPage.jsx';
@@ -22,6 +22,11 @@ export default function App(){
  const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
  const [mobileMenuLevel,setMobileMenuLevel]=useState('root');
  const [ideaFocusKey,setIdeaFocusKey]=useState(0);
+ const [installPrompt,setInstallPrompt]=useState(null);
+ const [installHelpOpen,setInstallHelpOpen]=useState(false);
+ const [standalone,setStandalone]=useState(()=>{
+  try{return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}catch{return false}
+ });
  const [uiSize,setUiSize]=useState(()=>{
   try{
    const saved=localStorage.getItem('chefcita:ui-size');
@@ -39,6 +44,56 @@ export default function App(){
   document.documentElement.dataset.uiSize=uiSize;
   try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
  },[uiSize]);
+
+ useEffect(()=>{
+  const root=document.documentElement;
+  let raf=0;
+  const updateVisualViewport=()=>{
+   cancelAnimationFrame(raf);
+   raf=requestAnimationFrame(()=>{
+    const vv=window.visualViewport;
+    if(!vv){root.style.setProperty('--mobile-vv-shift','0px');return}
+    const layoutHeight=root.clientHeight;
+    const visualBottom=vv.offsetTop+vv.height;
+    const shift=Math.max(0,visualBottom-layoutHeight);
+    root.style.setProperty('--mobile-vv-shift',`${Math.round(shift)}px`);
+   });
+  };
+  updateVisualViewport();
+  window.visualViewport?.addEventListener('resize',updateVisualViewport);
+  window.visualViewport?.addEventListener('scroll',updateVisualViewport);
+  window.addEventListener('resize',updateVisualViewport);
+  window.addEventListener('scroll',updateVisualViewport,{passive:true});
+  return()=>{
+   cancelAnimationFrame(raf);
+   window.visualViewport?.removeEventListener('resize',updateVisualViewport);
+   window.visualViewport?.removeEventListener('scroll',updateVisualViewport);
+   window.removeEventListener('resize',updateVisualViewport);
+   window.removeEventListener('scroll',updateVisualViewport);
+  };
+ },[]);
+
+ useEffect(()=>{
+  const media=window.matchMedia('(display-mode: standalone)');
+  const updateStandalone=()=>setStandalone(media.matches||window.navigator.standalone===true);
+  const handleBeforeInstall=event=>{
+   event.preventDefault();
+   setInstallPrompt(event);
+  };
+  const handleInstalled=()=>{
+   setInstallPrompt(null);
+   setStandalone(true);
+   setInstallHelpOpen(false);
+  };
+  window.addEventListener('beforeinstallprompt',handleBeforeInstall);
+  window.addEventListener('appinstalled',handleInstalled);
+  media.addEventListener?.('change',updateStandalone);
+  return()=>{
+   window.removeEventListener('beforeinstallprompt',handleBeforeInstall);
+   window.removeEventListener('appinstalled',handleInstalled);
+   media.removeEventListener?.('change',updateStandalone);
+  };
+ },[]);
 
  useLayoutEffect(()=>{
   document.documentElement.dataset.theme=theme;
@@ -115,6 +170,28 @@ export default function App(){
   setMobileMenuLevel('root');
  };
 
+ const installChefcita=async()=>{
+  closeMenu();
+  if(standalone)return;
+  if(installPrompt){
+   const prompt=installPrompt;
+   setInstallPrompt(null);
+   try{
+    await prompt.prompt();
+    if(prompt.userChoice)await prompt.userChoice;
+   }catch{
+    setInstallHelpOpen(true);
+   }
+   return;
+  }
+  setInstallHelpOpen(true);
+ };
+
+ const userAgent=typeof navigator==='undefined'?'':navigator.userAgent;
+ const isIOS=/iPad|iPhone|iPod/.test(userAgent)||(/Macintosh/.test(userAgent)&&navigator.maxTouchPoints>1);
+ const isIOSChrome=/CriOS/.test(userAgent);
+ const isAndroid=/Android/.test(userAgent);
+
  const goToTab=target=>{
   if(target==='Pendientes')setPendingStart('imports');
   if(target==='Inicio')setIdeaFocusKey(0);
@@ -184,6 +261,7 @@ export default function App(){
       <div className="drawer-group">
        <small>ACCIONES</small>
        <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Añadir receta</b><small>Instagram o carga manual</small></span></button>
+       {!standalone&&<button onClick={installChefcita}><Download/><span><b>Instalar Chefcita</b><small>Añadila a la pantalla de inicio</small></span></button>}
       </div>
       <div className="drawer-group">
        <small>CUENTA</small>
@@ -199,6 +277,35 @@ export default function App(){
        <button onClick={()=>openSettings('IA e importaciones')}><WandSparkles/><span><b>IA e importaciones</b><small>Cómo se procesan las recetas</small></span></button>
       </div>
      </>}
+    </section>
+   </div>}
+
+   {installHelpOpen&&<div className="install-help-backdrop" onClick={e=>{if(e.target===e.currentTarget)setInstallHelpOpen(false)}}>
+    <section className="install-help" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+     <div className="install-help-head">
+      <div><Smartphone/><span><b id="install-help-title">Instalar Chefcita</b><small>Acceso rápido desde tu pantalla de inicio</small></span></div>
+      <button onClick={()=>setInstallHelpOpen(false)} aria-label="Cerrar"><X/></button>
+     </div>
+     {isIOS?<div className="install-help-content">
+      <p><b>{isIOSChrome?'En iPhone, hacelo desde Safari.':'Añadila desde el menú Compartir.'}</b></p>
+      <ol>
+       {isIOSChrome&&<li>Abrí <b>chefcita.online</b> en Safari.</li>}
+       <li>Tocá <Share2/> <b>Compartir</b>.</li>
+       <li>Elegí <b>Añadir a pantalla de inicio</b>.</li>
+       <li>Confirmá con <b>Añadir</b>.</li>
+      </ol>
+      <small>Después se abre como una app, sin tener que buscar Chefcita en el navegador.</small>
+     </div>:isAndroid?<div className="install-help-content">
+      <p><b>En Android podés instalarla como una app.</b></p>
+      <ol>
+       <li>Abrí el menú <b>⋮</b> de Chrome.</li>
+       <li>Elegí <b>Instalar app</b> o <b>Añadir a pantalla principal</b>.</li>
+       <li>Confirmá la instalación.</li>
+      </ol>
+     </div>:<div className="install-help-content">
+      <p>Buscá en el menú de tu navegador la opción <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b>.</p>
+     </div>}
+     <button className="primary install-help-close" onClick={()=>setInstallHelpOpen(false)}>Entendido</button>
     </section>
    </div>}
 
