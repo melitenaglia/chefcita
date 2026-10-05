@@ -28,11 +28,29 @@ export default function App(){
    return ['compact','normal','large'].includes(saved)?saved:'normal';
   }catch{return 'normal'}
  });
+ const [theme,setTheme]=useState(()=>{
+  try{
+   const saved=localStorage.getItem('chefcita:theme');
+   return ['sage','olive','tomato','lavender'].includes(saved)?saved:'sage';
+  }catch{return 'sage'}
+ });
 
  useLayoutEffect(()=>{
   document.documentElement.dataset.uiSize=uiSize;
   try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
  },[uiSize]);
+
+ useLayoutEffect(()=>{
+  document.documentElement.dataset.theme=theme;
+  const themeColors={
+   sage:'#F5F7F2',
+   olive:'#F7F6EF',
+   tomato:'#FCF8F1',
+   lavender:'#F8F5F8'
+  };
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',themeColors[theme]||themeColors.sage);
+  try{localStorage.setItem('chefcita:theme',theme)}catch{}
+ },[theme]);
 
  useEffect(()=>{
   let cancelled=false;
@@ -149,8 +167,8 @@ export default function App(){
    </header>
 
    {tab==='Inicio'&&<HomeDashboard onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe} ideaFocusKey={ideaFocusKey}/>}
-   {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize}/>}
-   {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize}/>}
+   {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
+   {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
    {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} initialRecipeId={openRecipeId}/>}
    {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
    {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>}
