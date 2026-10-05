@@ -5,7 +5,7 @@ import {userErrorMessage} from './userError.js';
 
 const settingsSections=['Pantalla','Bibliotecas','IA e importaciones'];
 
-export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange}){
+export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange,theme='sage',onThemeChange}){
  const [section,setSection]=useState(mode==='account'?'Cuenta':initialSection);
  const [name,setName]=useState(session.user.user_metadata?.name||'');
  const [password,setPassword]=useState('');
@@ -66,6 +66,25 @@ export default function SettingsPage({session,mode='settings',initialSection='Pa
       <button type="button" role="radio" aria-checked={uiSize==='large'} className={uiSize==='large'?'active':''} onClick={()=>onUiSizeChange?.('large')}><b>Grande</b><small>Más cómodo para leer y tocar</small></button>
      </div>
      <small className="ui-size-device-note">Se guarda en este dispositivo. Cada móvil u ordenador puede tener un tamaño distinto.</small>
+    </div>
+
+    <div className="theme-setting">
+     <div className="theme-setting-head"><h3>Color</h3><p>Elegí la paleta que más te guste para este dispositivo.</p></div>
+     <div className="theme-options" role="radiogroup" aria-label="Tema de color">
+      <button type="button" role="radio" aria-checked={theme==='sage'} className={theme==='sage'?'active':''} onClick={()=>onThemeChange?.('sage')}>
+       <span className="theme-swatches sage"><i/><i/><i/></span><span><b>Salvia</b><small>Suave, fresca y natural</small></span>
+      </button>
+      <button type="button" role="radio" aria-checked={theme==='olive'} className={theme==='olive'?'active':''} onClick={()=>onThemeChange?.('olive')}>
+       <span className="theme-swatches olive"><i/><i/><i/></span><span><b>Oliva</b><small>Más cálida y gastronómica</small></span>
+      </button>
+      <button type="button" role="radio" aria-checked={theme==='tomato'} className={theme==='tomato'?'active':''} onClick={()=>onThemeChange?.('tomato')}>
+       <span className="theme-swatches tomato"><i/><i/><i/></span><span><b>Tomate</b><small>La paleta cálida actual</small></span>
+      </button>
+      <button type="button" role="radio" aria-checked={theme==='lavender'} className={theme==='lavender'?'active':''} onClick={()=>onThemeChange?.('lavender')}>
+       <span className="theme-swatches lavender"><i/><i/><i/></span><span><b>Lavanda</b><small>Suave y más delicada</small></span>
+      </button>
+     </div>
+     <small className="ui-size-device-note">El tema también se guarda solo en este dispositivo.</small>
     </div>
    </>}
 
