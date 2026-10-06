@@ -1728,18 +1728,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--chef-primary)!importa
  html,body,#root{min-height:100dvh}
  .mobile-bottom-nav{
   position:fixed!important;
-  left:0!important;
-  right:0!important;
-  top:auto!important;
-  bottom:0!important;
-  width:100%!important;
+  right:auto!important;
+  bottom:auto!important;
   z-index:80!important;
-  transform:translate3d(0,var(--mobile-vv-shift,0px),0)!important;
-  -webkit-transform:translate3d(0,var(--mobile-vv-shift,0px),0)!important;
+  transform:none!important;
+  -webkit-transform:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   background:var(--chef-surface)!important;
-  will-change:transform;
+  will-change:top,left,width;
  }
  .content{
   padding-bottom:calc(88px * var(--ui-scale) + env(safe-area-inset-bottom))!important;
@@ -1770,6 +1767,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--chef-primary)!importa
 .install-help-content li svg{width:17px;height:17px;vertical-align:-3px;color:var(--chef-primary-dark)}
 .install-help-content>small{font-size:12px;line-height:1.45}
 .install-help-close{margin-top:0!important}
+.install-share-button{
+ width:100%;min-height:48px;border:1px solid var(--chef-primary);background:var(--chef-primary-soft);
+ color:var(--chef-primary-dark);border-radius:12px;padding:11px 14px;font-weight:800;
+ display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer
+}
+.install-share-button svg{width:18px;height:18px}
 
 @media(max-width:760px){
  .install-help-backdrop{align-items:flex-end;padding:0}

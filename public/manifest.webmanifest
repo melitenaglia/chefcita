@@ -13,16 +13,22 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/chefcita-192.svg",
+      "src": "/icons/chefcita-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/chefcita-512.svg",
+      "src": "/icons/chefcita-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/chefcita-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

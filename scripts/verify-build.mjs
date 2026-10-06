@@ -23,6 +23,30 @@ for (const ref of refs) {
   }
 }
 
+for (const file of [
+  'dist/manifest.webmanifest',
+  'dist/sw.js',
+  'dist/icons/chefcita-180.png',
+  'dist/icons/chefcita-192.png',
+  'dist/icons/chefcita-512.png'
+]) {
+  if (!fs.existsSync(file)) {
+    throw new Error('Missing installable app asset: ' + file);
+  }
+}
+
+const manifest=JSON.parse(fs.readFileSync('dist/manifest.webmanifest','utf8'));
+if(manifest.name!=='Chefcita'||manifest.start_url!=='/'||manifest.display!=='standalone'){
+ throw new Error('Invalid Chefcita web app manifest');
+}
+const manifestSizes=new Set((manifest.icons||[]).map(icon=>icon.sizes));
+if(!manifestSizes.has('192x192')||!manifestSizes.has('512x512')){
+ throw new Error('Chefcita manifest is missing required install icons');
+}
+if(!html.includes('rel="manifest"')||!html.includes('rel="apple-touch-icon"')){
+ throw new Error('Production HTML is missing install metadata');
+}
+
 const quantityCases=[
  [{quantity_text:'4',quantity:4,unit:'unidad'},'4 uds.'],
  [{quantity_text:'120',quantity:120,unit:'g'},'120 grs.'],
