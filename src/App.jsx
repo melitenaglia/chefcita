@@ -46,32 +46,51 @@ export default function App(){
  },[uiSize]);
 
  useEffect(()=>{
-  const root=document.documentElement;
+  const viewport=window.visualViewport;
+  const nav=document.querySelector('.mobile-bottom-nav');
+  if(!viewport||!nav)return;
+
   let raf=0;
-  const updateVisualViewport=()=>{
+  const reset=()=>{
+   nav.style.removeProperty('top');
+   nav.style.removeProperty('left');
+   nav.style.removeProperty('width');
+   nav.style.removeProperty('bottom');
+   nav.style.removeProperty('transform');
+   nav.style.removeProperty('-webkit-transform');
+  };
+  const sync=()=>{
    cancelAnimationFrame(raf);
    raf=requestAnimationFrame(()=>{
-    const vv=window.visualViewport;
-    if(!vv){root.style.setProperty('--mobile-vv-shift','0px');return}
-    const layoutHeight=root.clientHeight;
-    const visualBottom=vv.offsetTop+vv.height;
-    const shift=Math.max(0,visualBottom-layoutHeight);
-    root.style.setProperty('--mobile-vv-shift',`${Math.round(shift)}px`);
+    if(window.innerWidth>760){reset();return}
+    const navHeight=nav.offsetHeight||64;
+    nav.style.position='fixed';
+    nav.style.bottom='auto';
+    nav.style.left=`${Math.round(viewport.offsetLeft)}px`;
+    nav.style.width=`${Math.round(viewport.width)}px`;
+    nav.style.top=`${Math.max(0,Math.round(viewport.offsetTop+viewport.height-navHeight))}px`;
+    nav.style.transform='none';
+    nav.style.webkitTransform='none';
    });
   };
-  updateVisualViewport();
-  window.visualViewport?.addEventListener('resize',updateVisualViewport);
-  window.visualViewport?.addEventListener('scroll',updateVisualViewport);
-  window.addEventListener('resize',updateVisualViewport);
-  window.addEventListener('scroll',updateVisualViewport,{passive:true});
+
+  sync();
+  viewport.addEventListener('resize',sync);
+  viewport.addEventListener('scroll',sync);
+  window.addEventListener('resize',sync);
+  window.addEventListener('orientationchange',sync);
+  window.addEventListener('scroll',sync,{passive:true});
+
   return()=>{
    cancelAnimationFrame(raf);
-   window.visualViewport?.removeEventListener('resize',updateVisualViewport);
-   window.visualViewport?.removeEventListener('scroll',updateVisualViewport);
-   window.removeEventListener('resize',updateVisualViewport);
-   window.removeEventListener('scroll',updateVisualViewport);
+   viewport.removeEventListener('resize',sync);
+   viewport.removeEventListener('scroll',sync);
+   window.removeEventListener('resize',sync);
+   window.removeEventListener('orientationchange',sync);
+   window.removeEventListener('scroll',sync);
+   reset();
   };
- },[]);
+ },[session,uiSize]);
 
  useEffect(()=>{
   const media=window.matchMedia('(display-mode: standalone)');
@@ -170,27 +189,43 @@ export default function App(){
   setMobileMenuLevel('root');
  };
 
+ const userAgent=typeof navigator==='undefined'?'':navigator.userAgent;
+ const isIOS=/iPad|iPhone|iPod/.test(userAgent)||(/Macintosh/.test(userAgent)&&navigator.maxTouchPoints>1);
+ const isAndroid=/Android/.test(userAgent);
+
  const installChefcita=async()=>{
   closeMenu();
   if(standalone)return;
+
   if(installPrompt){
    const prompt=installPrompt;
    setInstallPrompt(null);
    try{
     await prompt.prompt();
-    if(prompt.userChoice)await prompt.userChoice;
+    const choice=prompt.userChoice?await prompt.userChoice:null;
+    if(choice?.outcome!=='accepted')setInstallHelpOpen(true);
    }catch{
     setInstallHelpOpen(true);
    }
    return;
   }
+
+  if(isIOS&&navigator.share){
+   try{
+    await navigator.share({
+     title:'Chefcita',
+     text:'Añadí Chefcita a tu pantalla de inicio',
+     url:window.location.origin
+    });
+   }catch(error){
+    if(error?.name==='AbortError')setInstallHelpOpen(true);
+    else setInstallHelpOpen(true);
+   }
+   return;
+  }
+
   setInstallHelpOpen(true);
  };
-
- const userAgent=typeof navigator==='undefined'?'':navigator.userAgent;
- const isIOS=/iPad|iPhone|iPod/.test(userAgent)||(/Macintosh/.test(userAgent)&&navigator.maxTouchPoints>1);
- const isIOSChrome=/CriOS/.test(userAgent);
- const isAndroid=/Android/.test(userAgent);
 
  const goToTab=target=>{
   if(target==='Pendientes')setPendingStart('imports');
@@ -287,14 +322,17 @@ export default function App(){
       <button onClick={()=>setInstallHelpOpen(false)} aria-label="Cerrar"><X/></button>
      </div>
      {isIOS?<div className="install-help-content">
-      <p><b>{isIOSChrome?'En iPhone, hacelo desde Safari.':'Añadila desde el menú Compartir.'}</b></p>
+      <p><b>Te falta solo la confirmación del iPhone.</b></p>
+      {navigator.share&&<button className="install-share-button" onClick={async()=>{
+       try{
+        await navigator.share({title:'Chefcita',text:'Añadí Chefcita a tu pantalla de inicio',url:window.location.origin});
+       }catch{}
+      }}><Share2/>Abrir menú del iPhone</button>}
       <ol>
-       {isIOSChrome&&<li>Abrí <b>chefcita.online</b> en Safari.</li>}
-       <li>Tocá <Share2/> <b>Compartir</b>.</li>
        <li>Elegí <b>Añadir a pantalla de inicio</b>.</li>
        <li>Confirmá con <b>Añadir</b>.</li>
       </ol>
-      <small>Después se abre como una app, sin tener que buscar Chefcita en el navegador.</small>
+      <small>Funciona desde Safari, Chrome y otros navegadores actuales de iPhone.</small>
      </div>:isAndroid?<div className="install-help-content">
       <p><b>En Android podés instalarla como una app.</b></p>
       <ol>
