@@ -6,7 +6,7 @@ import {userErrorMessage} from './userError.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeLibrary({session,mode='all',initialRecipeId=null}){
+export default function RecipeLibrary({session,mode='all',initialRecipeId=null,initialPersonalFilter=''}){
  const [recipes,setRecipes]=useState([]);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
@@ -16,7 +16,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  const [categoryFilter,setCategoryFilter]=useState('');
  const [mealFilter,setMealFilter]=useState('');
  const [levelFilter,setLevelFilter]=useState('');
- const [personalFilter,setPersonalFilter]=useState('');
+ const [personalFilter,setPersonalFilter]=useState(initialPersonalFilter);
  const [libraryFilter,setLibraryFilter]=useState('');
  const [sort,setSort]=useState('newest');
  const [kitchenView,setKitchenView]=useState('favorites');
@@ -160,6 +160,9 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
  const filterCount=[categoryFilter,mealFilter,levelFilter,libraryFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
 
  return <section className="recipe-library">
+   <div className="recipe-quick-tabs" role="group" aria-label="Filtrar recetas por estado">
+    {[['','Todas'],['favorite','Favoritas'],['to_try','Por probar'],['tried','Probadas']].map(([value,label])=><button type="button" key={label} className={personalFilter===value?'selected':''} aria-pressed={personalFilter===value} onClick={()=>setPersonalFilter(value)}>{label}</button>)}
+   </div>
   {mode==='kitchen'&&<div className="kitchen-tabs">
    <button className={kitchenView==='favorites'?'active':''} onClick={()=>setKitchenView('favorites')}><Heart/>Favoritas <span>{kitchenCounts.favorites}</span></button>
    <button className={kitchenView==='to_try'?'active':''} onClick={()=>setKitchenView('to_try')}><Circle/>Por probar <span>{kitchenCounts.toTry}</span></button>
@@ -167,7 +170,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
   </div>}
 
   <div className="library-toolbar">
-   <div className="search-box"><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por receta, ingrediente, categoría o etiqueta..."/></div>
+   <div className="search-box"><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar una receta o ingrediente…"/></div>
    <span>{visible.length} {visible.length===1?'receta':'recetas'}</span>
   </div>
 
@@ -178,7 +181,6 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null})
    <select value={mealFilter} onChange={e=>setMealFilter(e.target.value)}><option value="">Todos los tipos</option>{mealTypes.map(x=><option key={x}>{x}</option>)}</select>
    <select value={levelFilter} onChange={e=>setLevelFilter(e.target.value)}><option value="">Cualquier nivel</option><option value="initial">Inicial</option><option value="intermediate">Intermedio</option><option value="expert">Experto</option></select>
    <select value={libraryFilter} onChange={e=>setLibraryFilter(e.target.value)}><option value="">Todas las bibliotecas</option><option value="personal">Personal</option>{libraries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>
-   {mode==='all'&&<select value={personalFilter} onChange={e=>setPersonalFilter(e.target.value)}><option value="">Cualquier estado</option><option value="favorite">Favoritas</option><option value="to_try">Por probar</option><option value="tried">Probadas</option></select>}
    <select value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Más recientes</option><option value="title">A–Z</option><option value="time">Menor tiempo</option></select>
    {filtersActive&&<button onClick={clearFilters}>Limpiar</button>}
   </div>
