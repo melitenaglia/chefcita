@@ -1,5 +1,5 @@
 import React,{useEffect,useLayoutEffect,useState} from 'react';
-import {Heart,Inbox,BookOpen,Plus,ChefHat,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight,Download,Share2,Smartphone} from 'lucide-react';
+import {Heart,Inbox,BookOpen,Plus,ChefHat,CheckCircle2,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight,Download,Share2,Smartphone} from 'lucide-react';
 import {supabase} from './supabase.js';
 import Auth from './Auth.jsx';
 import SettingsPage from './SettingsPage.jsx';
@@ -15,6 +15,7 @@ export default function App(){
  const [tab,setTab]=useState('Inicio');
  const [settingsStart,setSettingsStart]=useState('Pantalla');
  const [adding,setAdding]=useState(false);
+ const [saveNotice,setSaveNotice]=useState('');
  const [recipeRefresh,setRecipeRefresh]=useState(0);
  const [recipeListFilter,setRecipeListFilter]=useState('');
  const [pendingStart,setPendingStart]=useState('imports');
@@ -182,6 +183,7 @@ export default function App(){
  };
 
  const goToTab=target=>{
+  setSaveNotice('');
   if(target==='Mi cocina'||target==='Favoritas'){
    setRecipeListFilter('favorite');
    target='Recetas';
@@ -194,6 +196,7 @@ export default function App(){
 
  const goToIdeas=()=>{
   closeMenu();
+  setSaveNotice('');
   setIdeaFocusKey(x=>x+1);
   setTab('Inicio');
  };
@@ -240,6 +243,7 @@ export default function App(){
     </div>
    </header>
 
+   {saveNotice&&<div className="save-notice" role="status"><CheckCircle2/><span>{saveNotice}</span></div>}
    {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe} ideaFocusKey={ideaFocusKey}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
@@ -312,8 +316,16 @@ export default function App(){
    {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{
     setAdding(false);
     setRecipeRefresh(x=>x+1);
-    if(target==='Por validar'){setPendingStart('review');setTab('Pendientes')}
-    else{if(target==='Pendientes')setPendingStart('imports');setTab(target)}
+    if(target==='Por validar'){
+     setPendingStart('review');setTab('Pendientes');
+     setSaveNotice('¡Receta guardada! Revisala para que aparezca en tu recetario.');
+    }else{
+     if(target==='Pendientes'){
+      setPendingStart('imports');
+      setSaveNotice('El enlace quedó guardado. Podés terminar la receta cuando quieras.');
+     }else setSaveNotice('¡Receta guardada en tu recetario!');
+     setTab(target);
+    }
    }}/>}
   </main>
  </div>;
