@@ -123,7 +123,7 @@
   .mobile-bottom-nav button{
     min-height:52px !important;
     padding:7px 3px !important;
-    font-size:clamp(11px,2.7vw,13px) !important;
+    font-size:clamp(13px,3.5vw,15px) !important;
     gap:4px !important;
     line-height:1.2 !important;
     border-radius:12px !important;
@@ -160,7 +160,7 @@
   .recipe-quick-tabs button{
     min-height:47px;
     padding:8px 4px;
-    font-size:clamp(11px,2.8vw,14px);
+    font-size:clamp(12.5px,3.2vw,14px);
     border-radius:10px;
   }
 }
