@@ -6,7 +6,7 @@ const IDEA_TYPES=['Desayuno','Almuerzo/Cena','Merienda','Snack','Postre','Bebida
 const normalize=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
 const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.message||error||''));
 
-export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKey=0}){
+export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKey=0,session}){
  const [data,setData]=useState({recipes:0,pending:0,favorites:0,recent:[]});
  const [ideaOptions,setIdeaOptions]=useState([]);
  const [ideaType,setIdeaType]=useState('');
@@ -57,8 +57,33 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
    };
   };
 
+  const ensureFreshAuth=async()=>{
+   const {data:userData,error:userError}=await supabase.auth.getUser();
+   if(!userError&&userData?.user)return true;
+
+   try{
+    const {data:refreshData,error:refreshError}=await supabase.auth.refreshSession();
+    if(refreshError||!refreshData?.session)return false;
+    await new Promise(resolve=>setTimeout(resolve,250));
+    return true;
+   }catch{
+    return false;
+   }
+  };
+
   (async()=>{
    setLoading(true);
+   setSummaryReady(false);
+
+   const authReady=await ensureFreshAuth();
+   if(!active)return;
+
+   if(!authReady){
+    setLoading(false);
+    console.warn('No se pudo validar la sesión antes de cargar el resumen de inicio.');
+    return;
+   }
+
    let result=await fetchSummary();
 
    if(result.error&&isJwtClockError(result.error)){
@@ -70,15 +95,19 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
    }
 
    if(!active)return;
-   if(result.data){setData(result.data);setSummaryReady(true)}
-   else setSummaryReady(false);
+   if(result.data){
+    setData(result.data);
+    setSummaryReady(true);
+   }else{
+    setSummaryReady(false);
+   }
    if(result.options)setIdeaOptions(result.options);
    if(result.error)console.warn('No se pudo actualizar el resumen de inicio.',result.error);
    setLoading(false);
   })();
 
   return()=>{active=false};
- },[]);
+ },[session?.access_token]);
 
  useEffect(()=>{
   if(!ideaFocusKey)return;
