@@ -16,6 +16,7 @@ export default function App(){
  const [settingsStart,setSettingsStart]=useState('Pantalla');
  const [adding,setAdding]=useState(false);
  const [recipeRefresh,setRecipeRefresh]=useState(0);
+ const [recipeListFilter,setRecipeListFilter]=useState('');
  const [pendingStart,setPendingStart]=useState('imports');
  const [openRecipeId,setOpenRecipeId]=useState(null);
  const [inviteNotice,setInviteNotice]=useState('');
@@ -44,53 +45,6 @@ export default function App(){
   document.documentElement.dataset.uiSize=uiSize;
   try{localStorage.setItem('chefcita:ui-size',uiSize)}catch{}
  },[uiSize]);
-
- useEffect(()=>{
-  const viewport=window.visualViewport;
-  const nav=document.querySelector('.mobile-bottom-nav');
-  if(!viewport||!nav)return;
-
-  let raf=0;
-  const reset=()=>{
-   nav.style.removeProperty('top');
-   nav.style.removeProperty('left');
-   nav.style.removeProperty('width');
-   nav.style.removeProperty('bottom');
-   nav.style.removeProperty('transform');
-   nav.style.removeProperty('-webkit-transform');
-  };
-  const sync=()=>{
-   cancelAnimationFrame(raf);
-   raf=requestAnimationFrame(()=>{
-    if(window.innerWidth>760){reset();return}
-    const navHeight=nav.offsetHeight||64;
-    nav.style.position='fixed';
-    nav.style.bottom='auto';
-    nav.style.left=`${Math.round(viewport.offsetLeft)}px`;
-    nav.style.width=`${Math.round(viewport.width)}px`;
-    nav.style.top=`${Math.max(0,Math.round(viewport.offsetTop+viewport.height-navHeight))}px`;
-    nav.style.transform='none';
-    nav.style.webkitTransform='none';
-   });
-  };
-
-  sync();
-  viewport.addEventListener('resize',sync);
-  viewport.addEventListener('scroll',sync);
-  window.addEventListener('resize',sync);
-  window.addEventListener('orientationchange',sync);
-  window.addEventListener('scroll',sync,{passive:true});
-
-  return()=>{
-   cancelAnimationFrame(raf);
-   viewport.removeEventListener('resize',sync);
-   viewport.removeEventListener('scroll',sync);
-   window.removeEventListener('resize',sync);
-   window.removeEventListener('orientationchange',sync);
-   window.removeEventListener('scroll',sync);
-   reset();
-  };
- },[session,uiSize]);
 
  useEffect(()=>{
   const media=window.matchMedia('(display-mode: standalone)');
@@ -181,8 +135,8 @@ export default function App(){
  if(loading)return <div className="splash"><ChefHat/><span>Chefcita</span></div>;
  if(!session)return <Auth notice={authNotice} onNoticeConsumed={()=>setAuthNotice('')}/>;
 
- const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox],['Mi cocina',Heart]];
- const mobileNav=[['Inicio',Home],['Recetas',BookOpen],['Ideas',WandSparkles],['Pendientes',Inbox],['Mi cocina',Heart]];
+ const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox]];
+ const mobileNav=[['Inicio',Home],['Recetas',BookOpen],['Guardar',Plus],['Ideas',WandSparkles]];
 
  const closeMenu=()=>{
   setMobileMenuOpen(false);
@@ -228,6 +182,10 @@ export default function App(){
  };
 
  const goToTab=target=>{
+  if(target==='Mi cocina'||target==='Favoritas'){
+   setRecipeListFilter('favorite');
+   target='Recetas';
+  }else if(target==='Recetas')setRecipeListFilter('');
   if(target==='Pendientes')setPendingStart('imports');
   if(target==='Inicio')setIdeaFocusKey(0);
   closeMenu();
@@ -249,6 +207,7 @@ export default function App(){
  const openRecipe=id=>{
   if(!id)return;
   setAdding(false);
+  setRecipeListFilter('');
   setOpenRecipeId(id);
   setRecipeRefresh(x=>x+1);
   setTab('Recetas');
@@ -257,7 +216,7 @@ export default function App(){
  return <div className="shell">
   <aside className="desktop-sidebar">
    <div className="logo"><ChefHat/><b>Chefcita</b></div>
-   <nav className="desktop-nav">{nav.map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>goToTab(n)}><I/><span>{n}</span></button>)}</nav>
+   <nav className="desktop-nav">{nav.map(([n,I])=><button key={n} className={tab===n?'active':''} onClick={()=>goToTab(n)}><I/><span>{n==='Pendientes'?'Por revisar':n}</span></button>)}</nav>
    <div className="account-nav">
     <button className={tab==='Mi cuenta'?'active':''} onClick={()=>setTab('Mi cuenta')}><UserRound/>Mi cuenta</button>
     <button className={tab==='Configuración'?'active':''} onClick={()=>{setSettingsStart('Pantalla');setTab('Configuración')}}><Settings/>Config.</button>
@@ -266,13 +225,16 @@ export default function App(){
   </aside>
 
   <nav className="mobile-bottom-nav" aria-label="Navegación principal">
-   {mobileNav.map(([name,Icon])=><button key={name} className={(name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:(name==='Inicio'?tab==='Inicio'&&ideaFocusKey===0:tab===name))?'active':''} onClick={()=>name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>)}
+   {mobileNav.map(([name,Icon])=>{
+    const selected=name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:name==='Inicio'?tab==='Inicio'&&ideaFocusKey===0:tab===name;
+    return <button type="button" key={name} className={(selected?'active ':'')+(name==='Guardar'?'mobile-nav-save':'')} aria-label={name==='Guardar'?'Guardar una receta':name} aria-current={selected?'page':undefined} onClick={()=>name==='Guardar'?setAdding(true):name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>;
+   })}
   </nav>
 
   <main className="content">
    <header className="app-header">
     <button className="mobile-menu-trigger" onClick={()=>{setMobileMenuLevel('root');setMobileMenuOpen(true)}} aria-label="Abrir menú"><Menu/></button>
-    <div className="app-header-title"><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab}</h1></div>
+    <div className="app-header-title"><p className="eyebrow">CHEFCITA 2.0</p><h1>{tab==='Pendientes'?'Revisar recetas':tab}</h1></div>
     <div className="header-actions">
      <button className="add" onClick={()=>setAdding(true)}><Plus/><span>Añadir receta</span></button>
     </div>
@@ -281,8 +243,7 @@ export default function App(){
    {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe} ideaFocusKey={ideaFocusKey}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
-   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}`} session={session} initialRecipeId={openRecipeId}/>}
-   {tab==='Mi cocina'&&<RecipeLibrary key={`kitchen-${recipeRefresh}`} session={session} mode="kitchen"/>}
+   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter}/>}
    {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>}
 
    {mobileMenuOpen&&<div className="mobile-drawer-backdrop" onClick={e=>{if(e.target===e.currentTarget)closeMenu()}}>
@@ -295,7 +256,8 @@ export default function App(){
      {mobileMenuLevel==='root'?<>
       <div className="drawer-group">
        <small>ACCIONES</small>
-       <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Añadir receta</b><small>Instagram o carga manual</small></span></button>
+       <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Guardar receta</b><small>Instagram o escribir a mano</small></span></button>
+       <button onClick={()=>goToTab('Pendientes')}><Inbox/><span><b>Recetas por revisar</b><small>Importaciones y recetas sin terminar</small></span></button>
        {!standalone&&<button onClick={installChefcita}><Download/><span><b>Instalar Chefcita</b><small>Añadila a la pantalla de inicio</small></span></button>}
       </div>
       <div className="drawer-group">
