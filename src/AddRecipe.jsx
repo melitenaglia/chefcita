@@ -262,7 +262,10 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
   setError('');
   try{
    const text=(await navigator.clipboard.readText()).trim();
-   if(!text)return;
+   if(!text){
+    setError('Todavía no hay un enlace copiado. En Instagram tocá Compartir → Copiar enlace. Después volvé acá.');
+    return;
+   }
    if(!isInstagramRecipeUrl(text)){
     setError('Lo que hay copiado no parece ser un enlace de Instagram. En Instagram tocá Compartir → Copiar enlace.');
     return;
@@ -317,7 +320,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
  const linkReady=isInstagramRecipeUrl(sourceUrl);
 
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)onClose()}}>
-  <form className="recipe-form add-recipe-form" onSubmit={mode==='manual'?saveManual:linkSubmit}>
+  <form className="recipe-form add-recipe-form" aria-busy={busy} onSubmit={mode==='manual'?saveManual:linkSubmit}>
    <div className="form-head"><div><small>CHEFCITA</small><h2>Guardar una receta</h2></div><button type="button" disabled={busy} onClick={onClose}><X/></button></div>
 
    <div className="add-modes">
@@ -340,6 +343,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
      </div>
     </div>
 
+    {mode==='link'&&error&&<p className="message form-error" role="alert">{error}</p>}
     {!pendingImportId&&linkReady&&<div className="link-ready" role="status"><CheckCircle2/><span>¡Perfecto! Ahora tocá <b>Guardar receta</b>.</span></div>}
     {!pendingImportId&&sourceUrl.trim()&&!linkReady&&<p className="instagram-link-help" role="status">Revisá el enlace. Tiene que ser de un Reel o una publicación de Instagram.</p>}
     {!pendingImportId&&<p className="simple-import-note">Si Instagram no muestra los ingredientes, Chefcita te pedirá el texto sin perder el enlace.</p>}
@@ -411,13 +415,13 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
     </div>
    </>}
 
-   {busy&&<div className="import-working" role="status" aria-live="polite"><LoaderCircle className="spin"/><span><b>{pendingImportId?'Chefcita está preparando tu receta…':'Chefcita está buscando tu receta…'}</b><small>Estamos trabajando. Esperá un momento sin cerrar esta pantalla.</small></span></div>}
+   {busy&&<div className="import-working import-working-overlay" role="status" aria-live="polite"><LoaderCircle className="spin"/><span><b>{pendingImportId?'Chefcita está preparando tu receta…':'Chefcita está buscando tu receta…'}</b><small>Estamos trabajando. Esperá un momento sin cerrar esta pantalla.</small></span></div>}
    {error&&<p className="message form-error">{error}</p>}
 
    <div className="form-actions">
     {pendingImportId?<button type="button" className="cancel discard-import" onClick={discardPending} disabled={busy}><Trash2/>Descartar</button>:<button type="button" className="cancel" disabled={busy} onClick={onClose}>Cancelar</button>}
     {mode==='link'&&pendingImportId&&importStage==='needs_input'?<button className="primary save-recipe" disabled={busy||!pastedContent.trim()}>{busy?'Guardando…':'Continuar y guardar'}</button>
-    :mode==='link'&&pendingImportId?<button type="button" className="primary save-recipe" onClick={onClose} disabled={busy}>Cerrar y dejar pendiente</button>
+    :mode==='link'&&pendingImportId?<button type="button" className="primary save-recipe" onClick={()=>onSaved('Pendientes')} disabled={busy}>Guardar y terminar después</button>
     :<button className="primary save-recipe" disabled={busy||(mode==='link'?(!linkReady||(importStrategy==='manual'&&!hintTitle.trim())):!title.trim())}>
      {busy?'Guardando…':mode==='link'?(importStrategy==='manual'?'Guardar para más tarde':'Guardar receta'):'Guardar receta'}
     </button>}
