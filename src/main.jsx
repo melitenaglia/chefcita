@@ -4,6 +4,7 @@ import App from './App.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import './styles.css';
 import './mobile-polish.css';
+import './ux-simplification.css';
 
 const root=document.getElementById('root');
 createRoot(root).render(
