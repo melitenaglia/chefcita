@@ -167,3 +167,47 @@
 @media(max-width:350px){
   .recipe-quick-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* La confirmación no desaparece al cerrar el formulario. */
+.save-notice{
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  margin:0 0 18px;
+  padding:13px 15px;
+  border-radius:14px;
+  background:var(--chef-primary-soft,#e9f1e8);
+  border:1px solid var(--chef-primary,#9ab69b);
+  color:var(--chef-primary-dark,#425b48);
+  font-size:15px;
+  font-weight:700;
+  line-height:1.45;
+}
+.save-notice svg{width:21px;height:21px;flex:0 0 21px}
+
+/* Estado de procesamiento siempre visible, incluso con el teclado móvil. */
+.import-working-overlay{
+  position:fixed !important;
+  z-index:200 !important;
+  top:50% !important;
+  left:50% !important;
+  transform:translate(-50%,-50%) !important;
+  width:min(380px,calc(100vw - 40px)) !important;
+  max-width:none !important;
+  min-height:118px;
+  padding:22px !important;
+  border:1px solid var(--chef-border,#dbe5d9) !important;
+  border-radius:18px !important;
+  background:var(--chef-surface,#fff) !important;
+  box-shadow:0 0 0 100vmax #242e2780,0 18px 50px #0002 !important;
+  align-items:center;
+  gap:14px;
+  font-size:16px;
+}
+.import-working-overlay>svg{
+  width:32px !important;
+  height:32px !important;
+  flex:0 0 32px !important;
+  color:var(--chef-primary-dark,#46674b);
+}
+.import-working-overlay small{font-size:14px;line-height:1.45}
