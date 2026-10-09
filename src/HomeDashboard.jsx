@@ -193,15 +193,15 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKe
    <div><small>TU RECETARIO</small><b>Explorá lo que ya guardaste o sumá una receta nueva.</b></div>
    <button className="welcome-instagram" onClick={onAdd}>
     <Instagram/>
-    <span><b>Guardar desde Instagram</b><small>Pegá un Reel o post</small></span>
+    <span><b>Guardar una receta</b><small>Copiá y pegá el enlace de Instagram</small></span>
     <ArrowRight/>
    </button>
   </section>
 
   <div className="cards dashboard-cards">
    <button onClick={()=>onNavigate('Recetas')}><BookOpen/><b>Recetas</b><strong>{loading||!summaryReady?'–':data.recipes}</strong><small>Tu biblioteca aprobada.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Mi cocina')}><Heart/><b>Favoritas</b><strong>{loading||!summaryReady?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
-   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Pendientes</b><strong>{loading||!summaryReady?'–':data.pending}</strong><small>Importaciones y recetas por validar.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Favoritas')}><Heart/><b>Favoritas</b><strong>{loading||!summaryReady?'–':data.favorites}</strong><small>Las que querés tener siempre a mano.</small><ArrowRight/></button>
+   <button onClick={()=>onNavigate('Pendientes')}><Inbox/><b>Por revisar</b><strong>{loading||!summaryReady?'–':data.pending}</strong><small>Recetas guardadas que falta revisar.</small><ArrowRight/></button>
   </div>
 
   <section className="home-recent">
