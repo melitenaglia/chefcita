@@ -1,0 +1,169 @@
+/* Chefcita: navegación estable en iOS y flujo simple para guardar recetas.
+   Se carga al final para cancelar las antiguas reglas de visualViewport. */
+
+.recipe-quick-tabs {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin:0 0 20px;
+}
+.recipe-quick-tabs button {
+  min-width:0;
+  min-height:46px;
+  padding:10px 8px;
+  border-radius:12px;
+  border:1px solid var(--chef-border,#e1d9d1);
+  background:var(--chef-surface,#fff);
+  color:var(--chef-text,#39463b);
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.recipe-quick-tabs button.selected {
+  border-color:var(--chef-primary-dark,#4d6b53);
+  background:var(--chef-primary-soft,#e9f1e8);
+  color:var(--chef-primary-dark,#4d6b53);
+}
+.simple-import-intro {
+  margin:0 0 15px;
+  font-size:16px;
+  line-height:1.5;
+  color:var(--chef-text,#39463b);
+}
+.instagram-link-field {
+  display:grid;
+  gap:8px;
+  margin:0 0 12px;
+  min-width:0;
+}
+.instagram-link-field>label {
+  display:block;
+  margin:8px 0 0;
+  font-size:14px;
+  font-weight:650;
+}
+.instagram-link-field .instagram-link-row {
+  display:block;
+}
+.instagram-link-field .instagram-link-row input {
+  width:100%;
+  min-width:0;
+  min-height:52px;
+  font-size:16px;
+  border-radius:12px;
+}
+.instagram-link-field .simple-import-paste {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  max-width:none;
+  min-height:56px;
+  border:0;
+  border-radius:14px;
+  background:var(--chef-primary-dark,#49674e);
+  color:white;
+  font-size:17px;
+  font-weight:800;
+  cursor:pointer;
+}
+.simple-import-paste svg{width:22px;height:22px}
+.simple-import-note {
+  margin:12px 0 16px;
+  font-size:13px;
+  line-height:1.45;
+  color:var(--chef-muted,#687368);
+}
+.instagram-link-help {
+  margin:7px 0;
+  border-radius:10px;
+  padding:10px 12px;
+  background:#fff6ee;
+  color:#81502d;
+  font-size:14px;
+  line-height:1.4;
+}
+.link-ready{font-size:14px;line-height:1.4}
+@media(max-width:760px){
+  /* El viewport visual cambia al mostrar/ocultar la interfaz de Safari/Chrome.
+     Un fixed con bottom:0 NO debe recalcular top con visualViewport. */
+  html,body{min-height:100% !important}
+  #root{min-height:100svh !important}
+  .shell{min-height:100svh !important;padding-bottom:0 !important}
+  .content{
+    overflow-x:clip !important;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  .app-header{
+    position:relative !important;
+    top:auto !important;
+  }
+  .mobile-bottom-nav{
+    position:fixed !important;
+    top:auto !important;
+    bottom:0 !important;
+    left:0 !important;
+    right:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    height:auto !important;
+    transform:none !important;
+    -webkit-transform:none !important;
+    will-change:auto !important;
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    align-items:center;
+    gap:4px !important;
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px)) !important;
+    box-sizing:border-box;
+    z-index:80 !important;
+  }
+  .mobile-bottom-nav button{
+    min-height:52px !important;
+    padding:7px 3px !important;
+    font-size:clamp(11px,2.7vw,13px) !important;
+    gap:4px !important;
+    line-height:1.2 !important;
+    border-radius:12px !important;
+    transform:none !important;
+  }
+  .mobile-bottom-nav button svg{
+    width:23px !important;
+    height:23px !important;
+    flex:0 0 23px;
+  }
+  .mobile-bottom-nav .mobile-nav-save{
+    background:var(--chef-accent-soft,#f6ebcf) !important;
+    color:var(--chef-accent-dark,#8b6421) !important;
+    border:1px solid var(--chef-accent,#dfbd70) !important;
+    font-weight:800;
+  }
+  body:has(.modal-backdrop) .mobile-bottom-nav{visibility:hidden !important}
+  .modal-backdrop{z-index:120 !important}
+  .recipe-form.add-recipe-form{
+    height:100dvh !important;
+    max-height:100dvh !important;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  .add-recipe-form .instagram-guide{
+    margin:0 0 18px;
+    padding:13px;
+    gap:11px;
+  }
+  .add-recipe-form .instagram-guide p{font-size:15px;line-height:1.45}
+  .add-recipe-form .simple-import-paste{min-height:58px}
+  .add-recipe-form .form-actions .primary{min-height:52px;font-size:16px}
+  .add-recipe-form .form-actions .cancel{min-height:48px}
+  .recipe-quick-tabs{gap:5px;margin-bottom:16px}
+  .recipe-quick-tabs button{
+    min-height:47px;
+    padding:8px 4px;
+    font-size:clamp(11px,2.8vw,14px);
+    border-radius:10px;
+  }
+}
+@media(max-width:350px){
+  .recipe-quick-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
