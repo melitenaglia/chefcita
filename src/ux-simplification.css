@@ -240,3 +240,88 @@
   color:var(--chef-primary-dark,#46674b);
 }
 .import-working-overlay small{font-size:14px;line-height:1.45}
+
+/* Inicio es un panel de recetario; Ideas tiene su propia página. */
+.home-dashboard>.home-save-section{
+  margin-top:0!important;
+  padding:20px;
+  border-radius:18px;
+  gap:20px;
+}
+.home-save-section>div{max-width:540px;gap:7px}
+.home-save-section>div small{font-size:12px!important;letter-spacing:.09em}
+.home-save-section>div b{
+  font-size:clamp(16px,1.6vw,19px)!important;
+  line-height:1.35!important;
+}
+.home-save-section .welcome-instagram{
+  min-width:245px;
+  min-height:66px;
+}
+.home-save-section .welcome-instagram b{font-size:16px}
+.home-save-section .welcome-instagram small{font-size:13px}
+.home-dashboard .home-recent,
+.home-dashboard .home-favorites,
+.home-dashboard .home-shortcuts-section{
+  margin-top:30px!important;
+}
+.home-dashboard .home-section-head h2{font-size:clamp(20px,2vw,26px)}
+.home-shortcuts-section .dashboard-cards.home-shortcuts{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.home-dashboard .home-loading{
+  min-height:86px;
+  display:grid;
+  place-items:center;
+  border:1px dashed var(--chef-border,#dce4dc);
+  border-radius:15px;
+  padding:20px;
+  color:var(--chef-muted,#647267);
+  font-size:15px;
+}
+.home-dashboard .home-empty-compact{
+  min-height:160px;
+  padding:24px;
+}
+.home-dashboard .home-empty-compact p{max-width:420px}
+.ideas-page{width:100%}
+.ideas-page .idea-hero{margin:0}
+.ideas-page .ideas-empty{
+  margin-top:16px;
+  padding:18px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  color:var(--chef-muted,#647267);
+  border:1px solid var(--chef-border,#dce4dc);
+  background:var(--chef-surface,#fff);
+  border-radius:15px;
+}
+.ideas-page .ideas-empty svg{width:24px;height:24px;flex-shrink:0}
+.ideas-page .ideas-empty p{margin:0}
+@media(max-width:760px){
+  .home-dashboard>.home-save-section{
+    margin-top:0!important;
+    padding:16px!important;
+    gap:15px;
+  }
+  .home-save-section>div b{font-size:17px!important}
+  .home-save-section .welcome-instagram{
+    min-width:0;
+    min-height:68px!important;
+  }
+  .home-dashboard .home-recent,
+  .home-dashboard .home-favorites,
+  .home-dashboard .home-shortcuts-section{
+    margin-top:28px!important;
+  }
+  .home-dashboard .home-section-head h2{font-size:21px!important}
+  .ideas-page .idea-hero-actions{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .ideas-page .idea-hero-actions button{
+    width:100%;
+    min-height:52px!important;
+    font-size:16px!important;
+  }
+}
