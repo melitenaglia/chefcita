@@ -151,9 +151,8 @@
     width:23px !important;
     height:23px !important;
   }
-  /* Guardar siempre permanece en el medio, grande y fácil de reconocer. */
-  .mobile-bottom-nav button.mobile-nav-save,
-  .mobile-bottom-nav button.mobile-nav-save:nth-child(2){
+  /* Ideas ocupa el centro de la barra y lleva a su bloque dentro de Inicio. */
+  .mobile-bottom-nav button.mobile-nav-ideas:nth-child(2){
     background:var(--chef-accent-soft,#f6ebcf) !important;
     color:var(--chef-accent-dark,#8b6421) !important;
     border:1px solid var(--chef-accent,#dfbd70) !important;
@@ -161,7 +160,12 @@
     font-weight:800 !important;
     min-height:58px !important;
   }
-  .mobile-bottom-nav button.mobile-nav-save svg{
+  .mobile-bottom-nav button.mobile-nav-ideas:nth-child(2).active{
+    background:var(--chef-primary-soft,#e9f1e8) !important;
+    color:var(--chef-primary-dark,#425b48) !important;
+    border:1px solid var(--chef-primary,#9ab69b) !important;
+  }
+  .mobile-bottom-nav button.mobile-nav-ideas:nth-child(2) svg{
     width:25px !important;
     height:25px !important;
   }
