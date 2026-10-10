@@ -115,7 +115,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
    {loading?<div className="home-loading" role="status">Cargando favoritas…</div>
    :!summaryReady?null
    :data.favoriteRecipes.length>0?<RecipePreviews recipes={data.favoriteRecipes} onOpenRecipe={onOpenRecipe}/>
-   :<div className="home-empty home-empty-compact"><Heart/><p>Marcá con el corazón las recetas que más te gusten y aparecerán acá.</p><button type="button" onClick={()=>onNavigate('Recetas')}>Explorar recetas</button></div>}
+   :<div className="home-empty home-empty-compact"><Heart/><p>{data.favorites>0?'Tenés recetas favoritas guardadas. Podés verlas todas desde el recetario.':'Marcá con el corazón las recetas que más te gusten y aparecerán acá.'}</p><button type="button" onClick={()=>onNavigate(data.favorites>0?'Favoritas':'Recetas')}>{data.favorites>0?'Ver favoritas':'Explorar recetas'}</button></div>}
   </section>
 
   <section className="home-shortcuts-section">
