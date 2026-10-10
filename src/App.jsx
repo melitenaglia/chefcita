@@ -7,6 +7,7 @@ import RecipeLibrary from './RecipeLibrary.jsx';
 import AddRecipe from './AddRecipe.jsx';
 import PendingHub from './PendingHub.jsx';
 import HomeDashboard from './HomeDashboard.jsx';
+import IdeasPage from './IdeasPage.jsx';
 
 export default function App(){
  const [session,setSession]=useState(null);
@@ -18,7 +19,6 @@ export default function App(){
  const [saveNotice,setSaveNotice]=useState('');
  const [recipeRefresh,setRecipeRefresh]=useState(0);
  const [recipeListFilter,setRecipeListFilter]=useState('');
- const [ideaFocusKey,setIdeaFocusKey]=useState(0);
  const [pendingStart,setPendingStart]=useState('imports');
  const [openRecipeId,setOpenRecipeId]=useState(null);
  const [inviteNotice,setInviteNotice]=useState('');
@@ -136,7 +136,7 @@ export default function App(){
  if(loading)return <div className="splash"><ChefHat/><span>Chefcita</span></div>;
  if(!session)return <Auth notice={authNotice} onNoticeConsumed={()=>setAuthNotice('')}/>;
 
- const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox]];
+ const nav=[['Inicio',Home],['Ideas',WandSparkles],['Recetas',BookOpen],['Pendientes',Inbox]];
  const mobileNav=[['Inicio',Home],['Ideas',WandSparkles],['Recetas',BookOpen]];
 
  const closeMenu=()=>{
@@ -188,17 +188,9 @@ export default function App(){
    setRecipeListFilter('favorite');
    target='Recetas';
   }else if(target==='Recetas')setRecipeListFilter('');
-  if(target==='Inicio')setIdeaFocusKey(0);
   if(target==='Pendientes')setPendingStart('imports');
   closeMenu();
   setTab(target);
- };
-
- const goToIdeas=()=>{
-  closeMenu();
-  setSaveNotice('');
-  setIdeaFocusKey(n=>n+1);
-  setTab('Inicio');
  };
 
  const openSettings=section=>{
@@ -229,8 +221,8 @@ export default function App(){
 
   <nav className="mobile-bottom-nav" aria-label="Navegación principal">
    {mobileNav.map(([name,Icon])=>{
-    const selected=name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:tab===name&&(name!=='Inicio'||ideaFocusKey===0);
-    return <button type="button" key={name} className={(selected?'active ':'')+(name==='Ideas'?'mobile-nav-ideas':'')} aria-label={name==='Ideas'?'Sugerime una receta':name} aria-current={selected?'page':undefined} onClick={()=>name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>;
+    const selected=tab===name;
+    return <button type="button" key={name} className={(selected?'active ':'')+(name==='Ideas'?'mobile-nav-ideas':'')} aria-label={name==='Ideas'?'Sugerime una receta':name} aria-current={selected?'page':undefined} onClick={()=>goToTab(name)}><Icon/><span>{name}</span></button>;
    })}
   </nav>
 
@@ -244,7 +236,8 @@ export default function App(){
    </header>
 
    {saveNotice&&<div className="save-notice" role="status"><CheckCircle2/><span>{saveNotice}</span></div>}
-   {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe} ideaFocusKey={ideaFocusKey}/>}
+   {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>}
+   {tab==='Ideas'&&<IdeasPage session={session} onOpenRecipe={openRecipe}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
    {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter}/>}
