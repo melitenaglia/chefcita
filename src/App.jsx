@@ -191,6 +191,7 @@ export default function App(){
   if(target==='Pendientes')setPendingStart('imports');
   closeMenu();
   setTab(target);
+  window.scrollTo(0,0);
  };
 
  const openSettings=section=>{
