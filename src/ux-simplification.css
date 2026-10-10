@@ -113,7 +113,7 @@
     -webkit-transform:none !important;
     will-change:auto !important;
     display:grid !important;
-    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
     align-items:center;
     gap:4px !important;
     padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px)) !important;
@@ -134,11 +134,36 @@
     height:23px !important;
     flex:0 0 23px;
   }
-  .mobile-bottom-nav .mobile-nav-save{
+  /* La tercera pestaña ahora es Recetas: neutralizar las reglas antiguas
+     que resaltaban el tercer botón (antes Ideas). */
+  .mobile-bottom-nav button:nth-child(3){
+    background:transparent !important;
+    color:var(--chef-muted,#687368) !important;
+    border:0 !important;
+    transform:none !important;
+  }
+  .mobile-bottom-nav button:nth-child(3).active{
+    background:var(--chef-primary-soft,#e9f1e8) !important;
+    color:var(--chef-primary-dark,#425b48) !important;
+    border:0 !important;
+  }
+  .mobile-bottom-nav button:nth-child(3) svg{
+    width:23px !important;
+    height:23px !important;
+  }
+  /* Guardar siempre permanece en el medio, grande y fácil de reconocer. */
+  .mobile-bottom-nav button.mobile-nav-save,
+  .mobile-bottom-nav button.mobile-nav-save:nth-child(2){
     background:var(--chef-accent-soft,#f6ebcf) !important;
     color:var(--chef-accent-dark,#8b6421) !important;
     border:1px solid var(--chef-accent,#dfbd70) !important;
-    font-weight:800;
+    border-radius:14px !important;
+    font-weight:800 !important;
+    min-height:58px !important;
+  }
+  .mobile-bottom-nav button.mobile-nav-save svg{
+    width:25px !important;
+    height:25px !important;
   }
   body:has(.modal-backdrop) .mobile-bottom-nav{visibility:hidden !important}
   .modal-backdrop{z-index:120 !important}

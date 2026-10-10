@@ -23,7 +23,6 @@ export default function App(){
  const [inviteNotice,setInviteNotice]=useState('');
  const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
  const [mobileMenuLevel,setMobileMenuLevel]=useState('root');
- const [ideaFocusKey,setIdeaFocusKey]=useState(0);
  const [installPrompt,setInstallPrompt]=useState(null);
  const [installHelpOpen,setInstallHelpOpen]=useState(false);
  const [standalone,setStandalone]=useState(()=>{
@@ -137,7 +136,7 @@ export default function App(){
  if(!session)return <Auth notice={authNotice} onNoticeConsumed={()=>setAuthNotice('')}/>;
 
  const nav=[['Inicio',Home],['Recetas',BookOpen],['Pendientes',Inbox]];
- const mobileNav=[['Inicio',Home],['Recetas',BookOpen],['Guardar',Plus],['Ideas',WandSparkles]];
+ const mobileNav=[['Inicio',Home],['Guardar',Plus],['Recetas',BookOpen]];
 
  const closeMenu=()=>{
   setMobileMenuOpen(false);
@@ -189,16 +188,8 @@ export default function App(){
    target='Recetas';
   }else if(target==='Recetas')setRecipeListFilter('');
   if(target==='Pendientes')setPendingStart('imports');
-  if(target==='Inicio')setIdeaFocusKey(0);
   closeMenu();
   setTab(target);
- };
-
- const goToIdeas=()=>{
-  closeMenu();
-  setSaveNotice('');
-  setIdeaFocusKey(x=>x+1);
-  setTab('Inicio');
  };
 
  const openSettings=section=>{
@@ -229,8 +220,8 @@ export default function App(){
 
   <nav className="mobile-bottom-nav" aria-label="Navegación principal">
    {mobileNav.map(([name,Icon])=>{
-    const selected=name==='Ideas'?tab==='Inicio'&&ideaFocusKey>0:name==='Inicio'?tab==='Inicio'&&ideaFocusKey===0:tab===name;
-    return <button type="button" key={name} className={(selected?'active ':'')+(name==='Guardar'?'mobile-nav-save':'')} aria-label={name==='Guardar'?'Guardar una receta':name} aria-current={selected?'page':undefined} onClick={()=>name==='Guardar'?setAdding(true):name==='Ideas'?goToIdeas():goToTab(name)}><Icon/><span>{name}</span></button>;
+    const selected=tab===name;
+    return <button type="button" key={name} className={(selected?'active ':'')+(name==='Guardar'?'mobile-nav-save':'')} aria-label={name==='Guardar'?'Guardar una receta':name} aria-current={selected?'page':undefined} onClick={()=>name==='Guardar'?setAdding(true):goToTab(name)}><Icon/><span>{name}</span></button>;
    })}
   </nav>
 
@@ -244,7 +235,7 @@ export default function App(){
    </header>
 
    {saveNotice&&<div className="save-notice" role="status"><CheckCircle2/><span>{saveNotice}</span></div>}
-   {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe} ideaFocusKey={ideaFocusKey}/>}
+   {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
    {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter}/>}
