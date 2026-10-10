@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Instagram,Sparkles,WandSparkles} from 'lucide-react';
 import {supabase} from './supabase.js';
 
@@ -6,7 +6,7 @@ const IDEA_TYPES=['Desayuno','Almuerzo/Cena','Merienda','Snack','Postre','Bebida
 const normalize=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
 const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.message||error||''));
 
-export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
+export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,ideaFocusKey=0,session}){
  const [data,setData]=useState({recipes:0,pending:0,favorites:0,recent:[]});
  const [ideaOptions,setIdeaOptions]=useState([]);
  const [ideaType,setIdeaType]=useState('');
@@ -16,6 +16,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
  const [ideaRecipe,setIdeaRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
  const [summaryReady,setSummaryReady]=useState(false);
+ const ideaRef=useRef(null);
 
  useEffect(()=>{
   let active=true;
@@ -107,6 +108,14 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
   return()=>{active=false};
  },[session?.access_token]);
 
+ useEffect(()=>{
+  if(!ideaFocusKey)return;
+  const frame=requestAnimationFrame(()=>{
+   ideaRef.current?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  return()=>cancelAnimationFrame(frame);
+ },[ideaFocusKey]);
+
  const pickDifferent=pool=>{
   if(!pool.length)return null;
   const options=ideaRecipe&&pool.length>1?pool.filter(x=>x.id!==ideaRecipe.id):pool;
@@ -148,7 +157,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
  };
 
  return <>
-  <section className="idea-hero">
+  <section className="idea-hero" ref={ideaRef}>
    <div className="idea-hero-copy">
     <span className="idea-hero-icon"><WandSparkles/></span>
     <div>
