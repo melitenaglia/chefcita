@@ -41,3 +41,6 @@ html[data-appearance="dark"] :is(.tabs button,.add-modes button,.strategy-card,.
 html[data-appearance="dark"] :is(.tabs button.active,.add-modes button.active,.strategy-card.active,.share-library-list button.active,.picker-recipes button.added){background:var(--chef-primary-soft)!important;color:var(--chef-primary-dark)!important;border-color:var(--chef-primary)!important}
 html[data-appearance="dark"] :is(.share-library-list button,.picker-recipes button,.copy-link,.invite-form button,.pending-actions button,.caption-editor button){background:var(--chef-surface)!important;color:var(--chef-text)!important;border-color:var(--chef-border)!important}
 html[data-appearance="dark"] .brandmark{background:var(--chef-primary-soft)!important;color:var(--chef-primary-dark)!important}
+html[data-appearance="dark"] small,html[data-appearance="dark"] .ui-size-device-note,html[data-appearance="dark"] .theme-setting-head p{color:var(--chef-muted)!important}
+html[data-appearance="dark"] .primary small{color:var(--chef-on-primary)!important}
+html[data-appearance="dark"] :is(.source-review-content p,.source-copy-disclosure p,.supplemental-source p,.review-organization-preview span,.ingredient-list small,.step-list small){color:var(--chef-text)!important}
