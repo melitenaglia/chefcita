@@ -4,7 +4,7 @@ import {loadShopping,saveShopping} from './cookingTools.js';
 export default function ShoppingList({session}){
  const userId=session.user.id;
  const [rows,setRows]=useState(()=>loadShopping(userId));const [text,setText]=useState('');const [error,setError]=useState('');
- useEffect(()=>{const refresh=()=>setRows(loadShopping(userId));window.addEventListener('storage',refresh);window.addEventListener('chefcita-shopping',refresh);return()=>{window.removeEventListener('storage',refresh);window.removeEventListener('chefcita-shopping',refresh)}},[userId]);
+ useEffect(()=>{const refresh=()=>setRows(loadShopping(userId));refresh();window.addEventListener('storage',refresh);window.addEventListener('chefcita-shopping',refresh);return()=>{window.removeEventListener('storage',refresh);window.removeEventListener('chefcita-shopping',refresh)}},[userId]);
  const update=next=>{try{saveShopping(userId,next);setRows(next);setError('')}catch{setError('No pude guardar la lista. Revisá que el navegador permita guardar datos.')}};
  const groups=[...new Set(rows.map(r=>r.recipeTitle||'Otros productos'))];
  return <section className="shopping-page"><p className="tool-note">Añadí ingredientes desde una receta o escribí lo que falte. Se guarda en este dispositivo para tu cuenta.</p>

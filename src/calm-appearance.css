@@ -66,3 +66,5 @@ html[data-appearance] .mobile-bottom-nav button.active span{font-weight:800}
 html[data-appearance] :focus-visible{outline:3px solid var(--chef-primary-dark);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){html[data-appearance] *,html[data-appearance] *::before,html[data-appearance] *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 @media(prefers-contrast:more){html[data-appearance]{--chef-border:#818881;--chef-muted:#4A514B}html[data-appearance="dark"]{--chef-border:#89958C;--chef-muted:#D1D9D3}}
+
+@media(max-width:760px){html[data-appearance] .app-header{position:sticky;top:0;z-index:5;background:var(--chef-bg)!important;padding:6px 0!important}html[data-appearance] .recipe-detail .detail-head{background:var(--chef-surface)!important}}

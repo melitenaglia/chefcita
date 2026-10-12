@@ -29,7 +29,7 @@ Deno.serve(async req=>{
   const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
   let query=admin.from('recipes').select('id,image_url,recipe_sources(source_url,is_primary)').eq('owner_id',user.id);
   if(batch){
-   query=query.not('image_url','like','%/storage/v1/object/public/recipe-thumbnails/%').order('created_at',{ascending:true});
+   query=query.or('image_url.is.null,image_url.not.like.%/storage/v1/object/public/recipe-thumbnails/%').order('created_at',{ascending:true});
    const excluded=Array.isArray(body.exclude_ids)?body.exclude_ids.filter((x:unknown)=>typeof x==='string'&&uuid.test(x)).slice(0,150):[];
    if(excluded.length)query=query.not('id','in',`(${excluded.join(',')})`);
    query=query.limit(3);

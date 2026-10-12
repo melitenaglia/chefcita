@@ -56,7 +56,7 @@ async function testSignedInMobile(){
   if(table==='recipes'){if(route.request().method()==='PATCH')Object.assign(ownRecipe,route.request().postDataJSON());data=route.request().headers().accept?.includes('object')?ownRecipe:[ownRecipe,sharedRecipe]};
   if(table==='recover-recipe-photo')data=route.request().postDataJSON()?.batch?{updates:[],failed:[],scanned:0}:{image_url:`https://yfhiqdpohixsvzuudivw.supabase.co/storage/v1/object/public/recipe-thumbnails/${uid}/recovered.jpg`};
   if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='POST')data={Key:'uploaded'};
-  if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='GET'){await route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});return}
+  if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='GET'){await route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGOs2NLEwMDAxMDAwMDAAAAUSAGyF1ko3gAAAABJRU5ErkJggg==','base64')});return}
   if(table==='recipe_library_shares')data=[ownRecipe,sharedRecipe].filter(r=>!url.searchParams.has('recipe_id')||url.searchParams.get('recipe_id')===`eq.${r.id}`).flatMap(r=>r.recipe_library_shares.map(x=>({...x,recipe_id:r.id,recipes:r})));
   if(table==='set_recipe_library_share'){
    const call=route.request().postDataJSON();shareCalls.push(call);
@@ -130,10 +130,10 @@ async function testSignedInMobile(){
   await page.locator('.cooking-checks button').first().click();
   if(await page.locator('.cooking-checks button[aria-pressed="true"]').count()!==1)throw new Error('Ingredient checklist failed');
   await page.getByRole('button',{name:'Empezar preparación',exact:true}).click();
-  await page.getByText('Cociná el arroz.',{exact:true}).waitFor();
+  await page.locator('.cooking-mode').getByText('Cociná el arroz.',{exact:true}).waitFor();
   await page.screenshot({path:`artifacts/${engine}-cooking.png`});
   await page.getByRole('button',{name:'Siguiente',exact:true}).click();
-  await page.getByText('Serví y disfrutá.',{exact:true}).waitFor();
+  await page.locator('.cooking-mode').getByText('Serví y disfrutá.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Terminé',exact:true}).click();
   await page.getByText('¡Listo!',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Volver a la receta',exact:true}).click();
@@ -143,7 +143,7 @@ async function testSignedInMobile(){
   await page.locator('.detail-image img').waitFor();
   await page.getByRole('button',{name:'Opciones de la receta',exact:true}).click();
   await page.getByRole('button',{name:'Cambiar foto desde galería',exact:true}).click();
-  await page.locator('.photo-file-input').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
+  await page.locator('.photo-file-input').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGOs2NLEwMDAxMDAwMDAAAAUSAGyF1ko3gAAAABJRU5ErkJggg==','base64')});
   await page.getByText('Foto guardada.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Volver a recetas',exact:true}).click();
   ownRecipe.recipe_steps=[];
