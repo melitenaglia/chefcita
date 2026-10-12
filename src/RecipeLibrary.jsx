@@ -161,8 +161,8 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
   setCategoryFilter('');setMealFilter('');setLevelFilter('');setLibraryFilter(initialLibraryId);setPersonalFilter('');setSort('newest');
  };
 
- const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||libraryFilter||personalFilter||sort!=='newest');
- const filterCount=[categoryFilter,mealFilter,levelFilter,libraryFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
+ const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||(!initialLibraryId&&libraryFilter)||personalFilter||sort!=='newest');
+ const filterCount=[categoryFilter,mealFilter,levelFilter,initialLibraryId?'':libraryFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
 
  return <section className="recipe-library">
    {!initialLibraryId&&<div className="library-scope-tabs" role="group" aria-label="Elegir recetario">

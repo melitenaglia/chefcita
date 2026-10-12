@@ -6,7 +6,7 @@ async function testViewport(name,viewport){
   const page=await browser.newPage({viewport});
   const errors=[];
   page.on('pageerror',e=>errors.push('pageerror: '+e.message));
-  page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+  page.on('console',m=>{if(m.type()==='error'&&!(name.startsWith('webkit-')&&m.text()==='Viewport argument key "interactive-widget" not recognized and ignored.'))errors.push('console: '+m.text())});
   try{
     const response=await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle',timeout:30000});
     if(!response||!response.ok())throw new Error(name+': Preview HTTP failed');
