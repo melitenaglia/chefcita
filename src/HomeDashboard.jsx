@@ -87,7 +87,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
   <section className="home-library-banner home-save-section">
    <div>
     <small>GUARDAR UNA RECETA</small>
-    <b>¿Viste una receta que te gustó? Guardala acá para tenerla siempre a mano.</b>
+    <b>Guardá enlaces de Instagram o escribí tus recetas.</b>
    </div>
    <button type="button" className="welcome-instagram" onClick={onAdd}>
     <Instagram/>

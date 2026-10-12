@@ -1,14 +1,15 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {BookOpen,ChevronDown,Copy,Plus,UserPlus,Users} from 'lucide-react';
+import {collaborativePlaylistsEnabled} from './libraryActions.js';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import {loadSharedLibraries} from './sharedLibraries.js';
 
-export default function SharedLibrariesSettings({session}){
+export default function SharedLibrariesSettings({session,initialExpanded='',onOpenLibrary}){
  const [libraries,setLibraries]=useState([]);
  const [members,setMembers]=useState([]);
  const [invites,setInvites]=useState([]);
- const [expanded,setExpanded]=useState('');
+ const [expanded,setExpanded]=useState(initialExpanded);
  const [newName,setNewName]=useState('');
  const [inviteEmail,setInviteEmail]=useState('');
  const [busy,setBusy]=useState(false);
@@ -89,12 +90,22 @@ export default function SharedLibrariesSettings({session}){
   catch{setMessage('No pude copiar el enlace automáticamente.')}
  };
 
+ const removeLibrary=async library=>{
+  const owner=library.role==='owner';
+  if(!window.confirm(owner?`¿Eliminar «${library.name}»? Las recetas originales se conservan; la biblioteca y sus invitaciones se eliminan.`:`¿Salir de «${library.name}»? La biblioteca seguirá disponible para sus integrantes.`))return;
+  setBusy(true);setMessage('');
+  const result=await supabase.rpc('manage_recipe_library',{p_household_id:library.id,p_action:owner?'delete':'leave'});
+  setBusy(false);
+  if(result.error){setMessage(userErrorMessage(result.error,'No pude completar el cambio.'));return}
+  setExpanded('');await load();setMessage(owner?'Biblioteca eliminada. Las recetas originales se conservaron.':'Saliste de la biblioteca.');
+ };
+
  if(loading)return <div className="settings-loading">Cargando bibliotecas…</div>;
 
  return <div className="shared-libraries">
   <div className="shared-library-intro">
    <BookOpen/>
-   <div><h2>Bibliotecas compartidas</h2><p>Tus recetas siempre quedan en tu biblioteca personal. Después podés compartirlas con una o varias bibliotecas.</p></div>
+   <div><h2>Mis bibliotecas</h2><p>Creá colecciones como playlists. Usalas solo vos o invitá a otras personas para añadir recetas juntas.</p></div>
   </div>
 
   <div className="personal-library-card">
@@ -103,11 +114,11 @@ export default function SharedLibrariesSettings({session}){
   </div>
 
   <div className="create-shared-library">
-   <label>Nueva biblioteca compartida<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Ej. Con Sofi, Familia, Recetas de mamá"/></label>
+   <label>Nueva biblioteca<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Ej. Con Sofi, Familia, Recetas de mamá"/></label>
    <button className="secondary" disabled={busy||!newName.trim()} onClick={createLibrary}><Plus/>Crear biblioteca</button>
   </div>
 
-  {libraries.length===0?<div className="shared-library-empty"><Users/><p>Todavía no tenés bibliotecas compartidas.</p></div>:
+  {libraries.length===0?<div className="shared-library-empty"><Users/><p>Todavía no tenés bibliotecas.</p></div>:
    <div className="shared-library-list">{libraries.map(library=>{
     const open=expanded===library.id;
     const libraryMembers=members.filter(x=>x.household_id===library.id);
@@ -120,6 +131,7 @@ export default function SharedLibrariesSettings({session}){
      </button>
 
      {open&&<div className="shared-library-body">
+      {onOpenLibrary&&<button className="secondary" onClick={()=>onOpenLibrary(library.id)}><BookOpen/>Abrir recetas de esta biblioteca</button>}
       {library.role==='owner'&&<label>Nombre de la biblioteca
        <div className="shared-library-rename"><input defaultValue={library.name} id={`library-name-${library.id}`}/><button className="secondary" disabled={busy} onClick={()=>renameLibrary(library,document.getElementById(`library-name-${library.id}`)?.value||'')}>Guardar</button></div>
       </label>}
@@ -137,6 +149,7 @@ export default function SharedLibrariesSettings({session}){
        <div className="invite-form"><input type="email" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="email@ejemplo.com"/><button className="secondary" disabled={busy||!inviteEmail.includes('@')} onClick={()=>invite(library)}>Crear invitación</button></div>
        {libraryInvites.length>0&&<div className="pending-invites">{libraryInvites.map(item=><div key={item.id}><span><b>{item.invited_email}</b><small>Pendiente · vence {new Date(item.expires_at).toLocaleDateString('es-ES')}</small></span><button className="copy-link" onClick={()=>copyInvite(item)}><Copy/>Copiar enlace</button></div>)}</div>}
       </div>}
+      {collaborativePlaylistsEnabled&&<button className="library-destructive" disabled={busy} onClick={()=>removeLibrary(library)}>{library.role==='owner'?'Eliminar biblioteca':'Salir de la biblioteca'}</button>}
      </div>}
     </article>
    })}</div>}

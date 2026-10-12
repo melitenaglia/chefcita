@@ -215,18 +215,6 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
     note:x.note?.trim()||''
    }));
 
-  // El destino vive en la importación para sobrevivir al cierre del formulario.
-  // Compartir es idempotente y el RPC conserva las comprobaciones de permisos.
-  if(approve&&mode==='review'){
-   const {data:importRow,error:importError}=await supabase.from('imports').select('user_hints').eq('recipe_id',recipe.id).limit(1).maybeSingle();
-   if(importError){setBusy(false);setError(userErrorMessage(importError,'No pude comprobar dónde guardar la receta. Reintentá.'));return}
-   const libraryId=importRow?.user_hints?.library_id;
-   if(libraryId){
-    const {error:shareError}=await supabase.rpc('set_recipe_library_share',{p_recipe_id:recipe.id,p_household_id:libraryId,p_shared:true});
-    if(shareError){setBusy(false);setError(userErrorMessage(shareError,'No pude añadir la receta a la biblioteca elegida. Reintentá antes de confirmar.'));return}
-   }
-  }
-
   const keepApproved=mode==='edit'?true:approve;
   const {error:saveError}=await supabase.rpc('save_recipe_review',{
    p_recipe_id:recipe.id,
@@ -354,7 +342,7 @@ export default function RecipeEditor({recipeId,mode='review',onBack,onSaved}){
 
  return <section className={isEdit?'review-editor edit-approved':'review-editor review-check-mode'}>
   <div className="review-editor-head">
-   <div><small>{isEdit?'EDITAR RECETA':'POR VALIDAR'}</small><h2>{recipe?.title||'Receta sin título'}</h2></div>
+   <div><small>{isEdit?'EDITAR RECETA':'REVISAR RECETA'}</small><h2>{recipe?.title||'Receta sin título'}</h2></div>
    <button onClick={onBack}>Volver</button>
   </div>
 

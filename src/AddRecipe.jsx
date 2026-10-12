@@ -1,7 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {X,Link as LinkIcon,PenLine,Sparkles,BookmarkPlus,ClipboardPaste,Trash2,LoaderCircle,CheckCircle2,ChevronDown} from 'lucide-react';
 import {supabase} from './supabase.js';
-import {loadSharedLibraries} from './sharedLibraries.js';
 import {userErrorMessage} from './userError.js';
 
 function normalizeInstagramRecipeUrl(value){
@@ -22,14 +21,8 @@ function isInstagramRecipeUrl(value){
  return Boolean(normalizeInstagramRecipeUrl(value));
 }
 
-export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,initialLibraryId=''}){
+export default function AddRecipe({session,onClose,onSaved,onExistingRecipe}){
  const [mode,setMode]=useState('link');
- const [libraries,setLibraries]=useState([]);
- const [librariesLoading,setLibrariesLoading]=useState(true);
- const [destination,setDestination]=useState(initialLibraryId);
- const [destinationError,setDestinationError]=useState('');
- const [savedManualId,setSavedManualId]=useState(null);
- useEffect(()=>{loadSharedLibraries(session.user.id).then(result=>{setLibraries(result.data||[]);if(result.error)setDestinationError('No pude cargar las bibliotecas. Cerrá y volvé a intentar antes de compartir.');setLibrariesLoading(false);})},[session.user.id]);
  const [sourceUrl,setSourceUrl]=useState('');
  const [pastedContent,setPastedContent]=useState('');
  const [importStrategy,setImportStrategy]=useState('smart');
@@ -91,17 +84,9 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
   setSelectedTags(list=>list.includes(name)?list.filter(x=>x!==name):[...list,name]);
  };
 
- const shareSavedRecipe=async recipeId=>{
-  if(!destination)return true;
-  const {error:shareError}=await supabase.rpc('set_recipe_library_share',{p_recipe_id:recipeId,p_household_id:destination,p_shared:true});
-  if(shareError){setError(userErrorMessage(shareError,'La receta quedó guardada en Propias, pero no pude añadirla a la biblioteca. Reintentá sin crear otra copia.'));return false}
-  return true;
- };
-
- const finishImportResponse=async(importId,response)=>{
+ const finishImportResponse=(importId,response)=>{
   const status=response?.status||'';
   if(status==='processed'||status==='processed_without_ai'){
-   if(!await shareSavedRecipe(response.recipe_id)){setPendingImportId(importId);setImportStage('error');setBusy(false);return true}
    clearDraft();
    setBusy(false);
    onSaved('Por validar');
@@ -141,7 +126,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
    setBusy(false);
    return;
   }
-  if(!await finishImportResponse(importId,data)){
+  if(!finishImportResponse(importId,data)){
    setPendingImportId(importId);
    setImportStage('error');
    setImportMessage('La receta quedó guardada. Podés reintentar desde acá.');
@@ -167,12 +152,11 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
 
   const [{data:existingSource},{data:existingImport}]=await Promise.all([
    supabase.from('recipe_sources').select('recipe_id').eq('source_url',url).limit(1).maybeSingle(),
-   supabase.from('imports').select('id,status,recipe_id,needs_input,user_hints').eq('user_id',session.user.id).eq('source_url',url).order('created_at',{ascending:false}).limit(1).maybeSingle()
+   supabase.from('imports').select('id,status,recipe_id,needs_input').eq('user_id',session.user.id).eq('source_url',url).order('created_at',{ascending:false}).limit(1).maybeSingle()
   ]);
 
   const existingRecipeId=existingSource?.recipe_id||existingImport?.recipe_id;
   if(existingRecipeId){
-   if(!await shareSavedRecipe(existingRecipeId)){setBusy(false);return}
    clearDraft();
    setBusy(false);
    onExistingRecipe?.(existingRecipeId);
@@ -180,8 +164,6 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
   }
 
   if(existingImport?.id){
-   const {error:destinationSaveError}=await supabase.from('imports').update({user_hints:{...existingImport.user_hints,library_id:destination||null}}).eq('id',existingImport.id);
-   if(destinationSaveError){setBusy(false);setError(userErrorMessage(destinationSaveError,'No pude guardar la biblioteca elegida. Reintentá.'));return}
    clearDraft();
    setPendingImportId(existingImport.id);
    if(existingImport.needs_input&&pastedContent.trim()){
@@ -204,8 +186,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
    ai_scope:aiScope,
    user_hints:{
     title:hintTitle.trim()||null,
-    tags:selectedTags,
-    library_id:destination||null
+    tags:selectedTags
    }
   }).select('id').single();
 
@@ -243,7 +224,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
   setBusy(true);setError('');
   const {error:updateError}=await supabase.from('imports').update({
    processing_mode:'manual',
-   user_hints:{title:fallbackTitle,tags:selectedTags,library_id:destination||null},
+   user_hints:{title:fallbackTitle,tags:selectedTags},
    status:'queued',
    needs_input:false,
    error_message:null
@@ -299,10 +280,6 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
   e.preventDefault();
   if(!title.trim())return;
   setBusy(true);setError('');
-  if(savedManualId){
-   if(await shareSavedRecipe(savedManualId)){clearDraft();onSaved('Recetas')}
-   setBusy(false);return;
-  }
   const {data,error:saveError}=await supabase.from('recipes').insert({
    owner_id:session.user.id,
    household_id:null,
@@ -334,8 +311,6 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
    if(tagError){setBusy(false);setError(userErrorMessage(tagError,'La receta se guardó, pero no pude guardar sus etiquetas. Podés editarlas después.'));return}
   }
 
-  setSavedManualId(data.id);
-  if(!await shareSavedRecipe(data.id)){setBusy(false);return}
   clearDraft();
   setBusy(false);
   onSaved('Recetas');
@@ -345,19 +320,9 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
  const linkReady=isInstagramRecipeUrl(sourceUrl);
 
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)onClose()}}>
-  <form className="recipe-form add-recipe-form" aria-busy={busy} onSubmit={mode==='manual'?saveManual:linkSubmit}>
+  <form role="dialog" aria-modal="true" aria-label="Guardar una receta" className="recipe-form add-recipe-form" aria-busy={busy} onSubmit={mode==='manual'?saveManual:linkSubmit}>
    <div className="form-head"><div><small>CHEFCITA</small><h2>Guardar una receta</h2></div><button type="button" disabled={busy} onClick={onClose}><X/></button></div>
 
-   <div className="save-destination">
-    <label htmlFor="recipe-destination">¿Dónde querés guardar la receta?</label>
-    <select id="recipe-destination" value={destination} disabled={librariesLoading||busy||Boolean(pendingImportId)||Boolean(savedManualId)} onChange={e=>setDestination(e.target.value)}>
-     <option value="">{librariesLoading?'Cargando bibliotecas…':'Solo en mis recetas propias'}</option>
-     {destination&&!libraries.some(x=>x.id===destination)&&<option value={destination}>Biblioteca elegida · {librariesLoading?'cargando…':'no disponible'}</option>}
-     {libraries.map(x=><option key={x.id} value={x.id}>{x.name} · compartida</option>)}
-    </select>
-    {destination&&<small>También sigue en Propias. Se compartirá cuando termine de procesarse; después revisala para que aparezca en el recetario compartido.</small>}
-    {destinationError&&<p role="alert">{destinationError}</p>}
-   </div>
    <div className="add-modes">
     <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='link'?'active':''} onClick={()=>{setMode('link');setError('')}}><LinkIcon/><span>Desde Instagram</span></button>
     <button type="button" disabled={Boolean(pendingImportId)||busy} className={mode==='manual'?'active':''} onClick={()=>{setMode('manual');setError('')}}><PenLine/><span>Escribir receta</span></button>
@@ -408,7 +373,7 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
 
       {importStrategy==='smart'&&<label>
        <span className="caption-label">¿Ya tenés el texto de la receta? <small>Opcional</small><button type="button" className="paste-caption" onClick={pasteClipboard}><ClipboardPaste/>Pegar</button></span>
-       <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Podés pegar acá el caption, ingredientes o pasos..."/>
+       <textarea value={pastedContent} onChange={e=>setPastedContent(e.target.value)} placeholder="Podés pegar acá el texto, ingredientes o pasos..."/>
       </label>}
 
       <div className="tag-field">

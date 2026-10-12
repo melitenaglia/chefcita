@@ -5,6 +5,7 @@ import ErrorBoundary from './ErrorBoundary.jsx';
 import './styles.css';
 import './mobile-polish.css';
 import './ux-simplification.css';
+import './mobile-design.css';
 
 const root=document.getElementById('root');
 createRoot(root).render(
