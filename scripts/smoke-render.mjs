@@ -74,6 +74,7 @@ async function testSignedInMobile(){
   await page.getByRole('button',{name:'Propias',exact:true}).click();
   await page.getByRole('button',{name:'Añadir a biblioteca',exact:true}).click();
   await page.locator('.share-library-list button').click();
+  await page.locator('.share-library-list button.active').waitFor();
   if(shareCalls.length!==1||shareCalls[0].p_household_id!==libraryId||shareCalls[0].p_recipe_id!==recipeId||shareCalls[0].p_shared!==true)throw new Error('Share RPC used wrong destination');
   await page.locator('.share-panel-head>button').click();
   for(const size of ['supercompact','compact','normal','large']){
