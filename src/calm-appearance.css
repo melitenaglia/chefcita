@@ -46,7 +46,7 @@ html[data-appearance="dark"] .primary small{color:var(--chef-on-primary)!importa
 html[data-appearance="dark"] :is(.source-review-content p,.source-copy-disclosure p,.supplemental-source p,.review-organization-preview span,.ingredient-list small,.step-list small){color:var(--chef-text)!important}
 
 /* Every content surface must own its foreground as well as its background. */
-html[data-appearance] :is(.video-source-cta,.detail-notes p,.detail-source details p,.detail-facts span,.step-list>div>b,.shopping-group,.cooking-checkbox){background:var(--chef-surface-raised)!important;color:var(--chef-text)!important;border-color:var(--chef-border)!important}
+html[data-appearance] :is(.video-source-cta,.detail-notes p,.detail-source details p,.detail-facts span,.step-list>div>b,.cooking-checkbox){background:var(--chef-surface-raised)!important;color:var(--chef-text)!important;border-color:var(--chef-border)!important}
 html[data-appearance] :is(.instagram-guide p,.ingredient-quantity,.detail-source summary,.detail-source>div span,.detail-facts,.rating-prompt,.filters-label,.muted,.pending-copy p,.tool-note){color:var(--chef-muted)!important}
 html[data-appearance] :is(.video-source-cta p,.detail-notes p span,.step-list p){color:var(--chef-text)!important}
 html[data-appearance] :is(.video-source-cta a,.detail-source>a,.home-section-head button,.library-filters>button,.tool-note button,.tool-notice button){color:var(--chef-primary-dark)!important}
