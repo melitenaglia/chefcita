@@ -39,6 +39,23 @@ export default function App(){
    return ['supercompact','compact','normal','large'].includes(saved)?saved:'normal';
   }catch{return 'normal'}
  });
+ const [appearance,setAppearance]=useState(()=>{
+  try{const saved=localStorage.getItem('chefcita:appearance');return ['system','light','dark'].includes(saved)?saved:'system'}catch{return 'system'}
+ });
+ const [systemDark,setSystemDark]=useState(()=>window.matchMedia('(prefers-color-scheme: dark)').matches);
+ const resolvedAppearance=appearance==='system'?(systemDark?'dark':'light'):appearance;
+ useEffect(()=>{
+  const media=window.matchMedia('(prefers-color-scheme: dark)');
+  const changed=()=>setSystemDark(media.matches);
+  media.addEventListener?.('change',changed);changed();
+  return()=>media.removeEventListener?.('change',changed);
+ },[]);
+ useLayoutEffect(()=>{
+  document.documentElement.dataset.appearance=resolvedAppearance;
+  document.documentElement.style.colorScheme=resolvedAppearance;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolvedAppearance==='dark'?'#151816':'#FAFAF8');
+  try{localStorage.setItem('chefcita:appearance',appearance)}catch{}
+ },[appearance,resolvedAppearance]);
  const [theme,setTheme]=useState(()=>{
   try{
    const saved=localStorage.getItem('chefcita:theme');
@@ -75,13 +92,6 @@ export default function App(){
 
  useLayoutEffect(()=>{
   document.documentElement.dataset.theme=theme;
-  const themeColors={
-   sage:'#F5F7F2',
-   olive:'#F7F6EF',
-   tomato:'#FCF8F1',
-   lavender:'#F8F5F8'
-  };
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',themeColors[theme]||themeColors.sage);
   try{localStorage.setItem('chefcita:theme',theme)}catch{}
  },[theme]);
 
@@ -245,8 +255,8 @@ export default function App(){
    {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>}
    {tab==='Bibliotecas'&&<LibrariesPage session={session} initialLibraryId={libraryStart}/>}
    {tab==='Ideas'&&<IdeasPage session={session} onOpenRecipe={openRecipe}/>}
-   {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
-   {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
+   {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme} appearance={appearance} onAppearanceChange={setAppearance}/>}
+   {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme} appearance={appearance} onAppearanceChange={setAppearance}/>}
    {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter} onManageLibraries={()=>{setLibraryStart('');goToTab('Bibliotecas')}}/>}
    {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>}
 

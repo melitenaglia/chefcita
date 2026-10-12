@@ -81,6 +81,29 @@ async function testSignedInMobile(){
   await page.getByRole('button',{name:'Filtros',exact:true}).click();
   await page.getByRole('button',{name:'Favoritas',exact:true}).waitFor();
   await page.getByRole('button',{name:'Filtros',exact:true}).click();
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.waitForFunction(()=>document.documentElement.dataset.appearance==='dark');
+  const darkStyle=await page.evaluate(()=>({bg:getComputedStyle(document.body).backgroundColor,color:getComputedStyle(document.body).color,nav:[...document.querySelectorAll('.mobile-bottom-nav button')].map(x=>({active:x.classList.contains('active'),bg:getComputedStyle(x).backgroundColor}))}));
+  if(darkStyle.bg!=='rgb(21, 24, 22)'||darkStyle.color!=='rgb(231, 235, 231)'||darkStyle.nav.some(x=>!x.active&&x.bg!=='rgba(0, 0, 0, 0)'))throw new Error('System dark mode or quiet navigation not applied');
+  await page.screenshot({path:`artifacts/${browser.browserType().name()}-dark-list.png`});
+  await page.locator('.mobile-menu-trigger').click();
+  await page.locator('.drawer-group button').filter({hasText:'Configuración'}).click();
+  await page.locator('.settings-submenu button').filter({hasText:'Pantalla'}).click();
+  await page.locator('.appearance-options button').filter({hasText:'Claro'}).click();
+  await page.waitForFunction(()=>document.documentElement.dataset.appearance==='light'&&localStorage.getItem('chefcita:appearance')==='light');
+  await page.emulateMedia({colorScheme:'light'});
+  await page.locator('.appearance-options button').filter({hasText:'Oscuro'}).click();
+  await page.waitForFunction(()=>document.documentElement.dataset.appearance==='dark');
+  await page.screenshot({path:`artifacts/${browser.browserType().name()}-dark-settings.png`});
+  for(const theme of ['Salvia','Oliva','Tomate','Lavanda']){
+   await page.locator('.theme-options button').filter({hasText:theme}).click();
+   const colors=await page.evaluate(()=>({bg:getComputedStyle(document.body).backgroundColor,text:getComputedStyle(document.body).color}));
+   if(colors.bg!=='rgb(21, 24, 22)'||colors.text!=='rgb(231, 235, 231)')throw new Error('Accent palette changed neutral dark surface');
+  }
+  await page.locator('.appearance-options button').filter({hasText:'Según el dispositivo'}).click();
+  await page.waitForFunction(()=>document.documentElement.dataset.appearance==='light');
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Recetas',exact:true}).click();
+  await page.getByRole('button',{name:'Abrir Receta propia de prueba',exact:true}).waitFor();
   const density=[];
   const engine=browser.browserType().name();
   for(const size of ['supercompact','compact','normal','large']){
