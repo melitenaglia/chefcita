@@ -325,3 +325,54 @@
     font-size:16px!important;
   }
 }
+
+/* Un solo contenedor desplaza el contenido; la barra ocupa su propia fila.
+   No depende del posicionamiento fixed durante el scroll del documento en iOS. */
+@media(max-width:760px){
+ body:has(.shell){overflow:hidden!important;overscroll-behavior:none}
+ #root:has(.shell){position:fixed;inset:0;height:100%;min-height:0!important;overflow:hidden}
+ .shell{height:100%!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden}
+ .shell>.content{order:0;flex:1 1 0;min-height:0;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;padding-bottom:24px!important}
+ .shell>.mobile-bottom-nav{position:relative!important;inset:auto!important;order:1;flex:0 0 auto;margin:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;z-index:80!important}
+}
+.library-scope-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.library-scope-tabs button{min-height:54px;border-radius:14px;border:1px solid var(--chef-border);background:var(--chef-surface);color:var(--chef-text);font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.library-scope-tabs button.selected{background:var(--chef-primary-soft);border-color:var(--chef-primary-dark);color:var(--chef-primary-dark)}
+.shared-library-access,.save-destination{display:grid;gap:10px;padding:14px;margin-bottom:16px;border:1px solid var(--chef-border);border-radius:14px;background:var(--chef-surface)}
+.shared-library-access p{margin:0;font-size:14px;line-height:1.5;color:var(--chef-muted)}
+.shared-library-access label,.save-destination label{display:grid;gap:7px;font-weight:700}
+.shared-library-access select,.save-destination select{width:100%;min-width:0;min-height:46px;font-size:16px;padding:10px;border:1px solid var(--chef-border);border-radius:10px;background:var(--chef-surface);color:var(--chef-text)}
+.shared-library-access>div{display:flex;gap:8px;flex-wrap:wrap}
+.shared-library-access button,.card-share{min-height:44px;padding:9px 12px;border:1px solid var(--chef-border);border-radius:10px;background:var(--chef-primary-soft);color:var(--chef-primary-dark);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.card-share{margin-top:10px;width:100%}
+.save-destination small{font-size:13px;line-height:1.4;color:var(--chef-muted)}
+html[data-ui-size="supercompact"]{--ui-scale:.68;--ui-text-scale:.8}
+html[data-ui-size="supercompact"] .content{padding:16px}
+html[data-ui-size="supercompact"] .app-header{margin-bottom:12px!important}
+html[data-ui-size="supercompact"] .app-header h1{font-size:20px!important}
+html[data-ui-size="supercompact"] .eyebrow{font-size:9px!important}
+html[data-ui-size="supercompact"] .library-scope-tabs{gap:6px;margin-bottom:10px}
+html[data-ui-size="supercompact"] .library-scope-tabs button{min-height:44px;font-size:14px;padding:6px}
+html[data-ui-size="supercompact"] .recipe-quick-tabs{gap:4px;margin-bottom:10px}
+html[data-ui-size="supercompact"] .recipe-quick-tabs button{min-height:40px;font-size:12px;padding:6px 3px}
+html[data-ui-size="supercompact"] .recipe-grid{gap:8px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+html[data-ui-size="supercompact"] .recipe-card{display:flex;border-radius:12px}
+html[data-ui-size="supercompact"] .recipe-card-top{width:80px;min-width:80px;height:auto!important;min-height:115px}
+html[data-ui-size="supercompact"] .recipe-card-top img{position:absolute;inset:0}
+html[data-ui-size="supercompact"] .recipe-card-body{padding:10px;min-width:0;flex:1}
+html[data-ui-size="supercompact"] .recipe-card-body h3{font-size:14px!important;line-height:1.3;margin:5px 0}
+html[data-ui-size="supercompact"] .recipe-card-body p,html[data-ui-size="supercompact"] .card-tags{display:none}
+html[data-ui-size="supercompact"] .recipe-meta span,html[data-ui-size="supercompact"] .card-ingredients span{font-size:10px!important;padding:2px 4px!important}
+html[data-ui-size="supercompact"] .recipe-facts{font-size:11px!important;margin-top:6px!important}
+html[data-ui-size="supercompact"] .tried-toggle,html[data-ui-size="supercompact"] .card-share{font-size:11px!important;min-height:36px!important;padding:5px 8px!important;margin-top:6px}
+html[data-ui-size="supercompact"] .home-dashboard .home-section-head h2{font-size:17px!important}
+html[data-ui-size="supercompact"] .home-dashboard>.home-save-section{padding:12px!important}
+html[data-ui-size="supercompact"] .home-save-section>div b{font-size:14px!important}
+html[data-ui-size="supercompact"] .home-dashboard .home-recent,html[data-ui-size="supercompact"] .home-dashboard .home-favorites,html[data-ui-size="supercompact"] .home-dashboard .home-shortcuts-section{margin-top:16px!important}
+@media(max-width:760px){
+ html[data-ui-size="supercompact"] .mobile-bottom-nav{padding-top:4px!important}
+ html[data-ui-size="supercompact"] .mobile-bottom-nav button{font-size:12px!important;min-height:44px!important}
+ html[data-ui-size="supercompact"] .mobile-bottom-nav button.mobile-nav-ideas:nth-child(2){min-height:46px!important}
+ html[data-ui-size="supercompact"] .mobile-bottom-nav button svg{width:20px!important;height:20px!important}
+ html[data-ui-size="supercompact"] input,html[data-ui-size="supercompact"] select,html[data-ui-size="supercompact"] textarea{font-size:16px!important}
+}
