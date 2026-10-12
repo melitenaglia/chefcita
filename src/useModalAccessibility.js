@@ -8,7 +8,7 @@ export default function useModalAccessibility(){
    const overlays=[...document.querySelectorAll(selector)];
    const next=overlays.at(-1)||null;
    if(next===active)return;
-   if(next){if(!active)previousFocus=document.activeElement;active=next;controls(active)[0]?.focus({preventScroll:true});}
+   if(next){if(!active)previousFocus=document.activeElement;active=next;const panel=active.querySelector('[role="dialog"]');if(panel){panel.setAttribute('tabindex','-1');panel.focus({preventScroll:true})}else controls(active)[0]?.focus({preventScroll:true});}
    else{active=null;if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;}
   };
   const observer=new MutationObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(sync)});

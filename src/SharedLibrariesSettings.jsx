@@ -5,7 +5,7 @@ import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import {loadSharedLibraries} from './sharedLibraries.js';
 
-export default function SharedLibrariesSettings({session,initialExpanded='',onOpenLibrary}){
+export default function SharedLibrariesSettings({session,initialExpanded='',onOpenLibrary,purpose='recipes'}){
  const [libraries,setLibraries]=useState([]);
  const [members,setMembers]=useState([]);
  const [invites,setInvites]=useState([]);
@@ -105,20 +105,20 @@ export default function SharedLibrariesSettings({session,initialExpanded='',onOp
  return <div className="shared-libraries">
   <div className="shared-library-intro">
    <BookOpen/>
-   <div><h2>Mis bibliotecas</h2><p>Creá colecciones como playlists. Usalas solo vos o invitá a otras personas para añadir recetas juntas.</p></div>
+   <div><h2>{purpose==='shopping'?'Grupos de casa':'Mis bibliotecas'}</h2><p>{purpose==='shopping'?'Compartí la compra con las personas de tu grupo.':'Creá colecciones como playlists. Usalas solo vos o invitá a otras personas para añadir recetas juntas.'}</p></div>
   </div>
 
-  <div className="personal-library-card">
+  {purpose!=='shopping'&&<div className="personal-library-card">
    <span><BookOpen/></span>
    <div><b>Personal</b><small>Es tu biblioteca base. No hace falta crearla ni gestionarla.</small></div>
-  </div>
+  </div>}
 
   <div className="create-shared-library">
-   <label>Nueva biblioteca<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Ej. Con Sofi, Familia, Recetas de mamá"/></label>
-   <button className="secondary" disabled={busy||!newName.trim()} onClick={createLibrary}><Plus/>Crear biblioteca</button>
+   <label>{purpose==='shopping'?'Nuevo grupo':'Nueva biblioteca'}<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder={purpose==='shopping'?'Ej. Casa o Familia':'Ej. Con Sofi, Familia, Recetas de mamá'}/></label>
+   <button className="secondary" disabled={busy||!newName.trim()} onClick={createLibrary}><Plus/>{purpose==='shopping'?'Crear grupo':'Crear biblioteca'}</button>
   </div>
 
-  {libraries.length===0?<div className="shared-library-empty"><Users/><p>Todavía no tenés bibliotecas.</p></div>:
+  {libraries.length===0?<div className="shared-library-empty"><Users/><p>{purpose==='shopping'?'Todavía no tenés un grupo de casa.':'Todavía no tenés bibliotecas.'}</p></div>:
    <div className="shared-library-list">{libraries.map(library=>{
     const open=expanded===library.id;
     const libraryMembers=members.filter(x=>x.household_id===library.id);
@@ -132,7 +132,7 @@ export default function SharedLibrariesSettings({session,initialExpanded='',onOp
 
      {open&&<div className="shared-library-body">
       {onOpenLibrary&&<button className="secondary" onClick={()=>onOpenLibrary(library.id)}><BookOpen/>Abrir recetas de esta biblioteca</button>}
-      {library.role==='owner'&&<label>Nombre de la biblioteca
+      {library.role==='owner'&&<label>{purpose==='shopping'?'Nombre del grupo':'Nombre de la biblioteca'}
        <div className="shared-library-rename"><input defaultValue={library.name} id={`library-name-${library.id}`}/><button className="secondary" disabled={busy} onClick={()=>renameLibrary(library,document.getElementById(`library-name-${library.id}`)?.value||'')}>Guardar</button></div>
       </label>}
 

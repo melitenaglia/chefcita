@@ -13,3 +13,8 @@ Appearance supports system/light/dark. Semantic surfaces, links and supporting t
 Design references: Apple HIG Dark Mode, Tab Bars, Buttons and Menus; W3C WCAG 2.2 Contrast Minimum. This is a web app following those patterns, not a native UIKit implementation.
 
 WebKit offline CI stops a dedicated preview origin and checks a service-worker response, rather than using Playwright's broken offline emulation (microsoft/playwright#42775). Chromium additionally uses setOffline. Neither test contacts real user accounts.
+
+## Shared shopping and stores
+Shared lists reuse household/library memberships, with named profiles and per-item recipe/title/portion provenance. Members may read, add, mark purchased and remove items. Outsiders have no access; column grants prevent changing destination or attribution. Five-second polling refreshes visible lists. Shared offline snapshots are read-only; personal lists remain editable offline. No existing local purchases are automatically shared: the user selects a group explicitly.
+
+Stores are created per household or personal account. Assignment can remember the exact normalized product name for future purchases, including manual entries. Other names are left unassigned rather than guessed. The same product may be moved with or without updating the remembered preference. Users can switch grouping between recipe and store; quantities from different recipes are not incorrectly combined. Membership management reuses existing invitation links; no invitations are sent by the agent.

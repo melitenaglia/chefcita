@@ -40,8 +40,8 @@ export default function App(){
  const [uiSize,setUiSize]=useState(()=>{
   try{
    const saved=localStorage.getItem('chefcita:ui-size');
-   return ['supercompact','compact','normal','large'].includes(saved)?saved:'normal';
-  }catch{return 'normal'}
+   return ['supercompact','compact','normal','large'].includes(saved)?saved:'compact';
+  }catch{return 'compact'}
  });
  const [appearance,setAppearance]=useState(()=>{
   try{const saved=localStorage.getItem('chefcita:appearance');return ['system','light','dark'].includes(saved)?saved:'system'}catch{return 'system'}
@@ -260,7 +260,7 @@ export default function App(){
 
    {saveNotice&&<div className="save-notice" role="status"><CheckCircle2/><span>{saveNotice}</span></div>}
    {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>}
-   {tab==='Compra'&&<ShoppingList session={session}/>}
+   {tab==='Compra'&&<ShoppingList session={session} onOpenRecipe={openRecipe}/>}
    {tab==='Bibliotecas'&&<LibrariesPage onOpenShopping={()=>goToTab('Compra')} session={session} initialLibraryId={libraryStart}/>}
    {tab==='Ideas'&&<IdeasPage session={session} onOpenRecipe={openRecipe}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme} appearance={appearance} onAppearanceChange={setAppearance}/>}
