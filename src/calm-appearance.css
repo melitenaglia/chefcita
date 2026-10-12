@@ -44,3 +44,33 @@ html[data-appearance="dark"] .brandmark{background:var(--chef-primary-soft)!impo
 html[data-appearance="dark"] small,html[data-appearance="dark"] .ui-size-device-note,html[data-appearance="dark"] .theme-setting-head p{color:var(--chef-muted)!important}
 html[data-appearance="dark"] .primary small{color:var(--chef-on-primary)!important}
 html[data-appearance="dark"] :is(.source-review-content p,.source-copy-disclosure p,.supplemental-source p,.review-organization-preview span,.ingredient-list small,.step-list small){color:var(--chef-text)!important}
+
+/* Every content surface must own its foreground as well as its background. */
+html[data-appearance] :is(.video-source-cta,.detail-notes p,.detail-source details p,.detail-facts span,.step-list>div>b,.cooking-checkbox){background:var(--chef-surface-raised)!important;color:var(--chef-text)!important;border-color:var(--chef-border)!important}
+html[data-appearance] :is(.instagram-guide p,.ingredient-quantity,.detail-source summary,.detail-source>div span,.detail-facts,.rating-prompt,.filters-label,.muted,.pending-copy p,.tool-note){color:var(--chef-muted)!important}
+html[data-appearance] :is(.video-source-cta p,.detail-notes p span,.step-list p){color:var(--chef-text)!important}
+html[data-appearance] :is(.video-source-cta a,.detail-source>a,.home-section-head button,.library-filters>button,.tool-note button,.tool-notice button){color:var(--chef-primary-dark)!important}
+html[data-appearance] :is(.ingredient-group+.ingredient-group,.recipe-detail .ingredient-list>div,.detail-source,.detail-footer,.personal-quick,.instagram-guide,.source-copy-disclosure,.detail-head,.shopping-item){border-color:var(--chef-border)!important}
+html[data-appearance] .recipe-detail .ingredient-list>div{background:transparent!important}
+html[data-appearance] .instagram-guide>div>span{background:var(--chef-surface-raised)!important;color:var(--chef-text)!important}
+html[data-appearance] .step-list>div>b{color:var(--chef-primary-dark)!important}
+html[data-appearance] .rating-row svg{color:var(--chef-muted)!important}
+html[data-appearance] .rating-row svg.filled{color:var(--chef-primary-dark)!important}
+html[data-appearance] button:disabled{opacity:1!important;background:var(--chef-surface-raised)!important;color:var(--chef-muted)!important;cursor:default}
+html[data-appearance] .home-utility button{background:var(--chef-surface)!important;color:var(--chef-text)!important;border-color:var(--chef-border)!important}
+html[data-appearance] .home-utility svg{color:var(--chef-primary-dark)}
+/* Restrained tab selection: icon + label, with a clear current section. */
+html[data-appearance] .mobile-bottom-nav button.active,html[data-appearance] .mobile-bottom-nav button:nth-child(3).active,html[data-appearance] .mobile-bottom-nav button.mobile-nav-ideas:nth-child(2).active{background:transparent!important;color:var(--chef-primary-dark)!important}
+html[data-appearance] .mobile-bottom-nav button.active svg{stroke-width:2.7}
+html[data-appearance] .mobile-bottom-nav button.active span{font-weight:800}
+html[data-appearance] :focus-visible{outline:3px solid var(--chef-primary-dark);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){html[data-appearance] *,html[data-appearance] *::before,html[data-appearance] *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(prefers-contrast:more){html[data-appearance]{--chef-border:#818881;--chef-muted:#4A514B}html[data-appearance="dark"]{--chef-border:#89958C;--chef-muted:#D1D9D3}}
+
+@media(max-width:760px){html[data-appearance] .app-header{position:sticky;top:0;z-index:5;background:var(--chef-bg)!important;padding:6px 0!important}html[data-appearance] .recipe-detail .detail-head{background:var(--chef-surface)!important}}
+
+html[data-appearance] .recipe-detail .ingredient-list{border-color:var(--chef-border)!important}
+html[data-appearance] .shopping-group{background:transparent!important}
+html[data-appearance] .shopping-group h2{color:var(--chef-muted)!important;font-size:var(--app-small);margin:0 0 10px}
+html[data-appearance] :is(.search-box svg,.filters-label svg){color:var(--chef-muted)!important}
+html[data-appearance] .shopping-check>span{border-color:var(--chef-muted)!important}

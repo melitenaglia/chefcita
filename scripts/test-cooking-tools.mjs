@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {scaleIngredient,ingredientView,parseAmount,addRecipeToShopping,loadShopping} from '../src/cookingTools.js';
+const storage=new Map();globalThis.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};globalThis.window={dispatchEvent(){}};globalThis.CustomEvent=class{};
+assert.equal(parseAmount('1 1/2'),1.5);assert.equal(parseAmount('1½'),1.5);assert.equal(parseAmount('2-3'),null);
+assert.equal(scaleIngredient({quantity_text:'200 g',quantity:200},2).quantity_text,'400 g');
+assert.equal(scaleIngredient({quantity_text:'½ taza'},2).quantity_text,'1 taza');
+assert.equal(scaleIngredient({quantity_text:'1 1/2'},2).quantity_text,'3');
+assert.equal(scaleIngredient({quantity_text:'2 a 3',quantity:2},2).quantity_text,'2 a 3');
+assert.equal(scaleIngredient({quantity_text:'al gusto',quantity:1},2).quantity_text,'al gusto');
+assert.equal(scaleIngredient({quantity_text:'una pizca'},2).scaled,false);
+assert.equal(scaleIngredient({quantity_text:'',quantity:2,unit:'g'},2).quantity,4);
+assert.equal(scaleIngredient({quantity:null},2).scaled,false);
+const recipe={id:'r1',title:'Receta de prueba'};const ingredients=[{id:'i1',original_name:'huevo',quantity_text:'2'}];
+addRecipeToShopping('u1',recipe,ingredients,2,4);assert.equal(loadShopping('u1').length,1);assert.equal(loadShopping('u1')[0].quantity,'4 uds.');
+addRecipeToShopping('u1',recipe,ingredients,3,6);assert.equal(loadShopping('u1').length,1);assert.equal(loadShopping('u1')[0].quantity,'6 uds.');assert.equal(loadShopping('u2').length,0);
+console.log('Portions preserve qualifiers/ranges and shopping data is idempotent and isolated by account');

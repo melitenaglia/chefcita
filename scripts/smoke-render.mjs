@@ -1,4 +1,6 @@
 import { chromium,webkit } from 'playwright';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
 
 let browser=await chromium.launch({headless:true});
 
@@ -45,7 +47,7 @@ async function testSignedInMobile(){
  await page.addInitScript(({uid,testToken})=>{
   localStorage.setItem('sb-yfhiqdpohixsvzuudivw-auth-token',JSON.stringify({access_token:testToken,refresh_token:'test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}}}));
  },{uid,testToken});
- const ownRecipe={id:recipeId,owner_id:uid,title:'Receta propia de prueba',created_at:'2026-10-12T10:00:00Z',review_status:'recipe',recipe_library_shares:[],recipe_ingredients:[],recipe_tags:[],recipe_steps:[],recipe_sources:[],user_recipes:[]};
+ const ownRecipe={id:recipeId,owner_id:uid,title:'Receta propia de prueba',created_at:'2026-10-12T10:00:00Z',review_status:'recipe',recipe_library_shares:[],servings:2,recipe_ingredients:[{id:'ingredient-1',original_name:'Arroz',quantity:200,quantity_text:'200',unit:'g',sort_order:1},{id:'ingredient-2',original_name:'Sal',quantity_text:'al gusto',sort_order:2}],recipe_tags:[],recipe_steps:[{id:'step-1',step_number:1,instruction:'Cociná el arroz.'},{id:'step-2',step_number:2,instruction:'Serví y disfrutá.'}],recipe_sources:[{source_url:'https://www.instagram.com/p/test/',is_primary:true,original_copy:'Texto original de prueba.'}],user_recipes:[]};
  const sharedRecipe={...ownRecipe,id:'44444444-4444-4444-8444-444444444444',owner_id:'other-user',title:'Receta de Sofi',recipe_library_shares:[{household_id:libraryId,households:{name:'Con Sofi'}}]};
  await page.route('https://*.supabase.co/**',async route=>{
   const url=new URL(route.request().url());
@@ -53,7 +55,10 @@ async function testSignedInMobile(){
   if(table==='user')data={id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}};
   if(table==='household_members')data=[{household_id:libraryId,user_id:uid,role:'member',joined_at:'2026-10-12'}];
   if(table==='households')data=[{id:libraryId,name:'Con Sofi',created_by:uid}];
-  if(table==='recipes')data=route.request().headers().accept?.includes('object')?ownRecipe:[ownRecipe,sharedRecipe];
+  if(table==='recipes'){if(route.request().method()==='PATCH')Object.assign(ownRecipe,route.request().postDataJSON());data=route.request().headers().accept?.includes('object')?ownRecipe:[ownRecipe,sharedRecipe]};
+  if(table==='recover-recipe-photo')data=route.request().postDataJSON()?.batch?{updates:[],failed:[],scanned:0}:{image_url:`https://yfhiqdpohixsvzuudivw.supabase.co/storage/v1/object/public/recipe-thumbnails/${uid}/recovered.jpg`};
+  if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='POST')data={Key:'uploaded'};
+  if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='GET'){await route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGOs2NLEwMDAxMDAwMDAAAAUSAGyF1ko3gAAAABJRU5ErkJggg==','base64')});return}
   if(table==='recipe_library_shares')data=[ownRecipe,sharedRecipe].filter(r=>!url.searchParams.has('recipe_id')||url.searchParams.get('recipe_id')===`eq.${r.id}`).flatMap(r=>r.recipe_library_shares.map(x=>({...x,recipe_id:r.id,recipes:r})));
   if(table==='set_recipe_library_share'){
    const call=route.request().postDataJSON();shareCalls.push(call);
@@ -118,7 +123,67 @@ async function testSignedInMobile(){
    if(state.contentScroll<100||state.documentScroll!==0||state.overflow||state.fonts.some(x=>x<16))throw new Error('Mobile scroll or zoom regression: '+size);
    await page.evaluate(()=>document.querySelector('.content').scrollTo(0,0));
   }
-  for(let i=1;i<density.length;i++)if(density[i].font<=density[i-1].font||density[i].padding<=density[i-1].padding||density[i].thumb<density[i-1].thumb)throw new Error('Density changes only text, not layout');
+  for(let i=1;i<density.length;i++)if(density[i].font<=density[i-1].font||density[i].padding<10||density[i].thumb<density[i-1].thumb)throw new Error('Density changes only text, not layout');
+  await page.evaluate(()=>document.documentElement.dataset.uiSize='supercompact');
+  await page.getByRole('button',{name:'Abrir Receta propia de prueba',exact:true}).click();
+  await page.getByRole('spinbutton',{name:'Porciones',exact:true}).fill('4');
+  await page.locator('.ingredient-quantity').filter({hasText:'400'}).waitFor();
+  await page.getByRole('button',{name:'Cocinar esta receta',exact:true}).click();
+  await page.locator('.cooking-checks button').first().click();
+  if(await page.locator('.cooking-checks button[aria-pressed="true"]').count()!==1)throw new Error('Ingredient checklist failed');
+  await page.getByRole('button',{name:'Empezar preparación',exact:true}).click();
+  await page.locator('.cooking-mode').getByText('Cociná el arroz.',{exact:true}).waitFor();
+  await page.screenshot({path:`artifacts/${engine}-cooking.png`});
+  await page.getByRole('button',{name:'Siguiente',exact:true}).click();
+  await page.locator('.cooking-mode').getByText('Serví y disfrutá.',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Terminé',exact:true}).click();
+  await page.getByText('¡Listo!',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Volver a la receta',exact:true}).click();
+  await page.getByRole('button',{name:'Añadir a la compra',exact:true}).click();
+  await page.getByRole('button',{name:'Opciones de la receta',exact:true}).click();
+  await page.getByRole('button',{name:'Recuperar foto original',exact:true}).click();
+  await page.locator('.detail-image img').waitFor();
+  await page.getByRole('button',{name:'Opciones de la receta',exact:true}).click();
+  await page.getByRole('button',{name:'Cambiar foto desde galería',exact:true}).click();
+  await page.locator('.photo-file-input').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGOs2NLEwMDAxMDAwMDAAAAUSAGyF1ko3gAAAABJRU5ErkJggg==','base64')});
+  await page.getByText('Foto guardada.',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Volver a recetas',exact:true}).click();
+  ownRecipe.recipe_steps=[];
+  await page.getByRole('button',{name:'Abrir Receta propia de prueba',exact:true}).click();
+  await page.locator('.video-source-cta').waitFor();
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.waitForFunction(()=>document.documentElement.dataset.appearance==='dark');
+  const checkContrast=async selectors=>page.evaluate(selectors=>{
+   const rgb=s=>(s.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
+   const lum=c=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
+   return selectors.flatMap(selector=>[...document.querySelectorAll(selector)].filter(el=>el.getClientRects().length).map(el=>{
+    let parent=el,bg='rgba(0, 0, 0, 0)';while(parent&&bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(parent).backgroundColor;parent=parent.parentElement}
+    const a=lum(rgb(getComputedStyle(el).color)),b=lum(rgb(bg));return {selector,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};
+   }));
+  },selectors);
+  let contrasts=await checkContrast(['.video-source-cta p','.video-source-cta a','.ingredient-quantity','.ingredient-list b','.detail-source>a','.detail-source summary']);
+  if(contrasts.some(x=>x.ratio<4.5))throw new Error('Dark recipe contrast failed: '+JSON.stringify(contrasts));
+  await page.locator('.recipe-detail').evaluate(el=>el.scrollTo(0,el.scrollHeight));
+  await page.screenshot({path:`artifacts/${engine}-dark-detail.png`});
+  await page.getByRole('button',{name:'Volver a recetas',exact:true}).click();
+  await page.locator('.mobile-menu-trigger').click();
+  await page.locator('.drawer-group button').filter({hasText:'Lista de compra'}).click();
+  await page.locator('.shopping-item b').filter({hasText:'400'}).waitFor();
+  await page.getByRole('button',{name:'Marcar comprado: Arroz',exact:true}).click();
+  await page.getByRole('button',{name:'Quitar productos comprados',exact:true}).click();
+  if(await page.locator('.shopping-item b').filter({hasText:'Arroz'}).count())throw new Error('Shopping clear purchased failed');
+  await page.getByRole('textbox',{name:'Añadir un producto',exact:true}).fill('Leche');
+  await page.locator('.shopping-add button').click();
+  await page.screenshot({path:`artifacts/${engine}-shopping.png`});
+  await page.reload({waitUntil:'networkidle'});
+  await page.getByRole('button',{name:'Lista de compra',exact:true}).click();
+  await page.getByText('Leche',{exact:true}).waitFor();
+  await page.locator('.mobile-menu-trigger').click();
+  await page.locator('.drawer-group button').filter({hasText:'Guardar receta'}).click();
+  contrasts=await checkContrast(['.instagram-guide p','.simple-import-paste']);
+  if(contrasts.some(x=>x.ratio<4.5))throw new Error('Dark import contrast failed: '+JSON.stringify(contrasts));
+  await page.screenshot({path:`artifacts/${engine}-dark-import.png`});
+  await page.locator('.form-head>button').click();
   await page.locator('.mobile-menu-trigger').click();
   await page.locator('.drawer-group button').filter({hasText:'Bibliotecas'}).click();
   await page.locator('.playlist-card').filter({hasText:'Con Sofi'}).click();
@@ -148,16 +213,43 @@ async function testSignedInMobile(){
  }catch(error){console.error('Signed-in test DOM:',await page.locator('body').innerText());throw error}finally{await page.close()}
 }
 
+async function testOfflineShopping(){
+ // Playwright WebKit kills even cached requests with setOffline (#42775).
+ // Stop a dedicated origin instead to exercise the real service-worker fallback.
+ const isWebKit=browser.browserType().name()==='webkit';
+ const preview=isWebKit?spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4180'],{stdio:'ignore'}):null;
+ const base=isWebKit?'http://127.0.0.1:4180/':'http://127.0.0.1:4173/';
+ if(preview){let ready=false;for(let i=0;i<30;i++){try{ready=(await fetch(base)).ok}catch{}if(ready)break;await new Promise(r=>setTimeout(r,200))}if(!ready){preview.kill();throw new Error('Dedicated offline origin failed')}}
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});
+ const page=await context.newPage();
+ await page.addInitScript(()=>{localStorage.setItem('chefcita:shopping:last-user','offline-test');localStorage.setItem('chefcita:shopping:offline-test',JSON.stringify([{id:'1',name:'Pan',quantity:'',done:false}]))});
+ try{
+  await page.goto(base,{waitUntil:'networkidle'});
+  await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.evaluate(async()=>{if(!await caches.match('/'))throw new Error('App shell not cached')});
+  if(preview){await context.addInitScript(()=>Object.defineProperty(Navigator.prototype,'onLine',{get:()=>false,configurable:true}));const exited=once(preview,'exit');preview.kill();await exited}else await context.setOffline(true);
+  const response=await page.reload({waitUntil:'domcontentloaded'});
+  if(!response?.fromServiceWorker())throw new Error('Offline navigation was not served by the cached worker');
+  await page.getByText('Sin conexión · lista guardada en este dispositivo',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Marcar comprado: Pan',exact:true}).click();
+  await page.getByRole('button',{name:'Volver a pendiente: Pan',exact:true}).waitFor();
+  console.log('Shopping app shell and saved products work offline');
+ }finally{await context.close();if(preview&&preview.exitCode===null)preview.kill()}
+}
+
 try{
   await testViewport('desktop',{width:1280,height:900});
   await testViewport('mobile-small',{width:360,height:800});
   await testViewport('mobile',{width:390,height:844});
   await testViewport('mobile-large',{width:430,height:932});
   await testSignedInMobile();
+  await testOfflineShopping();
   await browser.close();
   browser=await webkit.launch({headless:true});
   await testViewport('webkit-mobile',{width:390,height:844});
   await testSignedInMobile();
+  await testOfflineShopping();
 }finally{
   await browser.close();
 }

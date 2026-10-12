@@ -109,7 +109,7 @@ export default function IdeasPage({onOpenRecipe,session}){
    </div>
    {ideaMessage&&<small className="idea-hero-message">{ideaMessage}</small>}
    {ideaRecipe&&<article className="idea-result-card">
-    <div className="idea-result-image">{ideaRecipe.image_url?<img src={ideaRecipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
+    <div className="idea-result-image">{ideaRecipe.image_url?<img key={ideaRecipe.image_url} src={ideaRecipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
     <div className="idea-result-copy">
      <div className="idea-result-meta">{[ideaRecipe.categories?.name,ideaRecipe.meal_types?.name].filter(Boolean).map(x=><span key={x}>{x}</span>)}</div>
      <h3>{ideaRecipe.title}</h3>
