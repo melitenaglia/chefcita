@@ -43,6 +43,7 @@ async function testSignedInMobile(){
  const libraryId='22222222-2222-4222-8222-222222222222';
  const recipeId='33333333-3333-4333-8333-333333333333';
  const shareCalls=[];
+ const sharedItems=[],sharedStores=[],storePreferences=new Map();let homeFail=false;
  const testToken=[{alg:'HS256',typ:'JWT'},{sub:uid,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600},'test-signature'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
  await page.addInitScript(({uid,testToken})=>{
   localStorage.setItem('sb-yfhiqdpohixsvzuudivw-auth-token',JSON.stringify({access_token:testToken,refresh_token:'test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}}}));
@@ -53,13 +54,30 @@ async function testSignedInMobile(){
   const url=new URL(route.request().url());
   const table=url.pathname.split('/').pop();let data=[];
   if(table==='user')data={id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}};
-  if(table==='household_members')data=[{household_id:libraryId,user_id:uid,role:'member',joined_at:'2026-10-12'}];
+  if(table==='household_members'){data=[{household_id:libraryId,user_id:uid,role:'member',joined_at:'2026-10-12',profiles:{display_name:'Melisa'}},{household_id:libraryId,user_id:'other-user',role:'member',profiles:{display_name:'Sofi'}}];if(url.searchParams.has('user_id'))data=data.filter(x=>x.user_id===uid)};
   if(table==='households')data=[{id:libraryId,name:'Con Sofi',created_by:uid}];
+  if(table==='recipes'&&homeFail&&url.searchParams.get('limit')==='4'){await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({message:'Test unavailable'})});return}
   if(table==='recipes'){if(route.request().method()==='PATCH')Object.assign(ownRecipe,route.request().postDataJSON());data=route.request().headers().accept?.includes('object')?ownRecipe:[ownRecipe,sharedRecipe]};
   if(table==='recover-recipe-photo')data=route.request().postDataJSON()?.batch?{updates:[],failed:[],scanned:0}:{image_url:`https://yfhiqdpohixsvzuudivw.supabase.co/storage/v1/object/public/recipe-thumbnails/${uid}/recovered.jpg`};
   if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='POST')data={Key:'uploaded'};
   if(url.pathname.includes('/storage/v1/object/')&&route.request().method()==='GET'){await route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGOs2NLEwMDAxMDAwMDAAAAUSAGyF1ko3gAAAABJRU5ErkJggg==','base64')});return}
   if(table==='recipe_library_shares')data=[ownRecipe,sharedRecipe].filter(r=>!url.searchParams.has('recipe_id')||url.searchParams.get('recipe_id')===`eq.${r.id}`).flatMap(r=>r.recipe_library_shares.map(x=>({...x,recipe_id:r.id,recipes:r})));
+  if(table==='categories')data=[{id:libraryId,name:'Merienda'}];
+  if(table==='household_shopping_items'){
+   const id=url.searchParams.get('id')?.replace('eq.','');
+   if(route.request().method()==='PATCH'){const row=sharedItems.find(r=>r.id===id);if(row)Object.assign(row,route.request().postDataJSON());data=row?{id:row.id}:null}
+   else if(route.request().method()==='DELETE'){for(let i=sharedItems.length-1;i>=0;i--)if(sharedItems[i].id===id||url.searchParams.get('done')==='eq.true'&&sharedItems[i].done)sharedItems.splice(i,1);data=[]}
+   else data=sharedItems;
+  }
+  if(table==='household_shopping_stores'){
+   if(route.request().method()==='POST'){data={id:crypto.randomUUID(),name:route.request().postDataJSON().name};sharedStores.push(data)}else data=sharedStores;
+  }
+  if(table==='set_household_product_store'){const body=route.request().postDataJSON();storePreferences.set(body.p_product,body.p_store);data=null}
+  if(table==='add_household_shopping_items'){
+   const body=route.request().postDataJSON();
+   for(const item of body.p_items){let row=sharedItems.find(r=>r.item_key===item.id);if(row){row.quantity=item.quantity;row.note=item.note;row.portions=item.portions}else sharedItems.push({id:crypto.randomUUID(),household_id:body.p_household,item_key:item.id,recipe_id:item.recipeId,recipe_title:item.recipeTitle,name:item.name,quantity:item.quantity||'',note:item.note||'',portions:item.portions,done:false,added_by:uid,store_id:storePreferences.get(item.productKey)||null})}
+   data=body.p_items.length;
+  }
   if(table==='set_recipe_library_share'){
    const call=route.request().postDataJSON();shareCalls.push(call);
    ownRecipe.recipe_library_shares=call.p_shared?[{household_id:libraryId,households:{name:'Con Sofi'}}]:[];data=null;
@@ -129,6 +147,9 @@ async function testSignedInMobile(){
   await page.getByRole('spinbutton',{name:'Porciones',exact:true}).fill('4');
   await page.locator('.ingredient-quantity').filter({hasText:'400'}).waitFor();
   await page.getByRole('button',{name:'Cocinar esta receta',exact:true}).click();
+  await page.setViewportSize({width:390,height:620});
+  const footer=await page.locator('.cooking-footer').boundingBox();
+  if(!footer||footer.y+footer.height>621)throw new Error('Cooking actions clipped on small phone');
   await page.locator('.cooking-checks button').first().click();
   if(await page.locator('.cooking-checks button[aria-pressed="true"]').count()!==1)throw new Error('Ingredient checklist failed');
   await page.getByRole('button',{name:'Empezar preparación',exact:true}).click();
@@ -139,6 +160,7 @@ async function testSignedInMobile(){
   await page.getByRole('button',{name:'Terminé',exact:true}).click();
   await page.getByText('¡Listo!',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Volver a la receta',exact:true}).click();
+  await page.setViewportSize({width:390,height:844});
   await page.getByRole('button',{name:'Añadir a la compra',exact:true}).click();
   await page.getByRole('button',{name:'Opciones de la receta',exact:true}).click();
   await page.getByRole('button',{name:'Recuperar foto original',exact:true}).click();
@@ -178,6 +200,47 @@ async function testSignedInMobile(){
   await page.reload({waitUntil:'networkidle'});
   await page.getByRole('button',{name:'Lista de compra',exact:true}).click();
   await page.getByText('Leche',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Elegir tienda',exact:false}).last().click();
+  await page.locator('.store-picker').getByRole('button',{name:'Aldi',exact:true}).click();
+  await page.locator('.store-picker').waitFor({state:'detached'});
+  await page.locator('.shopping-group h2').filter({hasText:'Aldi'}).waitFor();
+  await page.getByRole('button',{name:'Compartir con casa',exact:true}).click();
+  await page.getByRole('button',{name:'Compartir con Con Sofi',exact:true}).click();
+  await page.locator('.shopping-members').filter({hasText:'Sofi'}).waitFor();
+  await page.locator('.shopping-item b').filter({hasText:'Leche'}).waitFor();
+  await page.locator('.shopping-item').filter({hasText:'Leche'}).getByRole('button',{name:'Elegir tienda',exact:false}).click();
+  await page.locator('.store-picker').getByRole('button',{name:'Aldi',exact:true}).click();
+  await page.locator('.store-picker').waitFor({state:'detached'});
+  await page.getByRole('textbox',{name:'Añadir un producto',exact:true}).fill('Leche');
+  await page.locator('.shopping-add button').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.shopping-group').length>=2);
+  await page.waitForFunction(()=>[...document.querySelectorAll('.shopping-item b')].filter(el=>el.textContent==='Leche').length===2);
+  const milk=sharedItems.filter(r=>r.name==='Leche');
+  if(milk.length!==2||milk.some(r=>!r.store_id))throw new Error('Shared product did not remember its store');
+  await page.getByRole('button',{name:'Por receta',exact:true}).click();
+  await page.locator('.shopping-group h2').filter({hasText:'Receta propia de prueba'}).waitFor();
+  await page.screenshot({path:`artifacts/${engine}-shared-shopping-recipes.png`});
+  await page.getByRole('button',{name:'Por tienda',exact:true}).click();
+  await page.screenshot({path:`artifacts/${engine}-shared-shopping-stores.png`});
+  await page.getByRole('combobox',{name:'Lista de compra',exact:true}).selectOption('');
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Sugerime una receta',exact:true}).click();
+  await page.getByRole('combobox',{name:'Tipo de comida',exact:true}).selectOption('Merienda');
+  await page.getByRole('button',{name:'Dame una idea',exact:true}).click();
+  await page.getByRole('button',{name:'Ver receta',exact:true}).waitFor();
+  await page.locator('.content').evaluate(el=>el.scrollTo(0,el.scrollHeight));
+  const ideaAction=await page.getByRole('button',{name:'Ver receta',exact:true}).boundingBox();
+  const navBox=await page.locator('.mobile-bottom-nav').boundingBox();
+  if(ideaAction.y+ideaAction.height>navBox.y)throw new Error('Idea actions clipped by navigation');
+  await page.screenshot({path:`artifacts/${engine}-ideas.png`});
+  homeFail=true;
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Inicio',exact:true}).click();
+  await page.locator('.home-empty').getByRole('button',{name:'Volver a intentar',exact:true}).waitFor();
+  contrasts=await checkContrast(['.home-empty p','.home-empty button']);
+  if(contrasts.some(x=>x.ratio<4.5))throw new Error('Dark home error contrast failed: '+JSON.stringify(contrasts));
+  await page.screenshot({path:`artifacts/${engine}-home-unavailable.png`});
+  homeFail=false;
+
+
   await page.locator('.mobile-menu-trigger').click();
   await page.locator('.drawer-group button').filter({hasText:'Guardar receta'}).click();
   contrasts=await checkContrast(['.instagram-guide p','.simple-import-paste']);

@@ -1,0 +1,28 @@
+begin;
+create temporary table shopping_fixture as select gen_random_uuid() a,gen_random_uuid() b,gen_random_uuid() c,gen_random_uuid() h,gen_random_uuid() other_h,gen_random_uuid() store;
+grant select on shopping_fixture to authenticated;
+insert into auth.users(id,email,raw_user_meta_data) select a,a::text||'@example.invalid','{"name":"Shopping test A"}'::jsonb from shopping_fixture union all select b,b::text||'@example.invalid','{"name":"Shopping test B"}'::jsonb from shopping_fixture union all select c,c::text||'@example.invalid','{"name":"Shopping test C"}'::jsonb from shopping_fixture;
+insert into public.profiles(id,display_name) select a,'Test A' from shopping_fixture union all select b,'Test B' from shopping_fixture union all select c,'Test C' from shopping_fixture on conflict(id) do nothing;
+insert into public.households(id,name,created_by) select h,'Temporary shopping test',a from shopping_fixture union all select other_h,'Other temporary house',c from shopping_fixture;
+insert into public.household_members(household_id,user_id,role) select h,a,'owner'::public.household_role from shopping_fixture union all select h,b,'member'::public.household_role from shopping_fixture union all select other_h,c,'owner'::public.household_role from shopping_fixture;
+set local role authenticated;
+do $$declare f record;n integer;begin
+ select * into f from shopping_fixture;
+ perform set_config('request.jwt.claim.sub',f.a::text,true);
+ perform public.add_household_shopping_items(f.h,'[{"id":"test-rice","name":"Arroz","quantity":"100 g","recipeTitle":"Arroz de prueba"}]'::jsonb);
+ insert into public.household_shopping_stores(id,household_id,name) values(f.store,f.h,'Aldi');
+ perform public.set_household_product_store(f.h,'jabon liquido',f.store);
+ perform public.add_household_shopping_items(f.h,'[{"id":"test-soap","name":"Jabón líquido","productKey":"jabon liquido"}]'::jsonb);
+ if not exists(select 1 from public.household_shopping_items where item_key='test-soap' and store_id=f.store) then raise exception 'store_preference_failed';end if;
+ perform set_config('request.jwt.claim.sub',f.b::text,true);
+ select count(*) into n from public.household_shopping_items where household_id=f.h;if n<>2 then raise exception 'member_read_failed';end if;
+ update public.household_shopping_items set done=true where item_key='test-rice' and household_id=f.h;
+ perform public.add_household_shopping_items(f.h,'[{"id":"test-rice","name":"Arroz","quantity":"200 g"}]'::jsonb);
+ if not exists(select 1 from public.household_shopping_items where item_key='test-rice' and done=true and added_by=f.a and quantity='200 g') then raise exception 'collaboration_upsert_failed';end if;
+ begin update public.household_shopping_items set household_id=f.other_h where item_key='test-rice';raise exception 'immutable_destination_failed';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub',f.c::text,true);
+ select count(*) into n from public.household_shopping_items where household_id=f.h;if n<>0 then raise exception 'outsider_read_failed';end if;
+ begin perform public.add_household_shopping_items(f.h,'[{"id":"bad","name":"Bad"}]'::jsonb);raise exception 'outsider_write_failed';exception when raise_exception then if sqlerrm<>'not_a_household_member' then raise;end if;end;
+ raise notice 'Shopping RLS, collaborative updates, immutable destination and remembered store verified';
+end $$;
+rollback;

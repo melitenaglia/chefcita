@@ -74,3 +74,17 @@ html[data-appearance] .shopping-group{background:transparent!important}
 html[data-appearance] .shopping-group h2{color:var(--chef-muted)!important;font-size:var(--app-small);margin:0 0 10px}
 html[data-appearance] :is(.search-box svg,.filters-label svg){color:var(--chef-muted)!important}
 html[data-appearance] .shopping-check>span{border-color:var(--chef-muted)!important}
+/* Native-style lists: surfaces indicate a task, not every individual label. */
+html[data-appearance] :is(.home-empty p,.home-empty button,.idea-hero-message,.shopping-empty p){color:var(--chef-text)!important}
+html[data-appearance] .home-empty button{background:var(--chef-surface-raised)!important;border-color:var(--chef-border)!important;min-height:44px;padding:10px 16px;border-radius:12px}
+html[data-appearance] :is(.drawer-group,.mobile-drawer-head,.share-panel-head,.store-picker .store-options button){border-color:var(--chef-border)!important}
+html[data-appearance] .share-panel-head>button{background:transparent!important;color:var(--chef-text)!important}
+html[data-appearance] .idea-result-image{background:var(--chef-surface-raised)!important;color:var(--chef-muted)!important}
+html[data-appearance] .home-save-section{background:transparent!important;border:0!important;padding:0!important}
+html[data-appearance] .home-save-section .welcome-instagram{background:var(--chef-primary-soft)!important;border:0!important;color:var(--chef-primary-dark)!important}
+html[data-appearance] :is(.settings-page,.settings-content,.idea-hero){background:transparent!important;border:0!important}
+html[data-appearance] .home-utility button{border:0!important;background:var(--chef-surface-raised)!important}
+html[data-appearance] :is(.shopping-view button,.shopping-status button,.shopping-store-link,.shopping-origin button,.store-options button){background:transparent;color:var(--chef-text);border-color:var(--chef-border)}
+html[data-appearance] .shopping-view button[aria-pressed="true"]{background:var(--chef-primary-soft);color:var(--chef-primary-dark)}
+html[data-appearance] [role="dialog"]:focus{outline:none}
+html[data-appearance] :is(.shopping-error,.shopping-error button){color:var(--chef-danger)}

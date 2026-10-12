@@ -5,6 +5,7 @@ import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
 import {formatIngredientDisplay} from './recipeFormat.js';
+import {addRecipeToDestination} from './shoppingDestinations.js';
 import CookingMode from './CookingMode.jsx';
 import {ingredientView,addRecipeToShopping} from './cookingTools.js';
 import {uploadRecipePhoto,recoverRecipePhoto} from './recipePhotos.js';
@@ -105,8 +106,9 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const basePortions=Number(recipe?.servings)||0;
  const ratio=basePortions>0&&portions>0?portions/basePortions:1;
  const ingredientDisplay=item=>ingredientView(item,ratio);
- const addShopping=()=>{
-  try{const result=addRecipeToShopping(session.user.id,recipe,ingredients,ratio,portions);setNotice(result.count?`${result.count} ingredientes añadidos a tu compra.`:'Lista de compra actualizada.');setMenu(false)}catch{setError('No pude guardar la lista de compra en este navegador.')}
+ const addShopping=async()=>{
+  if(busy)return;setBusy(true);setError('');
+  try{setNotice(await addRecipeToDestination(session.user.id,recipe,ingredients,ratio,portions));setMenu(false)}catch{setError('No pude añadir los ingredientes. Revisá la conexión y reintentá.')}finally{setBusy(false)}
  };
  const changePhoto=async file=>{
   if(!file||!isOwner||photoBusy)return;
@@ -161,8 +163,8 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
     {recipe.image_url&&<div className="detail-image" key={recipe.image_url}><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
 
-    <div className="recipe-cooking-actions"><button className="primary" onClick={()=>setCooking(true)}><UtensilsCrossed/>Cocinar esta receta</button><button className="secondary" onClick={addShopping} disabled={!ingredients.length}><ShoppingBasket/>Añadir a la compra</button></div>
-    {notice&&<div className="tool-notice" role="status">{notice}{notice.includes('compra')&&onOpenShopping&&<button onClick={onOpenShopping}>Ver lista</button>}</div>}
+    <div className="recipe-cooking-actions"><button className="primary" onClick={()=>setCooking(true)}><UtensilsCrossed/>Cocinar esta receta</button><button className="secondary" onClick={addShopping} disabled={busy||!ingredients.length}><ShoppingBasket/>Añadir a la compra</button></div>
+    {notice&&<div className="tool-notice" role="status">{notice}{notice.includes('lista')&&onOpenShopping&&<button onClick={onOpenShopping}>Ver lista</button>}</div>}
     {photoBusy&&<p role="status">Guardando foto…</p>}
     {isOwner&&<input ref={photoInput} className="photo-file-input" type="file" accept="image/*" aria-label="Elegir foto de la receta" onChange={e=>changePhoto(e.target.files?.[0])}/>}
     <div className="detail-summary">
