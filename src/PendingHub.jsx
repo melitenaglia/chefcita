@@ -6,8 +6,8 @@ export default function PendingHub({initialTab='imports',onOpenRecipe}){
  const [tab,setTab]=useState(initialTab==='review'?'review':'imports');
  return <section className="pending-hub">
   <div className="pending-tabs">
-   <button className={tab==='imports'?'active':''} onClick={()=>setTab('imports')}>Importaciones</button>
-   <button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Por validar</button>
+   <button className={tab==='imports'?'active':''} onClick={()=>setTab('imports')}>Enlaces guardados</button>
+   <button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar recetas</button>
   </div>
   {tab==='imports'?<PendingImports onOpenRecipe={onOpenRecipe}/>:<ReviewRecipes/>}
  </section>;

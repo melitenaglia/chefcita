@@ -26,7 +26,7 @@ jobs:
       - name: Install browser smoke-test dependency
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Smoke test rendered app
         run: |
           npm run preview -- --host 127.0.0.1 > /tmp/chefcita-preview.log 2>&1 &

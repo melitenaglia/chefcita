@@ -3,7 +3,7 @@ import {supabase} from './supabase.js';
 import SharedLibrariesSettings from './SharedLibrariesSettings.jsx';
 import {userErrorMessage} from './userError.js';
 
-const settingsSections=['Pantalla','Bibliotecas','IA e importaciones'];
+const settingsSections=['Pantalla','Bibliotecas'];
 
 export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange,theme='sage',onThemeChange}){
  const [section,setSection]=useState(mode==='account'?'Cuenta':initialSection);

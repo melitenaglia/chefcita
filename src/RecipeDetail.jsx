@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3,Share2,LockKeyhole} from 'lucide-react';
+import {canOrganizeRecipe} from './libraryActions.js';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
@@ -50,7 +51,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const steps=useMemo(()=>[...(recipe?.recipe_steps||[])].sort((a,b)=>a.step_number-b.step_number),[recipe]);
  const tags=(recipe?.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean);
  const isOwner=recipe?.owner_id===session.user.id;
- const sharedReadOnly=Boolean(viewingLibraryId)||(!isOwner&&Boolean(recipe));
+ const sharedReadOnly=!isOwner&&Boolean(recipe);
 
  const savePersonal=async changes=>{
   if(!recipe)return;
@@ -112,14 +113,11 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  if(editing)return <div className="modal-backdrop"><div className="recipe-detail editor-shell"><RecipeEditor recipeId={recipeId} mode="edit" onBack={()=>setEditing(false)} onSaved={async()=>{setEditing(false);await load();onChanged?.()}}/></div></div>;
 
  return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-  <article className="recipe-detail" onTouchStart={startEdgeSwipe} onTouchEnd={endEdgeSwipe}>
+  <article role="dialog" aria-modal="true" aria-label={recipe?.title||'Receta'} className="recipe-detail" onTouchStart={startEdgeSwipe} onTouchEnd={endEdgeSwipe}>
    <div className="detail-head">
     <span className="detail-head-label">Receta</span>
     <button className="detail-back" onClick={onClose} aria-label="Volver a recetas"><ChevronLeft/><span>Volver</span></button>
     <div className="detail-head-actions">
-     {source?.source_url&&<a className="source-head-action" href={source.source_url} target="_blank" rel="noreferrer" aria-label="Abrir publicación original"><ExternalLink/></a>}
-     {isOwner&&<button className="share-recipe" onClick={()=>setSharing(true)}><Share2/>Compartir</button>}
-     {isOwner&&!sharedReadOnly&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
      <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
     </div>
    </div>
@@ -131,11 +129,14 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
     <h2 className="detail-title">{recipe.title||'Receta'}</h2>
 
     {source?.source_url&&<a className="detail-source-quick" href={source.source_url} target="_blank" rel="noreferrer">
-     <ExternalLink/><span>Instagram · Abrir original</span>
+     <ExternalLink/><span>Ver receta original</span>
     </a>}
 
     {recipe.image_url&&<div className="detail-image"><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
 
+    <div className="detail-action-row">     {canOrganizeRecipe(recipe.owner_id,session.user.id)&&<button className="share-recipe" onClick={()=>setSharing(true)}><Share2/>Añadir a biblioteca</button>}
+     {isOwner&&!sharedReadOnly&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
+</div>
     <div className="detail-summary">
      <div className="recipe-meta">{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}{recipe.level&&<span>{levelLabel[recipe.level]}</span>}</div>
      {recipe.description&&<p>{recipe.description}</p>}
@@ -150,7 +151,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
     <section className="personal-quick" aria-label="Mi receta">
      <div className="personal-actions">
-      <button className={personal.is_favorite?'personal-action active':'personal-action'} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Favorita'}</button>
+      <button className={personal.is_favorite?'personal-action active':'personal-action'} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Marcar favorita'}</button>
       <button className={personal.tried_status==='tried'?'personal-action active tried':'personal-action'} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
      </div>
      {personal.tried_status==='tried'&&<div className="rating-row"><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{!personal.rating&&<p className="rating-prompt">Tocá de 1 a 5 estrellas.</p>}</div>}

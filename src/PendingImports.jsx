@@ -79,7 +79,7 @@ export default function PendingImports({onOpenRecipe}){
 
  return <section className="pending-page">
   <div className="pending-head">
-   <div><h2>Importaciones</h2><p>Acá ves lo que todavía necesita tu ayuda y las recetas que Chefcita ya terminó.</p></div>
+   <div><h2>Enlaces guardados</h2><p>Acá ves lo que todavía necesita tu ayuda y las recetas que Chefcita ya terminó.</p></div>
    <button onClick={load}><RefreshCw/>Actualizar</button>
   </div>
 
@@ -94,9 +94,9 @@ export default function PendingImports({onOpenRecipe}){
 
   {loading&&<div className="library-state"><Inbox/><p>Cargando pendientes...</p></div>}
   {!loading&&error&&<div className="library-state error"><p>No pudimos cargar los pendientes.</p><small>{error}</small><button onClick={load}>Reintentar</button></div>}
-  {!loading&&!error&&items.length===0&&<div className="library-state"><Inbox/><h2>No hay importaciones</h2><p>Pegá un Reel o post desde Añadir receta y aparecerá acá.</p></div>}
+  {!loading&&!error&&items.length===0&&<div className="library-state"><Inbox/><h2>No hay enlaces guardados</h2><p>Pegá un Reel o post desde Añadir receta y aparecerá acá.</p></div>}
 
-  {!loading&&!error&&items.length>0&&visibleItems.length===0&&<div className="library-state"><Inbox/><h2>{view==='processed'?'Todavía no hay procesadas':'Todo procesado'}</h2><p>{view==='processed'?'Cuando Chefcita termine una importación, la vas a encontrar acá.':'No hay importaciones que necesiten atención.'}</p></div>}
+  {!loading&&!error&&items.length>0&&visibleItems.length===0&&<div className="library-state"><Inbox/><h2>{view==='processed'?'Todavía no hay procesadas':'Todo procesado'}</h2><p>{view==='processed'?'Cuando Chefcita termine una importación, la vas a encontrar acá.':'No hay enlaces guardados que necesiten atención.'}</p></div>}
 
   {!loading&&!error&&visibleItems.length>0&&<div className="pending-list">{visibleItems.map(item=><article key={item.id}>
    <div className="source-icon import-thumb">{item.source_image_url?<img src={item.source_image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<Instagram/>}</div>
@@ -133,7 +133,7 @@ export default function PendingImports({onOpenRecipe}){
     </div>
 
     {editing===item.id&&<div className="caption-editor">
-     <textarea value={caption} onChange={e=>setCaption(e.target.value)} placeholder="Pegá el caption o texto completo de la receta..."/>
+     <textarea value={caption} onChange={e=>setCaption(e.target.value)} placeholder="Pegá el texto completo de la receta..."/>
      <div><button onClick={()=>{setEditing(null);setCaption('')}}>Cancelar</button><button disabled={busy||!caption.trim()} onClick={()=>saveCaption(item)}>Guardar y volver a evaluar</button></div>
     </div>}
    </div>

@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {BookOpen,Heart,Search,Clock,ChefHat,CheckCircle2,Circle,SlidersHorizontal,Star,ChevronDown} from 'lucide-react';
+import {setLibraryRecipe,canOrganizeRecipe} from './libraryActions.js';
 import {supabase} from './supabase.js';
 import {loadSharedLibraries} from './sharedLibraries.js';
 import RecipeSharePanel from './RecipeSharePanel.jsx';
@@ -8,10 +9,10 @@ import {userErrorMessage} from './userError.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeLibrary({session,mode='all',initialRecipeId=null,initialPersonalFilter='',onManageLibraries,onAddToLibrary}){
+export default function RecipeLibrary({session,mode='all',initialRecipeId=null,initialPersonalFilter='',onManageLibraries,initialLibraryId='',libraryName='',onChooseRecipes,onMembershipChanged}){
  const [recipes,setRecipes]=useState([]);
  const [libraries,setLibraries]=useState([]);
- const [scope,setScope]=useState('personal');
+ const [scope,setScope]=useState(initialLibraryId?'shared':'personal');
  const [libraryError,setLibraryError]=useState('');
  const [sharingRecipe,setSharingRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
@@ -23,7 +24,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
  const [mealFilter,setMealFilter]=useState('');
  const [levelFilter,setLevelFilter]=useState('');
  const [personalFilter,setPersonalFilter]=useState(initialPersonalFilter);
- const [libraryFilter,setLibraryFilter]=useState('');
+ const [libraryFilter,setLibraryFilter]=useState(initialLibraryId);
  const [sort,setSort]=useState('newest');
  const [kitchenView,setKitchenView]=useState('favorites');
  const [filtersOpen,setFiltersOpen]=useState(false);
@@ -157,23 +158,21 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
  };
 
  const clearFilters=()=>{
-  setCategoryFilter('');setMealFilter('');setLevelFilter('');setLibraryFilter('');setPersonalFilter('');setSort('newest');
+  setCategoryFilter('');setMealFilter('');setLevelFilter('');setLibraryFilter(initialLibraryId);setPersonalFilter('');setSort('newest');
  };
 
  const filtersActive=Boolean(categoryFilter||mealFilter||levelFilter||libraryFilter||personalFilter||sort!=='newest');
  const filterCount=[categoryFilter,mealFilter,levelFilter,libraryFilter,personalFilter,sort!=='newest'?'sort':''].filter(Boolean).length;
 
  return <section className="recipe-library">
-   <div className="library-scope-tabs" role="group" aria-label="Elegir recetario">
+   {!initialLibraryId&&<div className="library-scope-tabs" role="group" aria-label="Elegir recetario">
     {[['personal','Propias'],['shared','Compartidas']].map(([value,label])=><button key={value} type="button" aria-pressed={scope===value} className={scope===value?'selected':''} onClick={()=>{setScope(value);setLibraryFilter('')}}>{label}</button>)}
-   </div>
-   {scope==='shared'&&<div className="shared-library-access">
-    <p>Elegí la biblioteca que compartís con Sofi u otras personas. Cada una puede añadir sus propias recetas; las recetas de la otra persona se ven en lectura.</p>
-    {libraryError?<p role="alert">{libraryError} <button onClick={loadLibraries}>Reintentar</button></p>:<label>Biblioteca<select value={libraryFilter} onChange={e=>setLibraryFilter(e.target.value)}><option value="">Todas las compartidas</option>{libraries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>}
-    <div><button onClick={()=>onAddToLibrary?.(libraryFilter)}>{libraryFilter?'Añadir receta a esta biblioteca':'Añadir receta'}</button><button onClick={onManageLibraries}>Gestionar bibliotecas</button></div>
-    {!libraryError&&!libraries.length&&<p>Creá una biblioteca o aceptá la invitación de Sofi para empezar.</p>}
    </div>}
-
+   {scope==='shared'&&<div className="shared-library-access">
+    <p>{initialLibraryId?`Recetas de «${libraryName}». Quitar una receta de esta biblioteca no elimina la receta original.`:'Las recetas compartidas con vos. Podés añadirlas a tus bibliotecas, igual que canciones a playlists.'}</p>
+    <div>{initialLibraryId?<button onClick={onChooseRecipes}>Añadir recetas guardadas</button>:<button onClick={onManageLibraries}>Ver mis bibliotecas</button>}</div>
+    {libraryError&&<p role="alert">{libraryError} <button onClick={loadLibraries}>Reintentar</button></p>}
+   </div>}
    <div className="recipe-quick-tabs" role="group" aria-label="Filtrar recetas por estado">
     {[['','Todas'],['favorite','Favoritas'],['to_try','Por probar'],['tried','Probadas']].map(([value,label])=><button type="button" key={label} className={personalFilter===value?'selected':''} aria-pressed={personalFilter===value} onClick={()=>setPersonalFilter(value)}>{label}</button>)}
    </div>
@@ -209,10 +208,10 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
     const mainIngredients=(recipe.recipe_ingredients||[]).filter(x=>x.role!=='secondary').slice(0,4);
     const tagNames=(recipe.recipe_tags||[]).map(x=>x.tags?.name).filter(Boolean).slice(0,4);
     const tried=personal?.tried_status==='tried';
-    return <article className="recipe-card clickable" key={recipe.id} onClick={()=>openDetail(recipe.id,scope==='shared'?(libraryFilter||(recipe.recipe_library_shares||[]).find(x=>libraries.some(l=>l.id===x.household_id))?.household_id):null)}>
+    return <article className="recipe-card clickable" key={recipe.id} tabIndex={0} aria-label={recipe.title} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDetail(recipe.id)}}} onClick={()=>openDetail(recipe.id,scope==='shared'?(libraryFilter||(recipe.recipe_library_shares||[]).find(x=>libraries.some(l=>l.id===x.household_id))?.household_id):null)}>
      <div className="recipe-card-top">
       {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="recipe-placeholder"><ChefHat/></div>}
-      <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label="Favorita"><Heart/></button>
+      <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label={personal?.is_favorite?'Quitar de favoritas':'Marcar favorita'} aria-pressed={Boolean(personal?.is_favorite)}><Heart/></button>
      </div>
      <div className="recipe-card-body">
       <div className="recipe-meta">{(recipe.recipe_library_shares||[]).slice(0,2).map(share=>share.households?.name&&<span className="shared-library-chip" key={share.household_id}>{share.households.name}</span>)}{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}</div>
@@ -225,14 +224,15 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
        {recipe.level&&<span>{levelLabel[recipe.level]}</span>}
        {tried&&personal?.rating&&<span className="card-rating"><Star/>{personal.rating}/5</span>}
       </div>
-      {recipe.owner_id===session.user.id&&<button className="card-share" onClick={e=>{e.stopPropagation();setSharingRecipe(recipe)}}>Añadir a biblioteca</button>}
+      {canOrganizeRecipe(recipe.owner_id,session.user.id)&&<button className="card-share" onClick={e=>{e.stopPropagation();setSharingRecipe(recipe)}}>Añadir a biblioteca</button>}
+      {initialLibraryId&&canOrganizeRecipe(recipe.owner_id,session.user.id)&&<button className="card-remove-library" onClick={async e=>{e.stopPropagation();const result=await setLibraryRecipe({recipeId:recipe.id,libraryId:initialLibraryId,added:false,ownerId:recipe.owner_id,userId:session.user.id});if(result.error)setError(userErrorMessage(result.error,'No pude quitar la receta de la biblioteca.'));else{load();onMembershipChanged?.()}}}>Quitar de esta biblioteca</button>}
       <button className={tried?'tried-toggle active':'tried-toggle'} onClick={e=>toggleTried(recipe,e)}>{tried?<CheckCircle2/>:<Circle/>}{tried?'Probada':'Por probar'}</button>
      </div>
     </article>;
    })}
   </div>}
 
-  {sharingRecipe&&<RecipeSharePanel recipeId={sharingRecipe.id} ownerId={sharingRecipe.owner_id} session={session} onClose={()=>setSharingRecipe(null)} onChanged={load}/>}
+  {sharingRecipe&&<RecipeSharePanel onManageLibraries={onManageLibraries} recipeId={sharingRecipe.id} ownerId={sharingRecipe.owner_id} session={session} onClose={()=>setSharingRecipe(null)} onChanged={()=>{load();onMembershipChanged?.()}}/>}
   {selectedId&&<RecipeDetail recipeId={selectedId} session={session} viewingLibraryId={selectedLibraryContext} onClose={closeDetail} onDeleted={()=>load()} onChanged={()=>load()}/>}
  </section>;
 }
