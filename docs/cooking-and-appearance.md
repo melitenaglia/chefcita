@@ -11,3 +11,5 @@ The recover-recipe-photo Edge Function validates bearer tokens with auth.getUser
 Appearance supports system/light/dark. Semantic surfaces, links and supporting text replace fixed light colors, including the original-source fallback and Instagram instructions. Minimum control targets stay 44 CSS pixels; compact mode keeps readable gaps. Automated checks cover Chromium and WebKit, dark contrast on detail/import components, stable bottom navigation, portion changes, cooking, gallery/recovery mocks and offline shopping.
 
 Design references: Apple HIG Dark Mode, Tab Bars, Buttons and Menus; W3C WCAG 2.2 Contrast Minimum. This is a web app following those patterns, not a native UIKit implementation.
+
+WebKit offline CI stops a dedicated preview origin and checks a service-worker response, rather than using Playwright's broken offline emulation (microsoft/playwright#42775). Chromium additionally uses setOffline. Neither test contacts real user accounts.

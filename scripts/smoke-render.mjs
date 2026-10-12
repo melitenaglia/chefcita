@@ -1,4 +1,6 @@
 import { chromium,webkit } from 'playwright';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
 
 let browser=await chromium.launch({headless:true});
 
@@ -212,21 +214,28 @@ async function testSignedInMobile(){
 }
 
 async function testOfflineShopping(){
+ // Playwright WebKit kills even cached requests with setOffline (#42775).
+ // Stop a dedicated origin instead to exercise the real service-worker fallback.
+ const isWebKit=browser.browserType().name()==='webkit';
+ const preview=isWebKit?spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4180'],{stdio:'ignore'}):null;
+ const base=isWebKit?'http://127.0.0.1:4180/':'http://127.0.0.1:4173/';
+ if(preview){let ready=false;for(let i=0;i<30;i++){try{ready=(await fetch(base)).ok}catch{}if(ready)break;await new Promise(r=>setTimeout(r,200))}if(!ready){preview.kill();throw new Error('Dedicated offline origin failed')}}
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'allow'});
  const page=await context.newPage();
  await page.addInitScript(()=>{localStorage.setItem('chefcita:shopping:last-user','offline-test');localStorage.setItem('chefcita:shopping:offline-test',JSON.stringify([{id:'1',name:'Pan',quantity:'',done:false}]))});
  try{
-  await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+  await page.goto(base,{waitUntil:'networkidle'});
   await page.evaluate(()=>navigator.serviceWorker.ready);
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await page.evaluate(async()=>{if(!await caches.match('/'))throw new Error('App shell not cached')});
-  await context.setOffline(true);
-  await page.reload({waitUntil:'domcontentloaded'});
+  if(preview){await context.addInitScript(()=>Object.defineProperty(Navigator.prototype,'onLine',{get:()=>false,configurable:true}));const exited=once(preview,'exit');preview.kill();await exited}else await context.setOffline(true);
+  const response=await page.reload({waitUntil:'domcontentloaded'});
+  if(!response?.fromServiceWorker())throw new Error('Offline navigation was not served by the cached worker');
   await page.getByText('Sin conexión · lista guardada en este dispositivo',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Marcar comprado: Pan',exact:true}).click();
   await page.getByRole('button',{name:'Volver a pendiente: Pan',exact:true}).waitFor();
   console.log('Shopping app shell and saved products work offline');
- }finally{await context.close()}
+ }finally{await context.close();if(preview&&preview.exitCode===null)preview.kill()}
 }
 
 try{
