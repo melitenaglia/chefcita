@@ -101,7 +101,8 @@ async function testSignedInMobile(){
   await page.locator('.playlist-card').filter({hasText:'Con Sofi'}).click();
   await page.getByRole('button',{name:'Opciones de Receta propia de prueba',exact:true}).click();
   await page.getByRole('button',{name:'Quitar de esta biblioteca',exact:true}).click();
-  await page.getByText('Receta propia de prueba',{exact:true}).waitFor({state:'detached'});
+  await page.locator('.recipe-actions-sheet').waitFor({state:'detached'});
+  await page.locator('.simple-recipe-list').getByText('Receta propia de prueba',{exact:true}).waitFor({state:'detached'});
   if(!shareCalls.some(x=>x.p_shared===false))throw new Error('Removing from library did not change membership');
   await page.getByRole('button',{name:'Añadir recetas guardadas',exact:true}).click();
   await page.locator('.picker-recipes button').filter({hasText:'Receta propia de prueba'}).click();
