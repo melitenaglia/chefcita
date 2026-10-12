@@ -39,3 +39,7 @@ La organización de recetas propias usa el RPC existente. libraryActions.js cons
 ## Validación
 
 Compilación e integridad. CI de navegador con sesión/API simuladas: scopes, añadir/quitar, bibliotecas, revisión sin barras sticky, cuatro densidades y ausencia de scroll horizontal. Chromium y WebKit. Las barras nativas y el teclado en un iPhone físico siguen requiriendo prueba en dispositivo.
+
+## Aspecto y descanso visual
+
+Preferencia por dispositivo: Según el dispositivo / Claro / Oscuro. Predeterminado automático; sigue cambios del sistema mientras la app está abierta. index.html aplica el aspecto antes de React para evitar destellos claros. Color de acento independiente de los fondos neutros. Ideas no se resalta cuando está inactiva. Conserva contraste, safe areas y objetivos táctiles. src/calm-appearance.css coordina las superficies de autenticación, listas, modales, fichas y configuración.

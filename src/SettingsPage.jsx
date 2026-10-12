@@ -5,7 +5,7 @@ import {userErrorMessage} from './userError.js';
 
 const settingsSections=['Pantalla','Bibliotecas'];
 
-export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange,theme='sage',onThemeChange}){
+export default function SettingsPage({session,mode='settings',initialSection='Pantalla',notice='',uiSize='normal',onUiSizeChange,theme='sage',onThemeChange,appearance='system',onAppearanceChange}){
  const [section,setSection]=useState(mode==='account'?'Cuenta':initialSection);
  const [name,setName]=useState(session.user.user_metadata?.name||'');
  const [password,setPassword]=useState('');
@@ -69,8 +69,14 @@ export default function SettingsPage({session,mode='settings',initialSection='Pa
      <small className="ui-size-device-note">Se guarda en este dispositivo. Cada móvil u ordenador puede tener un tamaño distinto.</small>
     </div>
 
+    <div className="appearance-setting">
+     <h3>Claro u oscuro</h3>
+     <div className="appearance-options" role="radiogroup" aria-label="Aspecto de la pantalla">
+      {[['system','Según el dispositivo','Se adapta a tu móvil'],['light','Claro','Fondos claros y suaves'],['dark','Oscuro','Fondos oscuros y luz suave']].map(([value,label,detail])=><button type="button" key={value} role="radio" aria-checked={appearance===value} className={appearance===value?'active':''} onClick={()=>onAppearanceChange?.(value)}><b>{label}</b><small>{detail}</small></button>)}
+     </div>
+    </div>
     <div className="theme-setting">
-     <div className="theme-setting-head"><h3>Color</h3><p>Elegí la paleta que más te guste para este dispositivo.</p></div>
+     <div className="theme-setting-head"><h3>Color de acento</h3><p>Un toque de color para botones y selecciones.</p></div>
      <div className="theme-options" role="radiogroup" aria-label="Tema de color">
       <button type="button" role="radio" aria-checked={theme==='sage'} className={theme==='sage'?'active':''} onClick={()=>onThemeChange?.('sage')}>
        <span className="theme-swatches sage"><i/><i/><i/></span><span><b>Salvia</b><small>Suave, fresca y natural</small></span>
@@ -79,7 +85,7 @@ export default function SettingsPage({session,mode='settings',initialSection='Pa
        <span className="theme-swatches olive"><i/><i/><i/></span><span><b>Oliva</b><small>Más cálida y gastronómica</small></span>
       </button>
       <button type="button" role="radio" aria-checked={theme==='tomato'} className={theme==='tomato'?'active':''} onClick={()=>onThemeChange?.('tomato')}>
-       <span className="theme-swatches tomato"><i/><i/><i/></span><span><b>Tomate</b><small>La paleta cálida actual</small></span>
+       <span className="theme-swatches tomato"><i/><i/><i/></span><span><b>Tomate</b><small>Un toque cálido</small></span>
       </button>
       <button type="button" role="radio" aria-checked={theme==='lavender'} className={theme==='lavender'?'active':''} onClick={()=>onThemeChange?.('lavender')}>
        <span className="theme-swatches lavender"><i/><i/><i/></span><span><b>Lavanda</b><small>Suave y más delicada</small></span>

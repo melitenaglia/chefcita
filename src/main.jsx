@@ -6,6 +6,7 @@ import './styles.css';
 import './mobile-polish.css';
 import './ux-simplification.css';
 import './mobile-design.css';
+import './calm-appearance.css';
 
 const root=document.getElementById('root');
 createRoot(root).render(
