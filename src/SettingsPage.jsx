@@ -61,6 +61,7 @@ export default function SettingsPage({session,mode='settings',initialSection='Pa
     <p>Elegí cuánto espacio ocupa Chefcita en este dispositivo.</p>
     <div className="ui-size-setting">
      <div className="ui-size-options" role="radiogroup" aria-label="Tamaño de la interfaz">
+      <button type="button" role="radio" aria-checked={uiSize==='supercompact'} className={uiSize==='supercompact'?'active':''} onClick={()=>onUiSizeChange?.('supercompact')}><b>Súper compacto</b><small>Texto más pequeño y listas densas</small></button>
       <button type="button" role="radio" aria-checked={uiSize==='compact'} className={uiSize==='compact'?'active':''} onClick={()=>onUiSizeChange?.('compact')}><b>Compacto</b><small>Más contenido y menos espacio</small></button>
       <button type="button" role="radio" aria-checked={uiSize==='normal'} className={uiSize==='normal'?'active':''} onClick={()=>onUiSizeChange?.('normal')}><b>Normal</b><small>Equilibrado</small></button>
       <button type="button" role="radio" aria-checked={uiSize==='large'} className={uiSize==='large'?'active':''} onClick={()=>onUiSizeChange?.('large')}><b>Grande</b><small>Más cómodo para leer y tocar</small></button>

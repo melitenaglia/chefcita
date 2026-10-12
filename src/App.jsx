@@ -16,6 +16,7 @@ export default function App(){
  const [tab,setTab]=useState('Inicio');
  const [settingsStart,setSettingsStart]=useState('Pantalla');
  const [adding,setAdding]=useState(false);
+ const [addLibraryId,setAddLibraryId]=useState('');
  const [saveNotice,setSaveNotice]=useState('');
  const [recipeRefresh,setRecipeRefresh]=useState(0);
  const [recipeListFilter,setRecipeListFilter]=useState('');
@@ -32,7 +33,7 @@ export default function App(){
  const [uiSize,setUiSize]=useState(()=>{
   try{
    const saved=localStorage.getItem('chefcita:ui-size');
-   return ['compact','normal','large'].includes(saved)?saved:'normal';
+   return ['supercompact','compact','normal','large'].includes(saved)?saved:'normal';
   }catch{return 'normal'}
  });
  const [theme,setTheme]=useState(()=>{
@@ -191,6 +192,7 @@ export default function App(){
   if(target==='Pendientes')setPendingStart('imports');
   closeMenu();
   setTab(target);
+  document.querySelector('.content')?.scrollTo(0,0);
   window.scrollTo(0,0);
  };
 
@@ -241,7 +243,7 @@ export default function App(){
    {tab==='Ideas'&&<IdeasPage session={session} onOpenRecipe={openRecipe}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme}/>} 
-   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter}/>}
+   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter} onManageLibraries={()=>openSettings('Bibliotecas')} onAddToLibrary={id=>{setAddLibraryId(id);setAdding(true)}}/>}
    {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>}
 
    {mobileMenuOpen&&<div className="mobile-drawer-backdrop" onClick={e=>{if(e.target===e.currentTarget)closeMenu()}}>
@@ -254,6 +256,7 @@ export default function App(){
      {mobileMenuLevel==='root'?<>
       <div className="drawer-group">
        <small>ACCIONES</small>
+       <button onClick={()=>openSettings('Bibliotecas')}><BookOpen/><span><b>Bibliotecas</b><small>Compartir con Sofi y gestionar invitaciones</small></span></button>
        <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Guardar receta</b><small>Instagram o escribir a mano</small></span></button>
        <button onClick={()=>goToTab('Pendientes')}><Inbox/><span><b>Recetas por revisar</b><small>Importaciones y recetas sin terminar</small></span></button>
        {!standalone&&<button onClick={installChefcita}><Download/><span><b>Instalar Chefcita</b><small>Añadila a la pantalla de inicio</small></span></button>}
@@ -307,8 +310,8 @@ export default function App(){
     </section>
    </div>}
 
-   {adding&&<AddRecipe session={session} onClose={()=>setAdding(false)} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{
-    setAdding(false);
+   {adding&&<AddRecipe session={session} initialLibraryId={addLibraryId} onClose={()=>{setAdding(false);setAddLibraryId('')}} onExistingRecipe={openRecipe} onSaved={(target='Recetas')=>{
+    setAdding(false);setAddLibraryId('');
     setRecipeRefresh(x=>x+1);
     if(target==='Por validar'){
      setPendingStart('review');setTab('Pendientes');
