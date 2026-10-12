@@ -76,9 +76,11 @@ async function testSignedInMobile(){
   if(shareCalls.length!==1||shareCalls[0].p_household_id!==libraryId||shareCalls[0].p_recipe_id!==recipeId||shareCalls[0].p_shared!==true)throw new Error('Share RPC used wrong destination');
   await page.locator('.share-panel').getByRole('button',{name:'Listo',exact:true}).click();
   const density=[];
+  const engine=browser.browserType().name();
   for(const size of ['supercompact','compact','normal','large']){
    await page.evaluate(size=>{document.documentElement.dataset.uiSize=size;document.querySelector('.recipe-library').style.minHeight='2400px'},size);
    density.push(await page.evaluate(()=>({font:parseFloat(getComputedStyle(document.querySelector('.recipe-card-body h3')).fontSize),padding:parseFloat(getComputedStyle(document.querySelector('.recipe-card-body')).paddingTop),thumb:parseFloat(getComputedStyle(document.querySelector('.mobile-menu-trigger')).height)})));
+   await page.screenshot({path:`artifacts/${engine}-${size}.png`});
    const before=await page.locator('.mobile-bottom-nav').boundingBox();
    await page.evaluate(()=>document.querySelector('.content').scrollTo(0,1200));
    const after=await page.locator('.mobile-bottom-nav').boundingBox();
@@ -110,6 +112,7 @@ async function testSignedInMobile(){
   await page.getByRole('button',{name:'Eliminar receta',exact:true}).waitFor();
   const review=await page.evaluate(()=>({actions:getComputedStyle(document.querySelector('.review-actions')).position,top:getComputedStyle(document.querySelector('.review-top-actions')).position,overflow:document.documentElement.scrollWidth>innerWidth}));
   if(review.actions!=='static'||review.top!=='static'||review.overflow)throw new Error('Review actions obscure content or overflow');
+  await page.screenshot({path:`artifacts/${engine}-review-large.png`});
   console.log('Signed-in mobile density, playlists and non-sticky review actions OK');
  }catch(error){console.error('Signed-in test DOM:',await page.locator('body').innerText());throw error}finally{await page.close()}
 }
