@@ -36,20 +36,22 @@ async function testViewport(name,viewport){
 }
 
 async function testSignedInMobile(){
- const page=await browser.newPage({viewport:{width:390,height:844}});
+ const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
  const uid='11111111-1111-4111-8111-111111111111';
  const libraryId='22222222-2222-4222-8222-222222222222';
  const recipeId='33333333-3333-4333-8333-333333333333';
  const shareCalls=[];
- await page.addInitScript(({uid})=>{
-  localStorage.setItem('sb-yfhiqdpohixsvzuudivw-auth-token',JSON.stringify({access_token:'test-session',refresh_token:'test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}}}));
- },{uid});
+ const testToken=[{alg:'HS256',typ:'JWT'},{sub:uid,role:'authenticated',exp:Math.floor(Date.now()/1000)+3600},'test-signature'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
+ await page.addInitScript(({uid,testToken})=>{
+  localStorage.setItem('sb-yfhiqdpohixsvzuudivw-auth-token',JSON.stringify({access_token:testToken,refresh_token:'test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}}}));
+ },{uid,testToken});
  const ownRecipe={id:recipeId,owner_id:uid,title:'Receta propia de prueba',created_at:'2026-10-12T10:00:00Z',recipe_library_shares:[],recipe_ingredients:[],recipe_tags:[],user_recipes:[]};
  const sharedRecipe={...ownRecipe,id:'44444444-4444-4444-8444-444444444444',owner_id:'other-user',title:'Receta de Sofi',recipe_library_shares:[{household_id:libraryId,households:{name:'Con Sofi'}}]};
  await page.route('https://*.supabase.co/**',async route=>{
   const url=new URL(route.request().url());
   const table=url.pathname.split('/').pop();
   let data=[];
+  if(table==='user')data={id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}};
   if(table==='household_members')data=[{household_id:libraryId,role:'member',joined_at:'2026-10-12'}];
   if(table==='households')data=[{id:libraryId,name:'Con Sofi',created_by:uid}];
   if(table==='recipes')data=[ownRecipe,sharedRecipe];
@@ -84,7 +86,7 @@ async function testSignedInMobile(){
    await page.evaluate(()=>document.querySelector('.content').scrollTo(0,0));
   }
   console.log('Signed-in mobile navigation, density, library scopes and sharing OK');
- }finally{await page.close()}
+ }catch(error){console.error('Signed-in test DOM:',await page.locator('body').innerText());throw error}finally{await page.close()}
 }
 
 try{
