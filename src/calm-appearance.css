@@ -68,3 +68,9 @@ html[data-appearance] :focus-visible{outline:3px solid var(--chef-primary-dark);
 @media(prefers-contrast:more){html[data-appearance]{--chef-border:#818881;--chef-muted:#4A514B}html[data-appearance="dark"]{--chef-border:#89958C;--chef-muted:#D1D9D3}}
 
 @media(max-width:760px){html[data-appearance] .app-header{position:sticky;top:0;z-index:5;background:var(--chef-bg)!important;padding:6px 0!important}html[data-appearance] .recipe-detail .detail-head{background:var(--chef-surface)!important}}
+
+html[data-appearance] .recipe-detail .ingredient-list{border-color:var(--chef-border)!important}
+html[data-appearance] .shopping-group{background:transparent!important}
+html[data-appearance] .shopping-group h2{color:var(--chef-muted)!important;font-size:var(--app-small);margin:0 0 10px}
+html[data-appearance] :is(.search-box svg,.filters-label svg){color:var(--chef-muted)!important}
+html[data-appearance] .shopping-check>span{border-color:var(--chef-muted)!important}

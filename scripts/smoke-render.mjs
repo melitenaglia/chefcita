@@ -45,7 +45,7 @@ async function testSignedInMobile(){
  await page.addInitScript(({uid,testToken})=>{
   localStorage.setItem('sb-yfhiqdpohixsvzuudivw-auth-token',JSON.stringify({access_token:testToken,refresh_token:'test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,email:'test@example.invalid',aud:'authenticated',role:'authenticated',user_metadata:{}}}));
  },{uid,testToken});
- const ownRecipe={id:recipeId,owner_id:uid,title:'Receta propia de prueba',created_at:'2026-10-12T10:00:00Z',review_status:'recipe',recipe_library_shares:[],servings:2,recipe_ingredients:[{id:'ingredient-1',original_name:'Arroz',quantity:200,quantity_text:'200',unit:'g',sort_order:1},{id:'ingredient-2',original_name:'Sal',quantity_text:'al gusto',sort_order:2}],recipe_tags:[],recipe_steps:[{id:'step-1',step_number:1,instruction:'Cociná el arroz.'},{id:'step-2',step_number:2,instruction:'Serví y disfrutá.'}],recipe_sources:[{source_url:'https://www.instagram.com/p/test/',is_primary:true}],user_recipes:[]};
+ const ownRecipe={id:recipeId,owner_id:uid,title:'Receta propia de prueba',created_at:'2026-10-12T10:00:00Z',review_status:'recipe',recipe_library_shares:[],servings:2,recipe_ingredients:[{id:'ingredient-1',original_name:'Arroz',quantity:200,quantity_text:'200',unit:'g',sort_order:1},{id:'ingredient-2',original_name:'Sal',quantity_text:'al gusto',sort_order:2}],recipe_tags:[],recipe_steps:[{id:'step-1',step_number:1,instruction:'Cociná el arroz.'},{id:'step-2',step_number:2,instruction:'Serví y disfrutá.'}],recipe_sources:[{source_url:'https://www.instagram.com/p/test/',is_primary:true,original_copy:'Texto original de prueba.'}],user_recipes:[]};
  const sharedRecipe={...ownRecipe,id:'44444444-4444-4444-8444-444444444444',owner_id:'other-user',title:'Receta de Sofi',recipe_library_shares:[{household_id:libraryId,households:{name:'Con Sofi'}}]};
  await page.route('https://*.supabase.co/**',async route=>{
   const url=new URL(route.request().url());
@@ -218,6 +218,8 @@ async function testOfflineShopping(){
  try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
   await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+  await page.evaluate(async()=>{if(!await caches.match('/'))throw new Error('App shell not cached')});
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.getByText('Sin conexión · lista guardada en este dispositivo',{exact:true}).waitFor();

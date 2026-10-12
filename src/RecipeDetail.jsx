@@ -28,6 +28,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
  const swipeStart=useRef(null);
+ useEffect(()=>{const changed=e=>{const update=e.detail?.find(x=>x.id===recipeId);if(update)setRecipe(r=>r?{...r,image_url:update.image_url}:r)};window.addEventListener('chefcita-photos',changed);return()=>window.removeEventListener('chefcita-photos',changed)},[recipeId]);
 
  const load=async()=>{
   setLoading(true);setError('');
