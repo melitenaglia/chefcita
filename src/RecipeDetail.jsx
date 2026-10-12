@@ -9,12 +9,12 @@ import RecipeSharePanel from './RecipeSharePanel.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged,viewingLibraryId=null}){
+export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged,viewingLibraryId=null,initialEditing=false}){
  const [recipe,setRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
- const [editing,setEditing]=useState(false);
+ const [editing,setEditing]=useState(initialEditing);
  const [sharing,setSharing]=useState(false);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});

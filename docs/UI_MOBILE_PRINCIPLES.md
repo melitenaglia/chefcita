@@ -6,7 +6,7 @@ Referencia actualizada el 12/10/2026. Público: Melisa, Sofi, mamá, tía y abue
 
 - Inicio: guardar una receta, ver las últimas añadidas y favoritas.
 - Ideas: página propia para elegir qué cocinar.
-- Recetas: buscar por receta/ingrediente y filtrar por estado.
+- Recetas: lista como Inicio (miniatura cuadrada, título, categoría/tipo y tiempo). Acciones en el menú ⋯ de cada fila. Buscar por receta/ingrediente; filtros de estado/categoría/nivel/orden colapsados. Evitar chips de ingredientes, etiquetas y botones de gestión en cada fila.
 - Bibliotecas: colecciones tipo playlists; organizar después de guardar y revisar.
 - Ficha: abrir fuente original, leer ingredientes/preparación, marcar favorita/probada y guardar notas.
 
