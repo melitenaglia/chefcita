@@ -210,7 +210,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
     const tried=personal?.tried_status==='tried';
     return <article className="recipe-card clickable" key={recipe.id} tabIndex={0} aria-label={recipe.title} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDetail(recipe.id)}}} onClick={()=>openDetail(recipe.id,scope==='shared'?(libraryFilter||(recipe.recipe_library_shares||[]).find(x=>libraries.some(l=>l.id===x.household_id))?.household_id):null)}>
      <div className="recipe-card-top">
-      {recipe.image_url?<img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.style.display='none'}}/>:<div className="recipe-placeholder"><ChefHat/></div>}
+      {recipe.image_url?<img src={recipe.image_url} alt="" onError={()=>setRecipes(list=>list.map(item=>item.id===recipe.id?{...item,image_url:null}:item))}/>:<div className="recipe-placeholder"><ChefHat/></div>}
       <button className={personal?.is_favorite?'favorite active':'favorite'} onClick={e=>toggleFavorite(recipe,e)} aria-label={personal?.is_favorite?'Quitar de favoritas':'Marcar favorita'} aria-pressed={Boolean(personal?.is_favorite)}><Heart/></button>
      </div>
      <div className="recipe-card-body">

@@ -174,3 +174,13 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--chef-primary);outli
  html[data-ui-size] .theme-options small{font-size:var(--app-small)!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* Sin foto, mostrar una fila útil en lugar de reservar un bloque vacío. */
+@media(max-width:760px){
+ html[data-ui-size] .recipe-card:has(.recipe-placeholder){display:grid!important;grid-template-columns:var(--app-thumb) minmax(0,1fr)!important}
+ html[data-ui-size] .recipe-card:has(.recipe-placeholder) .recipe-card-top{width:var(--app-thumb)!important;height:100%!important;min-height:var(--app-thumb)!important;background:var(--chef-primary-soft)!important}
+ html[data-ui-size] .recipe-card:has(.recipe-placeholder) .recipe-placeholder svg{width:var(--app-icon)!important;height:var(--app-icon)!important}
+ html[data-ui-size] .recipe-card:has(.recipe-placeholder) .favorite{left:calc((var(--app-thumb) - 44px)/2)!important;right:auto!important}
+ html[data-ui-size="large"] .recipe-quick-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;overflow:visible!important}
+ html[data-ui-size="large"] .recipe-quick-tabs button{min-width:0!important}
+}
