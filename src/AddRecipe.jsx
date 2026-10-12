@@ -25,10 +25,11 @@ function isInstagramRecipeUrl(value){
 export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,initialLibraryId=''}){
  const [mode,setMode]=useState('link');
  const [libraries,setLibraries]=useState([]);
+ const [librariesLoading,setLibrariesLoading]=useState(true);
  const [destination,setDestination]=useState(initialLibraryId);
  const [destinationError,setDestinationError]=useState('');
  const [savedManualId,setSavedManualId]=useState(null);
- useEffect(()=>{loadSharedLibraries(session.user.id).then(result=>{setLibraries(result.data||[]);if(result.error)setDestinationError('No pude cargar las bibliotecas. Cerrá y volvé a intentar antes de compartir.');})},[session.user.id]);
+ useEffect(()=>{loadSharedLibraries(session.user.id).then(result=>{setLibraries(result.data||[]);if(result.error)setDestinationError('No pude cargar las bibliotecas. Cerrá y volvé a intentar antes de compartir.');setLibrariesLoading(false);})},[session.user.id]);
  const [sourceUrl,setSourceUrl]=useState('');
  const [pastedContent,setPastedContent]=useState('');
  const [importStrategy,setImportStrategy]=useState('smart');
@@ -349,8 +350,9 @@ export default function AddRecipe({session,onClose,onSaved,onExistingRecipe,init
 
    <div className="save-destination">
     <label htmlFor="recipe-destination">¿Dónde querés guardar la receta?</label>
-    <select id="recipe-destination" value={destination} disabled={busy||Boolean(pendingImportId)||Boolean(savedManualId)} onChange={e=>setDestination(e.target.value)}>
-     <option value="">Solo en mis recetas propias</option>
+    <select id="recipe-destination" value={destination} disabled={librariesLoading||busy||Boolean(pendingImportId)||Boolean(savedManualId)} onChange={e=>setDestination(e.target.value)}>
+     <option value="">{librariesLoading?'Cargando bibliotecas…':'Solo en mis recetas propias'}</option>
+     {destination&&!libraries.some(x=>x.id===destination)&&<option value={destination}>Biblioteca elegida · {librariesLoading?'cargando…':'no disponible'}</option>}
      {libraries.map(x=><option key={x.id} value={x.id}>{x.name} · compartida</option>)}
     </select>
     {destination&&<small>También sigue en Propias. Se compartirá cuando termine de procesarse; después revisala para que aparezca en el recetario compartido.</small>}

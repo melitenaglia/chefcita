@@ -68,6 +68,7 @@ async function testSignedInMobile(){
   if(await page.getByText('Receta propia de prueba',{exact:true}).count())throw new Error('Unshared recipe leaked into Compartidas');
   await page.locator('.shared-library-access select').selectOption(libraryId);
   await page.getByRole('button',{name:'Añadir receta a esta biblioteca',exact:true}).click();
+  await page.locator('#recipe-destination option').filter({hasText:'Con Sofi'}).waitFor({state:'attached'});
   if(await page.locator('#recipe-destination').inputValue()!==libraryId)throw new Error('Destination was not passed to add form');
   await page.locator('.form-head>button').click();
   await page.getByRole('button',{name:'Propias',exact:true}).click();
