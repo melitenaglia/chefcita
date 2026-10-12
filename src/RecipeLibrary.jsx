@@ -9,7 +9,7 @@ import {userErrorMessage} from './userError.js';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeLibrary({session,mode='all',initialRecipeId=null,initialPersonalFilter='',onManageLibraries,initialLibraryId='',libraryName='',onChooseRecipes,onMembershipChanged}){
+export default function RecipeLibrary({session,mode='all',initialRecipeId=null,initialPersonalFilter='',onManageLibraries,initialLibraryId='',libraryName='',onChooseRecipes,onMembershipChanged,onOpenShopping}){
  const [recipes,setRecipes]=useState([]);
  const [libraries,setLibraries]=useState([]);
  const [scope,setScope]=useState(initialLibraryId?'shared':'personal');
@@ -64,6 +64,7 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
  };
 
  useEffect(()=>{load()},[]);
+ useEffect(()=>{const changed=e=>setRecipes(rows=>rows.map(r=>{const update=e.detail?.find(x=>x.id===r.id);return update?{...r,image_url:update.image_url}:r}));window.addEventListener('chefcita-photos',changed);return()=>window.removeEventListener('chefcita-photos',changed)},[]);
  useEffect(()=>{
   const handlePopState=()=>{const id=window.history.state?.chefcitaRecipeId||null;setSelectedId(id);if(!id)setSelectedLibraryContext(null)};
   window.addEventListener('popstate',handlePopState);
@@ -236,6 +237,6 @@ export default function RecipeLibrary({session,mode='all',initialRecipeId=null,i
   </div>}
 
   {sharingRecipe&&<RecipeSharePanel onManageLibraries={onManageLibraries} recipeId={sharingRecipe.id} ownerId={sharingRecipe.owner_id} session={session} onClose={()=>setSharingRecipe(null)} onChanged={()=>{load();onMembershipChanged?.()}}/>}
-  {selectedId&&<RecipeDetail key={selectedId} initialEditing={startEditing} recipeId={selectedId} session={session} viewingLibraryId={selectedLibraryContext} onClose={closeDetail} onDeleted={()=>load()} onChanged={()=>load()}/>}
+  {selectedId&&<RecipeDetail key={selectedId} initialEditing={startEditing} onOpenShopping={onOpenShopping} recipeId={selectedId} session={session} viewingLibraryId={selectedLibraryContext} onClose={closeDetail} onDeleted={()=>load()} onChanged={()=>load()}/>}
  </section>;
 }

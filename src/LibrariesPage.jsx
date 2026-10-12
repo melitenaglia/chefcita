@@ -7,7 +7,7 @@ import {userErrorMessage} from './userError.js';
 import RecipeLibrary from './RecipeLibrary.jsx';
 import SharedLibrariesSettings from './SharedLibrariesSettings.jsx';
 
-export default function LibrariesPage({session,initialLibraryId=''}){
+export default function LibrariesPage({session,onOpenShopping,initialLibraryId=''}){
  const [libraries,setLibraries]=useState([]);
  const [selected,setSelected]=useState(initialLibraryId);
  const [loading,setLoading]=useState(true);
@@ -59,7 +59,7 @@ export default function LibrariesPage({session,initialLibraryId=''}){
   {error&&<p role="alert">{error}<button onClick={load}>Reintentar</button></p>}
   {loading&&!libraries.length?<p role="status">Cargando bibliotecas…</p>:selected&&library?<>
    <div className="playlist-title"><BookOpen/><div><h2>{library.name}</h2><p>{library.recipes.length} recetas · {library.role==='owner'?'Tu biblioteca':'Biblioteca compartida'}</p></div></div>
-   <RecipeLibrary key={`${selected}-${refresh}`} session={session} initialLibraryId={selected} libraryName={library.name} onChooseRecipes={openPicker} onManageLibraries={()=>setManaging(true)} onMembershipChanged={()=>setRefresh(x=>x+1)}/>
+   <RecipeLibrary onOpenShopping={onOpenShopping} key={`${selected}-${refresh}`} session={session} initialLibraryId={selected} libraryName={library.name} onChooseRecipes={openPicker} onManageLibraries={()=>setManaging(true)} onMembershipChanged={()=>setRefresh(x=>x+1)}/>
   </>:<>
    {!libraries.length&&<div className="library-state"><BookOpen/><h2>Tu primera biblioteca</h2><p>Por ejemplo: «Con Sofi», «Cenas rápidas» o «Postres». Podés usarla solo vos o invitar a alguien.</p><button className="secondary" onClick={()=>setManaging(true)}><Plus/>Crear biblioteca</button></div>}
    <div className="playlist-grid">{libraries.map(l=><button key={l.id} className="playlist-card" onClick={()=>setSelected(l.id)}><span className="playlist-cover">{l.recipes[0]?.recipes?.image_url?<img src={l.recipes[0].recipes.image_url} alt=""/>:<BookOpen/>}</span><span><b>{l.name}</b><small>{l.recipes.length} recetas · {l.role==='owner'?'La administrás vos':'Compartida con vos'}</small></span></button>)}</div>

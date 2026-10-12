@@ -1,5 +1,5 @@
 import React,{useEffect,useLayoutEffect,useState} from 'react';
-import {Heart,Inbox,BookOpen,Plus,ChefHat,CheckCircle2,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight,Download,Share2,Smartphone} from 'lucide-react';
+import {Heart,Inbox,BookOpen,Plus,ChefHat,CheckCircle2,Home,LogOut,UserRound,Settings,Menu,X,WandSparkles,ChevronLeft,ChevronRight,Download,Share2,Smartphone,ShoppingBasket,FolderHeart} from 'lucide-react';
 import {supabase} from './supabase.js';
 import Auth from './Auth.jsx';
 import SettingsPage from './SettingsPage.jsx';
@@ -9,11 +9,15 @@ import PendingHub from './PendingHub.jsx';
 import HomeDashboard from './HomeDashboard.jsx';
 import IdeasPage from './IdeasPage.jsx';
 import useModalAccessibility from './useModalAccessibility.js';
+import usePhotoRecovery from './usePhotoRecovery.js';
+import ShoppingList from './ShoppingList.jsx';
 import LibrariesPage from './LibrariesPage.jsx';
 
 export default function App(){
  useModalAccessibility();
  const [session,setSession]=useState(null);
+ usePhotoRecovery(session);
+ useEffect(()=>{if(session?.user?.id){try{localStorage.setItem('chefcita:shopping:last-user',session.user.id)}catch{}}},[session?.user?.id]);
  const [loading,setLoading]=useState(true);
  const [authNotice,setAuthNotice]=useState('');
  const [tab,setTab]=useState('Inicio');
@@ -100,6 +104,8 @@ export default function App(){
   let handlingConfirmation=false;
 
   const initAuth=async()=>{
+   if(!navigator.onLine){setLoading(false);return}
+
    const params=new URLSearchParams(window.location.search);
    const tokenHash=params.get('token_hash');
    const type=params.get('type');
@@ -148,9 +154,10 @@ export default function App(){
  },[session]);
 
  if(loading)return <div className="splash"><ChefHat/><span>Chefcita</span></div>;
+ if(!session&&!navigator.onLine){let id;try{id=localStorage.getItem('chefcita:shopping:last-user')}catch{}if(id)return <div className="shell"><main className="content"><h1>Lista de compra</h1><p className="tool-note">Sin conexión · lista guardada en este dispositivo</p><ShoppingList session={{user:{id}}}/><button className="secondary" onClick={()=>window.location.reload()}>Volver a conectar</button></main></div>}
  if(!session)return <Auth notice={authNotice} onNoticeConsumed={()=>setAuthNotice('')}/>;
 
- const nav=[['Inicio',Home],['Ideas',WandSparkles],['Recetas',BookOpen],['Bibliotecas',BookOpen],['Pendientes',Inbox]];
+ const nav=[['Inicio',Home],['Ideas',WandSparkles],['Recetas',BookOpen],['Compra',ShoppingBasket],['Bibliotecas',FolderHeart],['Pendientes',Inbox]];
  const mobileNav=[['Inicio',Home],['Ideas',WandSparkles],['Recetas',BookOpen]];
 
  const closeMenu=()=>{
@@ -245,7 +252,7 @@ export default function App(){
   <main className="content">
    <header className="app-header">
     <button className="mobile-menu-trigger" onClick={()=>{setMobileMenuLevel('root');setMobileMenuOpen(true)}} aria-label="Abrir menú"><Menu/></button>
-    <div className="app-header-title"><p className="eyebrow">CHEFCITA</p><h1>{tab==='Pendientes'?'Revisar recetas':tab}</h1></div>
+    <div className="app-header-title"><p className="eyebrow">CHEFCITA</p><h1>{tab==='Pendientes'?'Revisar recetas':tab==='Compra'?'Lista de compra':tab}</h1></div>
     <div className="header-actions">
      <button className="add" onClick={()=>setAdding(true)}><Plus/><span>Añadir receta</span></button>
     </div>
@@ -253,11 +260,12 @@ export default function App(){
 
    {saveNotice&&<div className="save-notice" role="status"><CheckCircle2/><span>{saveNotice}</span></div>}
    {tab==='Inicio'&&<HomeDashboard session={session} onNavigate={goToTab} onAdd={()=>setAdding(true)} onOpenRecipe={openRecipe}/>}
-   {tab==='Bibliotecas'&&<LibrariesPage session={session} initialLibraryId={libraryStart}/>}
+   {tab==='Compra'&&<ShoppingList session={session}/>}
+   {tab==='Bibliotecas'&&<LibrariesPage onOpenShopping={()=>goToTab('Compra')} session={session} initialLibraryId={libraryStart}/>}
    {tab==='Ideas'&&<IdeasPage session={session} onOpenRecipe={openRecipe}/>}
    {tab==='Mi cuenta'&&<SettingsPage session={session} mode="account" uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme} appearance={appearance} onAppearanceChange={setAppearance}/>}
    {tab==='Configuración'&&<SettingsPage session={session} mode="settings" initialSection={settingsStart} notice={inviteNotice} uiSize={uiSize} onUiSizeChange={setUiSize} theme={theme} onThemeChange={setTheme} appearance={appearance} onAppearanceChange={setAppearance}/>}
-   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter} onManageLibraries={()=>{setLibraryStart('');goToTab('Bibliotecas')}}/>}
+   {tab==='Recetas'&&<RecipeLibrary key={`recipes-${recipeRefresh}-${recipeListFilter}`} session={session} initialRecipeId={openRecipeId} initialPersonalFilter={recipeListFilter} onOpenShopping={()=>goToTab('Compra')} onManageLibraries={()=>{setLibraryStart('');goToTab('Bibliotecas')}}/>}
    {tab==='Pendientes'&&<PendingHub key={`pending-${recipeRefresh}-${pendingStart}`} initialTab={pendingStart} onOpenRecipe={openRecipe}/>}
 
    {mobileMenuOpen&&<div className="mobile-drawer-backdrop" onClick={e=>{if(e.target===e.currentTarget)closeMenu()}}>
@@ -270,7 +278,8 @@ export default function App(){
      {mobileMenuLevel==='root'?<>
       <div className="drawer-group">
        <small>ACCIONES</small>
-       <button onClick={()=>{setLibraryStart('');goToTab('Bibliotecas')}}><BookOpen/><span><b>Bibliotecas</b><small>Tus colecciones y recetas compartidas</small></span></button>
+       <button onClick={()=>goToTab('Compra')}><ShoppingBasket/><span><b>Lista de compra</b><small>Ingredientes que te faltan</small></span></button>
+       <button onClick={()=>{setLibraryStart('');goToTab('Bibliotecas')}}><FolderHeart/><span><b>Bibliotecas</b><small>Tus colecciones y recetas compartidas</small></span></button>
        <button onClick={()=>{closeMenu();setAdding(true)}}><Plus/><span><b>Guardar receta</b><small>Pegar enlace o escribir a mano</small></span></button>
        <button onClick={()=>goToTab('Pendientes')}><Inbox/><span><b>Recetas por revisar</b><small>Importaciones y recetas sin terminar</small></span></button>
        {!standalone&&<button onClick={installChefcita}><Download/><span><b>Instalar Chefcita</b><small>Añadila a la pantalla de inicio</small></span></button>}
@@ -285,7 +294,7 @@ export default function App(){
       <div className="drawer-group settings-submenu">
        <small>CONFIGURACIÓN</small>
        <button onClick={()=>openSettings('Pantalla')}><Settings/><span><b>Pantalla</b><small>Tamaño y densidad de interfaz</small></span></button>
-       <button onClick={()=>{setLibraryStart('');goToTab('Bibliotecas')}}><BookOpen/><span><b>Bibliotecas</b><small>Recetas compartidas e invitaciones</small></span></button>
+       <button onClick={()=>{setLibraryStart('');goToTab('Bibliotecas')}}><FolderHeart/><span><b>Bibliotecas</b><small>Recetas compartidas e invitaciones</small></span></button>
       </div>
      </>}
     </section>

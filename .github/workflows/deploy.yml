@@ -23,6 +23,7 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run verify
+      - run: node scripts/test-cooking-tools.mjs
       - name: Install browser smoke-test dependency
         run: |
           npm install --no-save playwright@1.55.0
@@ -33,6 +34,7 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
           node scripts/smoke-render.mjs
       - name: Upload mobile visual checks
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mobile-ui-checks

@@ -1,21 +1,30 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3,Share2,LockKeyhole} from 'lucide-react';
+import {X,ChevronLeft,Heart,CheckCircle2,Circle,Star,ExternalLink,Clock,ChefHat,Trash2,Save,Edit3,Share2,LockKeyhole,MoreHorizontal,ShoppingBasket,Camera,UtensilsCrossed} from 'lucide-react';
 import {canOrganizeRecipe} from './libraryActions.js';
 import {supabase} from './supabase.js';
 import {userErrorMessage} from './userError.js';
 import RecipeEditor from './RecipeEditor.jsx';
 import {formatIngredientDisplay} from './recipeFormat.js';
+import CookingMode from './CookingMode.jsx';
+import {ingredientView,addRecipeToShopping} from './cookingTools.js';
+import {uploadRecipePhoto,recoverRecipePhoto} from './recipePhotos.js';
 import RecipeSharePanel from './RecipeSharePanel.jsx';
 
 const levelLabel={initial:'Inicial',intermediate:'Intermedio',expert:'Experto'};
 
-export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged,viewingLibraryId=null,initialEditing=false}){
+export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChanged,viewingLibraryId=null,initialEditing=false,onOpenShopping}){
  const [recipe,setRecipe]=useState(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
  const [editing,setEditing]=useState(initialEditing);
  const [sharing,setSharing]=useState(false);
+ const [menu,setMenu]=useState(false);
+ const [cooking,setCooking]=useState(false);
+ const [portions,setPortions]=useState(null);
+ const [notice,setNotice]=useState('');
+ const [photoBusy,setPhotoBusy]=useState(false);
+ const photoInput=useRef(null);
  const [notes,setNotes]=useState('');
  const [personal,setPersonal]=useState({is_favorite:false,tried_status:'to_try',rating:null,tried_at:null});
  const swipeStart=useRef(null);
@@ -27,6 +36,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
    .eq('id',recipeId).single();
   if(error){setError(userErrorMessage(error,'No pude cargar esta receta. Probá de nuevo.'));setLoading(false);return}
   setRecipe(data);
+  setPortions(data.servings>0?Number(data.servings):null);
   const p=data.user_recipes?.[0]||{};
   setPersonal({
    is_favorite:p.is_favorite||false,
@@ -91,7 +101,22 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
   onClose();
  };
 
- const ingredientDisplay=item=>formatIngredientDisplay(item);
+ const basePortions=Number(recipe?.servings)||0;
+ const ratio=basePortions>0&&portions>0?portions/basePortions:1;
+ const ingredientDisplay=item=>ingredientView(item,ratio);
+ const addShopping=()=>{
+  try{const result=addRecipeToShopping(session.user.id,recipe,ingredients,ratio,portions);setNotice(result.count?`${result.count} ingredientes añadidos a tu compra.`:'Lista de compra actualizada.');setMenu(false)}catch{setError('No pude guardar la lista de compra en este navegador.')}
+ };
+ const changePhoto=async file=>{
+  if(!file||!isOwner||photoBusy)return;
+  setPhotoBusy(true);setError('');setMenu(false);
+  try{const url=await uploadRecipePhoto(file,recipe.id,session.user.id);setRecipe(r=>({...r,image_url:url}));setNotice('Foto guardada.');onChanged?.()}catch(e){setError(e.message)}finally{setPhotoBusy(false);if(photoInput.current)photoInput.current.value=''}
+ };
+ const recoverPhoto=async()=>{
+  if(!isOwner||photoBusy)return;setPhotoBusy(true);setMenu(false);setError('');
+  try{const url=await recoverRecipePhoto(recipe.id);setRecipe(r=>({...r,image_url:url}));setNotice('Foto recuperada y guardada.');onChanged?.()}catch(e){setError(e.message)}finally{setPhotoBusy(false)}
+ };
+
  const startEdgeSwipe=e=>{
   const standalone=window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
   const touch=e.touches?.[0];
@@ -118,6 +143,7 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
     <span className="detail-head-label">Receta</span>
     <button className="detail-back" onClick={onClose} aria-label="Volver a recetas"><ChevronLeft/><span>Volver</span></button>
     <div className="detail-head-actions">
+     <button className="recipe-more" onClick={()=>setMenu(true)} aria-label="Opciones de la receta"><MoreHorizontal/></button>
      <button className="close-detail" onClick={onClose} aria-label="Cerrar"><X/></button>
     </div>
    </div>
@@ -132,11 +158,12 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
      <ExternalLink/><span>Ver receta original</span>
     </a>}
 
-    {recipe.image_url&&<div className="detail-image"><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
+    {recipe.image_url&&<div className="detail-image" key={recipe.image_url}><img src={recipe.image_url} alt="" onError={e=>{e.currentTarget.parentElement.style.display='none'}}/></div>}
 
-    <div className="detail-action-row">     {canOrganizeRecipe(recipe.owner_id,session.user.id)&&<button className="share-recipe" onClick={()=>setSharing(true)}><Share2/>Añadir a biblioteca</button>}
-     {isOwner&&!sharedReadOnly&&<button className="edit-recipe" onClick={()=>setEditing(true)}><Edit3/>Editar</button>}
-</div>
+    <div className="recipe-cooking-actions"><button className="primary" onClick={()=>setCooking(true)}><UtensilsCrossed/>Cocinar esta receta</button><button className="secondary" onClick={addShopping} disabled={!ingredients.length}><ShoppingBasket/>Añadir a la compra</button></div>
+    {notice&&<div className="tool-notice" role="status">{notice}{notice.includes('compra')&&onOpenShopping&&<button onClick={onOpenShopping}>Ver lista</button>}</div>}
+    {photoBusy&&<p role="status">Guardando foto…</p>}
+    {isOwner&&<input ref={photoInput} className="photo-file-input" type="file" accept="image/*" aria-label="Elegir foto de la receta" onChange={e=>changePhoto(e.target.files?.[0])}/>}
     <div className="detail-summary">
      <div className="recipe-meta">{recipe.categories?.name&&<span>{recipe.categories.name}</span>}{recipe.meal_types?.name&&<span>{recipe.meal_types.name}</span>}{recipe.level&&<span>{levelLabel[recipe.level]}</span>}</div>
      {recipe.description&&<p>{recipe.description}</p>}
@@ -149,16 +176,10 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
      {tags.length>0&&<div className="card-tags">{tags.map(tag=><span key={tag}>{tag}</span>)}</div>}
     </div>
 
-    <section className="personal-quick" aria-label="Mi receta">
-     <div className="personal-actions">
-      <button className={personal.is_favorite?'personal-action active':'personal-action'} onClick={()=>savePersonal({is_favorite:!personal.is_favorite})} disabled={busy}><Heart/>{personal.is_favorite?'Favorita':'Marcar favorita'}</button>
-      <button className={personal.tried_status==='tried'?'personal-action active tried':'personal-action'} onClick={()=>savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'})} disabled={busy}>{personal.tried_status==='tried'?<CheckCircle2/>:<Circle/>}{personal.tried_status==='tried'?'Probada':'Por probar'}</button>
-     </div>
      {personal.tried_status==='tried'&&<div className="rating-row"><span>Mi valoración</span><div>{[1,2,3,4,5].map(n=><button key={n} disabled={busy} onClick={()=>savePersonal({rating:n})} aria-label={n+' estrellas'}><Star className={(personal.rating||0)>=n?'filled':''}/></button>)}</div>{!personal.rating&&<p className="rating-prompt">Tocá de 1 a 5 estrellas.</p>}</div>}
-    </section>
-
     <section className="detail-section ingredients-section">
-     <h3>Ingredientes</h3>
+     <div className="ingredients-heading"><h3>Ingredientes</h3>{basePortions>0&&<div className="portion-control" aria-label="Ajustar porciones"><button aria-label="Menos porciones" disabled={portions<=1} onClick={()=>setPortions(n=>Math.max(1,n-1))}>−</button><label><input type="number" min="1" max="100" value={portions??basePortions} aria-label="Porciones" onChange={e=>{const n=Number(e.target.value);if(Number.isFinite(n)&&n>=1&&n<=100)setPortions(n)}}/><span>{recipe.servings_unit||'porciones'}</span></label><button aria-label="Más porciones" disabled={portions>=100} onClick={()=>setPortions(n=>Math.min(100,n+1))}>+</button></div>}</div>
+     {ratio!==1&&<p className="tool-note">Cantidades adaptadas. Los textos como «al gusto» se conservan. <button onClick={()=>setPortions(basePortions)}>Volver al original</button></p>}
      <div className="ingredient-group">
       {secondaryIngredients.length>0&&<h4>Principales</h4>}
       {mainIngredients.length?<div className="ingredient-list">{mainIngredients.map(item=>{const d=ingredientDisplay(item);return <div key={item.id}><span className="ingredient-quantity">{d.quantity}</span><b>{d.name}</b>{d.note&&<small>{d.note}</small>}</div>})}</div>:<p className="muted">No hay ingredientes principales cargados.</p>}
@@ -194,9 +215,15 @@ export default function RecipeDetail({recipeId,session,onClose,onDeleted,onChang
 
     <div className="detail-footer">
      <small>{recipe.reviewed_at?'Revisada '+new Date(recipe.reviewed_at).toLocaleDateString('es-ES'):'Guardada '+new Date(recipe.created_at).toLocaleDateString('es-ES')}</small>
-     {isOwner&&!sharedReadOnly&&<button className="delete-recipe" disabled={busy} onClick={deleteRecipe}><Trash2/>Eliminar receta</button>}
     </div>
    </>}
+   {menu&&recipe&&<div className="share-panel-backdrop"><section className="share-panel recipe-actions-sheet" role="dialog" aria-modal="true" aria-label="Acciones de la receta"><div className="share-panel-head"><b>{recipe.title}</b><button aria-label="Cerrar" onClick={()=>setMenu(false)}><X/></button></div><div className="recipe-action-list">
+    <button disabled={busy} onClick={async()=>{await savePersonal({is_favorite:!personal.is_favorite});setMenu(false)}}><Heart/>{personal.is_favorite?'Quitar de favoritas':'Marcar favorita'}</button>
+    <button disabled={busy} onClick={async()=>{await savePersonal({tried_status:personal.tried_status==='tried'?'to_try':'tried'});setMenu(false)}}><CheckCircle2/>{personal.tried_status==='tried'?'Marcar por probar':'Marcar como probada'}</button>
+    {canOrganizeRecipe(recipe.owner_id,session.user.id)&&<button onClick={()=>{setMenu(false);setSharing(true)}}><Share2/>Añadir a biblioteca</button>}
+    {isOwner&&<><button onClick={()=>{setMenu(false);setEditing(true)}}><Edit3/>Editar receta</button><button disabled={photoBusy} onClick={()=>photoInput.current?.click()}><Camera/>Cambiar foto desde galería</button><button disabled={photoBusy||!source?.source_url} onClick={recoverPhoto}><Camera/>Recuperar foto original</button><button className="delete-recipe" disabled={busy} onClick={deleteRecipe}><Trash2/>Eliminar receta</button></>}
+   </div></section></div>}
+   {cooking&&recipe&&<CookingMode recipe={recipe} ingredients={ingredients} steps={steps} ratio={ratio} portions={portions} sourceUrl={source?.source_url} onClose={()=>setCooking(false)}/>}
    {sharing&&recipe&&<RecipeSharePanel recipeId={recipe.id} ownerId={recipe.owner_id} session={session} onClose={()=>setSharing(false)} onChanged={onChanged}/>}
   </article>
  </div>;

@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Instagram} from 'lucide-react';
+import {BookOpen,Heart,Inbox,ChefHat,Clock,ArrowRight,Plus,ShoppingBasket,FolderHeart} from 'lucide-react';
 import {supabase} from './supabase.js';
 
 const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.message||error||''));
@@ -7,7 +7,7 @@ const isJwtClockError=error=>/jwt issued at future|jwt/i.test(String(error?.mess
 function RecipePreviews({recipes,onOpenRecipe}){
  return <div className="recent-grid">
   {recipes.map(recipe=><button type="button" key={recipe.id} onClick={()=>onOpenRecipe?.(recipe.id)}>
-   <div className="recent-thumb">{recipe.image_url?<img src={recipe.image_url} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
+   <div className="recent-thumb">{recipe.image_url?<img key={recipe.image_url} src={recipe.image_url} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display='none'}}/>:<ChefHat/>}</div>
    <span><b>{recipe.title}</b><small>{[recipe.categories?.name,recipe.meal_types?.name].filter(Boolean).join(' · ')||'Receta'}</small>{recipe.total_minutes!=null&&<em><Clock/>{recipe.total_minutes} min</em>}</span>
   </button>)}
  </div>;
@@ -18,6 +18,7 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
  const [loading,setLoading]=useState(true);
  const [summaryReady,setSummaryReady]=useState(false);
  const [retryKey,setRetryKey]=useState(0);
+ useEffect(()=>{const changed=e=>setData(d=>{const apply=rows=>rows.map(r=>{const u=e.detail?.find(x=>x.id===r.id);return u?{...r,image_url:u.image_url}:r});return {...d,recent:apply(d.recent),favoriteRecipes:apply(d.favoriteRecipes)}});window.addEventListener('chefcita-photos',changed);return()=>window.removeEventListener('chefcita-photos',changed)},[]);
 
  useEffect(()=>{
   let active=true;
@@ -86,15 +87,16 @@ export default function HomeDashboard({onNavigate,onAdd,onOpenRecipe,session}){
  return <div className="home-dashboard">
   <section className="home-library-banner home-save-section">
    <div>
-    <small>GUARDAR UNA RECETA</small>
-    <b>Guardá enlaces de Instagram o escribí tus recetas.</b>
+    <b>Tu próxima receta</b>
    </div>
    <button type="button" className="welcome-instagram" onClick={onAdd}>
-    <Instagram/>
+    <Plus/>
     <span><b>Guardar receta</b><small>Desde Instagram o escribirla a mano</small></span>
     <ArrowRight/>
    </button>
   </section>
+
+  <div className="home-utility"><button onClick={()=>onNavigate('Compra')}><ShoppingBasket/><b>Lista de compra</b><ArrowRight/></button><button onClick={()=>onNavigate('Bibliotecas')}><FolderHeart/><b>Bibliotecas</b><ArrowRight/></button></div>
 
   <section className="home-recent">
    <div className="home-section-head">
