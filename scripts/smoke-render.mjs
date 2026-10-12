@@ -70,16 +70,22 @@ async function testSignedInMobile(){
   await page.getByText('Receta de Sofi',{exact:true}).waitFor();
   if(await page.getByText('Receta propia de prueba',{exact:true}).count())throw new Error('Unshared recipe leaked into Compartidas');
   await page.getByRole('button',{name:'Propias',exact:true}).click();
+  await page.getByRole('button',{name:'Opciones de Receta propia de prueba',exact:true}).click();
   await page.getByRole('button',{name:'Añadir a biblioteca',exact:true}).click();
   await page.locator('.share-library-list button').click();
   await page.locator('.share-library-list button.active').waitFor();
   if(shareCalls.length!==1||shareCalls[0].p_household_id!==libraryId||shareCalls[0].p_recipe_id!==recipeId||shareCalls[0].p_shared!==true)throw new Error('Share RPC used wrong destination');
   await page.locator('.share-panel').getByRole('button',{name:'Listo',exact:true}).click();
+  if(await page.locator('.simple-recipe-row').getByRole('button',{name:'Añadir a biblioteca',exact:true}).count())throw new Error('Management action still fills recipe row');
+  if(await page.locator('.recipe-quick-tabs').isVisible())throw new Error('Advanced state filters are not collapsed');
+  await page.getByRole('button',{name:'Filtros',exact:true}).click();
+  await page.getByRole('button',{name:'Favoritas',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Filtros',exact:true}).click();
   const density=[];
   const engine=browser.browserType().name();
   for(const size of ['supercompact','compact','normal','large']){
    await page.evaluate(size=>{document.documentElement.dataset.uiSize=size;document.querySelector('.recipe-library').style.minHeight='2400px'},size);
-   density.push(await page.evaluate(()=>({font:parseFloat(getComputedStyle(document.querySelector('.recipe-card-body h3')).fontSize),padding:parseFloat(getComputedStyle(document.querySelector('.recipe-card-body')).paddingTop),thumb:parseFloat(getComputedStyle(document.querySelector('.mobile-menu-trigger')).height)})));
+   density.push(await page.evaluate(()=>({font:parseFloat(getComputedStyle(document.querySelector('.simple-recipe-copy>b')).fontSize),padding:parseFloat(getComputedStyle(document.querySelector('.simple-recipe-row')).paddingTop),thumb:parseFloat(getComputedStyle(document.querySelector('.mobile-menu-trigger')).height)})));
    await page.screenshot({path:`artifacts/${engine}-${size}.png`});
    const before=await page.locator('.mobile-bottom-nav').boundingBox();
    await page.evaluate(()=>document.querySelector('.content').scrollTo(0,1200));
@@ -93,6 +99,7 @@ async function testSignedInMobile(){
   await page.locator('.mobile-menu-trigger').click();
   await page.locator('.drawer-group button').filter({hasText:'Bibliotecas'}).click();
   await page.locator('.playlist-card').filter({hasText:'Con Sofi'}).click();
+  await page.getByRole('button',{name:'Opciones de Receta propia de prueba',exact:true}).click();
   await page.getByRole('button',{name:'Quitar de esta biblioteca',exact:true}).click();
   await page.getByText('Receta propia de prueba',{exact:true}).waitFor({state:'detached'});
   if(!shareCalls.some(x=>x.p_shared===false))throw new Error('Removing from library did not change membership');
