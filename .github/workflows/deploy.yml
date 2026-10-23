@@ -35,7 +35,7 @@ jobs:
           node scripts/smoke-render.mjs
       - name: Upload mobile visual checks
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobile-ui-checks
           path: artifacts/*.png
