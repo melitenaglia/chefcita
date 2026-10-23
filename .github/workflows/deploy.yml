@@ -47,7 +47,7 @@ jobs:
           test -f dist/CNAME
           grep -qx 'chefcita.online' dist/CNAME
           if grep -q '/src/main.jsx' dist/index.html; then exit 1; fi
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
